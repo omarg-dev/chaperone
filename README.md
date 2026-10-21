@@ -36,7 +36,8 @@ The Docker image builds with `docker build -t firewall-server .` and runs on por
 |---|---|
 | `apps/server` | The HTTP server (Hono): the API, and later the websocket and the built web app |
 | `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
-| `packages/` | Other libraries the apps share (arena, firewall and so on), added as each step needs them |
+| `packages/arena` | The simulated marketplace: a fictional catalog, seeded scenarios, and what each request means |
+| `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |
 
 ## Branches
