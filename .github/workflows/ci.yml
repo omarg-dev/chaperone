@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [dev, prod]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, types, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Installs the pnpm version named in package.json's packageManager field.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The example env is a working file: the checks run with it as .env.
+      - run: cp .env.example .env
+      - run: pnpm lint
+      - run: pnpm check
+      # A skipped test fails the run: a green run that quietly ran fewer tests looks exactly like
+      # one that ran them all. Vitest's summary line reads "Tests  N passed | M skipped (T)".
+      - name: Tests
+        run: |
+          set -o pipefail
+          pnpm test 2>&1 | tee test-out.txt
+          if grep -qiE '\b[1-9][0-9]* (skipped|todo)\b' test-out.txt; then
+            echo "::error::Tests were skipped. CI is configured to run all of them."
+            exit 1
+          fi
+      - run: pnpm build
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Same platform as the deploy image, so this checks what the server will run.
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      # The arm64 image can't run on this x86 runner at full speed, so start a native build of the
+      # same Dockerfile and check its HEALTHCHECK passes.
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: firewall-server:ci
+          cache-from: type=gha
+      - name: Container starts healthy
+        run: |
+          docker run -d --name app firewall-server:ci
+          for i in $(seq 1 30); do
+            if [ "$(docker inspect -f '{{.State.Health.Status}}' app)" = healthy ]; then exit 0; fi
+            sleep 2
+          done
+          docker logs app
+          echo "::error::The container never reported healthy."
+          exit 1
