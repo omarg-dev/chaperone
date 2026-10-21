@@ -12,6 +12,7 @@ Follow `omarg-dev/code-repo-rulebook` for branches, commits, PRs, CI, versions a
 ## Differs from the rulebook
 
 - **No "Apps people use" defaults for language, layout or sign-in.** The UI is English only, desktop first, and has no sign-in: judges need free, unrestricted access to the hosted demo. Design tokens, light and dark, and short sentence-case copy still apply.
+- **One minor version per milestone.** Omar approved going past the patch for milestones: MVP is 0.1.x, v1.1 is 0.2.0, v1.2 is 0.3.0, v1.3 is 0.4.0. Releases between milestones bump the patch as usual.
 
 ## Rules that are easy to break
 
