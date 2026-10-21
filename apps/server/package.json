@@ -1,0 +1,19 @@
+{
+  "name": "@firewall/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
+    "check": "tsc --noEmit -p .",
+    "build": "node build.mjs",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "2.1.5",
+    "hono": "4.13.13"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15"
+  }
+}
