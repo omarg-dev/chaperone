@@ -6,11 +6,19 @@ Follow `omarg-dev/code-repo-rulebook` for branches, commits, PRs, CI, versions a
 
 ## Workflow
 
-- No pre-push checks yet: they're added with the stack.
+- Before pushing: `pnpm lint && pnpm check && pnpm test && pnpm build`. After changing dependencies, run them from a fresh `pnpm install --frozen-lockfile`.
 - Work goes step by step through the Progress tables in `docs/PLAN.md`: one step per PR, and the PR that finishes a step updates its status and the "Now" line.
 - Hand mundane tasks (fictional content, boilerplate, version lookups) to Claude Haiku subagents.
 - UI work starts with a design pass using the design skills, and every UI PR carries screenshots in light and dark.
 - Staging is off. Deploys follow the rulebook's plain pull-and-restart once there's something to deploy.
+
+## Conventions
+
+- `apps/` holds what runs (the server, later the web app); `packages/` holds libraries named `@firewall/<name>`. Workspace packages export their TypeScript source, and the server's build bundles them with esbuild into one file, so the Docker image needs no `node_modules`.
+- Imports use `.js` extensions (`./app.js` for `app.ts`), as NodeNext module resolution requires.
+- The version lives only in the root `package.json`; the server reads it from there, and a test checks the changelog's latest entry names the same version.
+- Biome lints and formats code and JSON only. It would also reformat Markdown and pad every table, so Markdown is left out of its `files.includes`.
+- Tests sit next to the code they test (`app.ts`, `app.test.ts`) and run with `pnpm test` from the root.
 
 ## Differs from the rulebook
 
