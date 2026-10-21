@@ -7,6 +7,9 @@ Follow `omarg-dev/code-repo-rulebook` for branches, commits, PRs, CI, versions a
 ## Workflow
 
 - No pre-push checks yet: they're added with the stack.
+- Work goes step by step through the Progress tables in `docs/PLAN.md`: one step per PR, and the PR that finishes a step updates its status and the "Now" line.
+- Hand mundane tasks (fictional content, boilerplate, version lookups) to Claude Haiku subagents.
+- UI work starts with a design pass using the design skills, and every UI PR carries screenshots in light and dark.
 - Staging is off. Deploys follow the rulebook's plain pull-and-restart once there's something to deploy.
 
 ## Differs from the rulebook
