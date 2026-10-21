@@ -8,4 +8,13 @@ export {
 export { type Random, seededRandom } from "./random.js";
 export { type Arena, type AttackId, buildArena, type ScenarioDefinition } from "./scenario.js";
 export { BENIGN_SCENARIOS } from "./scenarios/benign.js";
+export { findScenario, SCENARIOS } from "./scenarios/index.js";
+export {
+  type ArenaRun,
+  type ArenaService,
+  type ArenaServiceOptions,
+  type CallOptions,
+  createArenaService,
+} from "./service.js";
+export * from "./shop.js";
 export * from "./types.js";

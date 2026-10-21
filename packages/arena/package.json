@@ -7,5 +7,8 @@
   },
   "scripts": {
     "check": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@firewall/events": "workspace:*"
   }
 }
