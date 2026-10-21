@@ -3,10 +3,6 @@
 # Build: install the whole workspace and bundle the server into one file.
 FROM node:22-slim AS build
 WORKDIR /app
-# better-sqlite3 compiles a native module on install, which needs Python and a C++ toolchain.
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ \
-  && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 # Fetch packages from the lockfile alone first, so this layer stays cached until it changes.
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
