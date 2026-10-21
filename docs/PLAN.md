@@ -40,7 +40,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 
 | # | Step | Status |
 |---|---|---|
-| 0 | Repo setup and this plan | 👀 [#1](https://github.com/omarg-dev/paypal-ai/pull/1), [#2](https://github.com/omarg-dev/paypal-ai/pull/2) |
+| 0 | Repo setup and this plan | 👀 PRs 1 and 2 |
 | 1 | Monorepo scaffold: workspace, lint, typecheck, tests, CI, a server with `/health`, Docker image | 🔨 |
 | 2 | Event log: the append-only event schema, SQLite through Drizzle, append and query | ⬜ |
 | 3 | Arena catalog: fictional sellers, products and reviews, seeded scenarios, the first benign ones | ⬜ |
