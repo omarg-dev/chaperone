@@ -28,53 +28,93 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Sandbox accounts | One buyer (personal), four honest sellers (business), two attackers (business). |
 | Credentials | Sandbox and model API keys are environment variables in the cloud environment's settings, never in chat or the repo. |
 
-## Milestones
+## Progress
 
-Numbers first: no UI work before the off-vs-on numbers exist.
+**Now: MVP step 1, monorepo scaffold and CI.**
+
+Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
+
+Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸ blocked (says on what) · ⬜ not started
 
 ### MVP (0.1.x), target Oct 29: "the heist works, and the firewall stops it"
 
-- First technical checks (below).
-- Arena API with the catalog, attacks A1, A2 and A4, and benign scenarios.
-- The naive shopping agent, paying through the agent toolkit's tools.
-- Event log in SQLite, webhook intake, and a command-line runner.
-- Mandate builder with confirmation (command line for now).
-- Gates 0 to 2 and the review tree's verdict rules.
-- SDK wrapper v1.
-- All seven attacks and at least 20 benign scenarios.
-- Eval harness v1 with the local runner.
-- Done when: with the firewall off a run sends sandbox money to an attacker account, with it on the same run is voided, and the off-vs-on attack success rate and false block rate exist.
+| # | Step | Status |
+|---|---|---|
+| 0 | Repo setup and this plan | 👀 [#1](https://github.com/omarg-dev/paypal-ai/pull/1), [#2](https://github.com/omarg-dev/paypal-ai/pull/2) |
+| 1 | Monorepo scaffold: workspace, lint, typecheck, tests, CI, a server with `/health`, Docker image | 🔨 |
+| 2 | Event log: the append-only event schema, SQLite through Drizzle, append and query | ⬜ |
+| 3 | Arena catalog: fictional sellers, products and reviews, seeded scenarios, the first benign ones | ⬜ |
+| 4 | Arena API: search, listing, reviews, coupon, cart, checkout | ⬜ |
+| 5 | Payment adapter interface and the in-memory fake | ⬜ |
+| 6 | First technical checks against the sandbox (see below) | ⏸ sandbox accounts, credentials, network access |
+| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, per-order payee, saved wallet | ⏸ step 6 |
+| 8 | Shopping agent on the AI SDK, using the agent toolkit's payment tools | ⏸ step 6 for the toolkit; Anthropic API key for live runs |
+| 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | ⬜ |
+| 10 | Mandate builder with confirmation (command line) | ⬜ |
+| 11 | Gate 0, deterministic policy | ⬜ |
+| 12 | Gate 1, quarantined extractor | ⬜ |
+| 13 | Gate 2, intent auditor | ⬜ |
+| 14 | Review tree and enforcement: approve captures, block voids, escalate holds | ⬜ |
+| 15 | Attacks A3, A5, A6 and A7 | ⬜ |
+| 16 | SDK wrapper v1 | ⬜ |
+| 17 | Eval harness v1 with the local runner and a results file | ⬜ |
+| 18 | 20+ benign scenarios, the first off-vs-on numbers, release 0.1.0 | ⬜ |
+
+Done when: with the firewall off a run sends sandbox money to an attacker account, with it on the same run is voided, and the off-vs-on attack success rate and false block rate exist.
 
 ### v1.1 (0.2.0), target Nov 3: "make it visible"
 
-- Observatory: the live run view on Bryntum Scheduler, the review tree per checkout, history and replay, the escalation inbox, and the AG Studio dashboard with custom widgets and theming.
-- An onboarding flow (connect agent, set mandate, run), empty states, one theme across both sponsor views, light and dark.
-- Hosted deploy on the VPS, with a hard spend cap and a hosted demo that replays recorded real runs by default.
-- Done when: a judge can open the hosted URL, replay a real attack run, and start a capped live run.
+| # | Step | Status |
+|---|---|---|
+| 1 | Design pass with the design skills: tokens, layout and mockups of every screen, reviewed by Omar before any UI code | ⬜ |
+| 2 | Web app shell: theme tokens, light and dark, navigation, empty states | ⬜ |
+| 3 | Live run view on Bryntum Scheduler, with causal arrows | ⬜ |
+| 4 | Review tree per checkout | ⬜ |
+| 5 | History and replay | ⬜ |
+| 6 | Escalation inbox | ⬜ |
+| 7 | AG Studio dashboard with custom widgets and theming | ⬜ |
+| 8 | Onboarding flow: connect agent, set mandate, run | ⬜ |
+| 9 | Hosted deploy on the VPS, with a hard spend cap and recorded real runs as the default demo | ⬜ |
+
+Done when: a judge can open the hosted URL, replay a real attack run, and start a capped live run.
 
 ### v1.2 (0.3.0), target Nov 7: "make the numbers credible"
 
-- Gate 3 and refunds, both finished before the gate freeze.
-- OpenAI and Gemini agent columns.
-- Eval matrix on Render Workflows.
-- **Gate freeze on Nov 5**: gate prompts and logic stop changing.
-- Held-out set ported and run against the frozen gates.
-- The headline matrix run against the real sandbox.
-- Done when: the dashboard shows real-sandbox numbers for all three models, with the ablation, the held-out results and at least one attack that still gets through.
+| # | Step | Status |
+|---|---|---|
+| 1 | Gate 3, trace auditor | ⬜ |
+| 2 | Refunds after capture | ⬜ |
+| 3 | OpenAI and Gemini agent columns | ⬜ |
+| 4 | Eval matrix on Render Workflows | ⬜ |
+| 5 | **Gate freeze, Nov 5**: gate prompts and logic stop changing | ⬜ |
+| 6 | Held-out set ported from published benchmarks and run against the frozen gates | ⬜ |
+| 7 | Headline matrix against the real sandbox | ⬜ |
+
+Done when: the dashboard shows real-sandbox numbers for all three models, with the ablation, the held-out results and at least one attack that still gets through.
 
 ### v1.3 (0.4.0), target Nov 9 (feature freeze): "polish"
 
-- The arena animation, driven by replayed events.
-- Disputes evidence pack and transaction insights, if time allows.
+| # | Step | Status |
+|---|---|---|
+| 1 | Arena animation driven by replayed events, starting with its own design pass | ⬜ |
+| 2 | Disputes evidence pack and transaction insights, if time allows | ⬜ |
 
-### Nov 10 to 11: ship
+### Ship, Nov 10 to 11
 
-- Rename the repo and product, make the repo public, check the MIT license shows in About.
-- README with one-command setup and the five-minute SDK quickstart; Postman collection.
-- Devpost write-up and the video (under 3 minutes, numbers from real sandbox runs only).
-- Submit on Nov 11.
+| # | Step | Status |
+|---|---|---|
+| 1 | Rename the repo and product, make the repo public, check the MIT license shows in About | ⬜ |
+| 2 | README with one-command setup and the five-minute SDK quickstart; Postman collection | ⬜ |
+| 3 | Devpost write-up and the video (under 3 minutes, numbers from real sandbox runs only) | ⬜ |
+| 4 | Submit on Nov 11 | ⬜ |
 
-### If we fall behind, cut in this order
+## How the work is done
+
+- One step, one PR, opened as a draft into `dev`. A PR stacked on an unmerged one says so at the top.
+- Mundane work (fictional catalog content, boilerplate, version lookups) goes to Claude Haiku subagents; design, gates, eval methodology and payments stay with the main session.
+- Any UI step starts from the design pass, and its PR carries screenshots in light and dark.
+
+## If we fall behind, cut in this order
 
 1. The OpenAI and Gemini columns.
 2. Disputes evidence pack and transaction insights.
