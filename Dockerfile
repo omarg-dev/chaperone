@@ -8,7 +8,10 @@ RUN corepack enable
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 RUN pnpm fetch
 COPY . .
-RUN pnpm install --offline --frozen-lockfile && pnpm --filter @firewall/server build
+# Only the server and what it depends on: other packages' native modules need a compiler this
+# image doesn't have, and the server doesn't use them yet.
+RUN pnpm install --offline --frozen-lockfile --filter @firewall/server... \
+  && pnpm --filter @firewall/server build
 
 # Run: the bundle only, as the non-root node user (uid 1000, which owns data/ on the server).
 FROM node:22-slim
