@@ -18,3 +18,4 @@ Follow `omarg-dev/code-repo-rulebook` for branches, commits, PRs, CI, versions a
 - **Don't name the hackathon's sponsor or its payment platform in commits or files for now.** Say "the hackathon" or describe the thing generically. The repository and product get renamed later, and the final name must not use or imply the sponsor's brand.
 - **Sandbox only.** No live payment credentials, and no real secrets in the repo or its history.
 - **All arena brands, products, sellers and reviews are fictional.** No real product brands anywhere in the arena or the demo.
+- **Say which eval numbers used the fake payment adapter.** During development the eval matrix can run against an in-memory fake of the payment platform instead of its sandbox. Whenever Omar asks whether the project is fully done, remind him which result sets are still faked, and that any number shown in the video or the write-up has to come from a run against the real sandbox.
