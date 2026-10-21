@@ -23,12 +23,27 @@ importers:
 
   apps/server:
     dependencies:
+      '@firewall/arena':
+        specifier: workspace:*
+        version: link:../../packages/arena
+      '@firewall/events':
+        specifier: workspace:*
+        version: link:../../packages/events
       '@hono/node-server':
         specifier: 2.1.5
         version: 2.1.5(hono@4.13.13)
+      '@hono/zod-validator':
+        specifier: 0.9.1
+        version: 0.9.1(hono@4.13.13)(zod@4.6.7)
+      better-sqlite3:
+        specifier: 13.0.3
+        version: 13.0.3
       hono:
         specifier: 4.13.13
         version: 4.13.13
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       esbuild:
         specifier: 0.28.2
@@ -36,6 +51,12 @@ importers:
       tsx:
         specifier: 4.23.15
         version: 4.23.15
+
+  packages/arena:
+    dependencies:
+      '@firewall/events':
+        specifier: workspace:*
+        version: link:../events
 
   packages/events:
     dependencies:
@@ -580,6 +601,12 @@ packages:
     engines: {node: '>=20'}
     peerDependencies:
       hono: ^4 || ^5.0.0-0
+
+  '@hono/zod-validator@0.9.1':
+    resolution: {integrity: sha512-iiv6w0qrIc0arfvCtUqBWsvl4fXjzaTcQcCJTTtCnkawF9HHGE+KjEl0ox3gQJ6rKZEgE3mLExlQCF72M+mNuw==}
+    peerDependencies:
+      hono: '>=4.11.2'
+      zod: ^3.25.0 || ^4.0.0
 
   '@jridgewell/resolve-uri@3.1.2':
     resolution: {integrity: sha512-bRISgCIjP20/tbWSPWMEi54QVPRZExkuD9lJL+UIxUKtwVJA8wW1Trb1jMs1RFXo1CBTNZ/5hpC9QvmKWdopKw==}
@@ -1233,6 +1260,9 @@ packages:
     engines: {node: '>=20.11'}
     hasBin: true
 
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
+
 snapshots:
 
   '@biomejs/biome@2.6.2':
@@ -1515,6 +1545,11 @@ snapshots:
   '@hono/node-server@2.1.5(hono@4.13.13)':
     dependencies:
       hono: 4.13.13
+
+  '@hono/zod-validator@0.9.1(hono@4.13.13)(zod@4.6.7)':
+    dependencies:
+      hono: 4.13.13
+      zod: 4.6.7
 
   '@jridgewell/resolve-uri@3.1.2': {}
 
@@ -1968,3 +2003,5 @@ snapshots:
       - msw
 
   why-is-node-running@3.2.1: {}
+
+  zod@4.6.7: {}
