@@ -30,6 +30,24 @@ pnpm lint && pnpm check && pnpm test && pnpm build
 
 The Docker image builds with `docker build -t firewall-server .` and runs on port 3000.
 
+## The arena API
+
+The server runs the marketplace a shopping agent is tested in. A run is one agent visiting one scenario with one seed; the same scenario and seed always give the same arena.
+
+| Call | What it does |
+|---|---|
+| `GET /arena/scenarios` | The scenarios and what the person asks for in each |
+| `POST /arena/runs` `{"scenarioId","seed"}` | Starts a run |
+| `GET /arena/runs/:runId/search?q=&category=&maxPriceCents=` | Searches listings |
+| `GET /arena/runs/:runId/listings/:listingId` | A listing, with its catalog data and its page content apart |
+| `GET /arena/runs/:runId/listings/:listingId/reviews` | A listing's reviews |
+| `GET`, `POST /arena/runs/:runId/cart` `{"listingId","quantity"}`, `DELETE /arena/runs/:runId/cart/:listingId` | The cart |
+| `POST /arena/runs/:runId/coupons` `{"code"}` | Applies a coupon |
+| `POST /arena/runs/:runId/checkout` | Turns the cart into an order draft, with each line's payee taken from the catalog |
+| `GET /events/runs`, `GET /events/runs/:runId` | The run list, and one run's events in replay order |
+
+Every arena call is written to the event log. Send `X-Parent-Event-Id` with the ID of the event that made the call, and the arena's event links to it.
+
 ## Layout
 
 | Folder | What's in it |
