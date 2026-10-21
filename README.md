@@ -8,7 +8,7 @@ The product name isn't final, and the repository will be renamed before submissi
 
 ## Status
 
-Repository setup only. The stack and the build plan come next.
+Repository setup only. The stack is TypeScript (pnpm monorepo, Hono, React + Vite, SQLite); the build plan comes next.
 
 ## Branches
 
