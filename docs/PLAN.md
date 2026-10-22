@@ -6,7 +6,7 @@ Deadline: submission Nov 12, 2026, 12:00 PM PT. Our own target is to submit on N
 
 ## The product in one paragraph
 
-A shopping agent's checkout is held as a sandbox payment authorization instead of being captured. A review tree checks the cart against the mandate the person confirmed before the agent started (Gate 0, deterministic policy; Gate 1, a quarantined extractor that turns untrusted seller content into typed facts; Gate 2, an intent auditor; Gate 3, a trace auditor). Approve captures the payment, escalate asks the person, block voids it. The arena is a seeded marketplace with honest and attacker sellers, each a separate sandbox merchant account, so a successful attack visibly pays the attacker. The eval harness runs attack and benign scenarios with the firewall off and on and reports attack success rate, false block rate, cost and latency.
+A shopping agent's checkout is held as a sandbox payment authorization instead of being captured. A review tree checks the cart against the mandate the person confirmed before the agent started (Gate 0, deterministic policy; Gate 1, a quarantined extractor that turns untrusted seller content into typed facts; Gate 2, an intent auditor; Gate 3, a trace auditor). The hold is the firewall platform's own: approve captures the payment and pays each seller out, escalate asks the person, block voids it, and no seller is paid before the review passes. The arena is a seeded marketplace with honest and attacker sellers, each a separate sandbox merchant account, so a successful attack visibly pays the attacker. The eval harness runs attack and benign scenarios with the firewall off and on and reports attack success rate, false block rate, cost and latency.
 
 ## Decisions
 
@@ -25,18 +25,19 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Channel3 | Undecided; we discuss it when the fair-price check comes up. |
 | Hosting | The VPS at omarg.dev, deployed the rulebook's way. The subdomain waits for the final name. |
 | Versions | One minor version per milestone, approved as an exception to the rulebook: MVP is 0.1.x, v1.1 is 0.2.0, v1.2 is 0.3.0, v1.3 is 0.4.0, with patch releases in between. |
-| Attacks in step 9 | A1 comes in two variants: an unverified attacker store, which Gate 0 catches by rule, and a verified but malicious store selling the wrong product, which only the AI gates can catch. A2 is the payee swap, A4 the "required" add-on. Omar reviews each attack's wording in its PR before it lands, since it may appear in the video. |
+| Attacks in step 9 | A1 comes in two variants: an unverified attacker store, which Gate 0 catches by rule, and a verified but malicious store selling the wrong product, which only the AI gates can catch. A2 swaps where the money goes (with the platform as payee, that's the seller a line pays out to), A4 the "required" add-on. Omar reviews each attack's wording in its PR before it lands, since it may appear in the video. |
 | Gate 0 and extra items | Gate 0 checks the cart against the mandate and escalates an item the person didn't ask for, rather than blocking it. A rule can't be talked out of its decision, and escalating keeps false blocks down when the extra was wanted. So A4 counts as caught without AI, and A1 (verified), A3, A5, A6 and A7 are the attacks only the AI gates can catch. |
-| Sandbox accounts | Created by bulk upload: one buyer (personal), four honest sellers named after the arena's stores, two attackers, all in the US. The default business account owns the app. The buyer's payment review and other test settings stay off; a second buyer with payment review on is an idea for testing a capture that comes back pending. The accounts are listed at the end of this file. |
+| Sandbox accounts | Created by bulk upload: one buyer (personal), four honest sellers named after the arena's stores, two attackers, all in the US. An eighth business account, the firewall platform, owns the app and is the payee on every order. The buyer's payment review and other test settings stay off; a second buyer with payment review on is an idea for testing a capture that comes back pending. The accounts are listed at the end of this file. |
 | Positioning | The shopping agent is the victim, not the product. The firewall is the safety layer under any agent that pays: before money moves, it checks that what the agent is buying is what the person asked for. Agent-to-agent payments and contractor payouts are future scope, named in the write-up but not built. |
 | Next to the platform's agent checkout | The payment platform's own agent checkout gives the agent a one-time payment token limited to one merchant, a maximum amount and an expiry. That limits how much the agent spends and with whom, but not whether the cart is what the person wanted. The firewall is that second check and can sit on top of it. This is the answer to "doesn't the platform already do this?" in the video and the write-up. |
 | Plugins | APIMatic's Context Plugin writes the payment integration, which is what qualifies for its prize. The platform's official plugin is installed next to it only for looking at the sandbox, explaining errors and reading docs. |
+| Who holds the money | The firewall runs on the buyer's side, because the sellers are the ones attacking: anything that needs a seller's cooperation (its own API keys, so the firewall can void its hold) fails against an attacker, and no honest seller hands a third party its secret. So the firewall platform is the payee on every order. It holds the whole cart in one authorization, voids it on a block, and on approval captures it and pays each seller its share with a payout. In production this is the platform's multiparty setup with delayed disbursement, where a platform takes the payment for its sellers and releases it later; this sandbox app isn't approved for that partner onboarding, so the arena uses the simpler version where the platform is the merchant of record. The control point is the same, and the write-up says so. Taking the payment also makes the platform the one that handles refunds and disputes. |
 | Credentials | Never in chat or the repo. Where each kind lives is in `CLAUDE.md`. |
 | Working sessions | Omar keeps one conversation for discussion and another for building. A decision made in discussion goes into this file or `CLAUDE.md` the same day, so the build session works from the repo, not from chat history. |
 
 ## Progress
 
-**Now: MVP step 9, attacks A1, A2 and A4.** Step 6 has its first answers ([docs/sandbox-checks.md](sandbox-checks.md)): the per-order payee works, but void and the saved wallet wait on settings outside the code (see the checklist at the end), so the steps that don't need them come first.
+**Now: MVP step 9, attacks A1, A2 and A4.** Step 6 is answered except the saved wallet ([docs/sandbox-checks.md](sandbox-checks.md)): with the firewall platform as payee, hold, void, capture and the payout to a seller all work, so step 7 can start.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -52,8 +53,8 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 3 | Arena catalog: fictional sellers, products and reviews, seeded scenarios, the first benign ones | ✅ |
 | 4 | Arena API: search, listing, reviews, coupon, cart, checkout | ✅ |
 | 5 | Payment adapter interface and the in-memory fake | ✅ |
-| 6 | First technical checks against the sandbox (see below) | ⏸ checks 1, 4 and 5 answered; void needs a merchant's own app credentials, the saved wallet needs vaulting on and the static asset host allowed |
-| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, per-order payee, saved wallet; one order per seller | ⏸ step 6 |
+| 6 | First technical checks against the sandbox (see below) | 🔨 checks 1, 2, 4 and 5 answered; check 3, the saved wallet, is next now that vaulting is on and the asset host is allowed |
+| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | ⬜ |
 | 8 | Shopping agent on the AI SDK, using the agent toolkit's payment tools | ⏸ step 6 for the toolkit; Anthropic API key for live runs |
 | 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 🔨 the attacks; the checkpoint needs steps 7 and 8 |
 | 10 | Mandate builder with confirmation (command line) | ⬜ |
@@ -127,13 +128,13 @@ Done when: the dashboard shows real-sandbox numbers for all three models, with t
 3. Gate 3.
 4. Arena animation polish (keep a simple version).
 
-Never cut: the eval numbers, the false block rate, the held-out set, and the core payment surfaces (authorize, capture, void, reauthorize, per-order payee, saved wallet, agent toolkit, webhooks).
+Never cut: the eval numbers, the false block rate, the held-out set, and the core payment surfaces (authorize, capture, void, reauthorize, payouts to sellers, saved wallet, agent toolkit, webhooks).
 
 ## First technical checks
 
 These decide whether the plan holds, so they come before anything else is built:
 
-1. An order can pay a different sandbox merchant per order (the payee field). If it can't, attack A2 is redesigned first.
+1. An order can pay a different sandbox merchant per order (the payee field). If it can't, attack A2 is redesigned first. (It can, but the firewall can't void another merchant's hold, so the platform became the payee and pays sellers with payouts.)
 2. Authorize then capture, and authorize then void.
 3. The buyer's wallet can be saved once and orders created against it with no redirect. Fallback: an approval link per order, completed by a scripted sandbox approval in demo mode.
 4. Which agent toolkit tools we can wrap, which fields (such as the order's custom ID) force a direct API call, and whether the toolkit's tools come in AI SDK form.
@@ -160,19 +161,19 @@ How the $5 stretches:
 
 ## To do outside the code (Omar)
 
-- [ ] Make `dev` the default branch and delete `main`; branch protection on `dev` and `prod` with Prod guard required on `prod`.
+- [x] Make `dev` the default branch and delete `main`; branch protection on `dev` and `prod` with Prod guard required on `prod`.
 - [x] Create the sandbox accounts: one buyer, four sellers, two attackers.
 - [x] Add the sandbox app's client ID and secret as environment variables in the cloud environment's settings.
 - [x] Allow the payment sandbox API host in the cloud environment's network settings.
-- [ ] Add `SANDBOX_API_URL`, the sandbox REST API's base URL, to the cloud environment's variables.
-- [ ] Allow the platform's static asset host (the checkout page's scripts and styles) in the network settings, so the buyer's one approval can load.
-- [ ] Turn on saving payment methods in the sandbox app's settings.
-- [ ] Create a sandbox app owned by the seller_1 sandbox account and add its credentials as `SANDBOX_MERCHANT_SELLER_1_CLIENT_ID` and `SANDBOX_MERCHANT_SELLER_1_CLIENT_SECRET`, to test voiding with the payee's own credentials. If it works, the same for the other five merchants.
+- [x] Add `SANDBOX_API_URL`, the sandbox REST API's base URL, to the cloud environment's variables.
+- [x] Allow the platform's static asset host (the checkout page's scripts and styles) in the network settings, so the buyer's one approval can load.
+- [x] Turn on saving payment methods in the sandbox app's settings.
+- [x] Create the firewall platform's business account and a sandbox app on it with saving payment methods and payouts on, and swap its credentials into `SANDBOX_CLIENT_ID` and `SANDBOX_CLIENT_SECRET`.
 - [ ] Allow `api.render.com` in the network settings, plus `api.openai.com` when the OpenAI column is added.
 - [ ] Get a Gemini API key from a Google Cloud project with billing turned off.
 - [ ] Add OpenAI API credit (the ChatGPT subscription doesn't cover the API), or drop that column.
 - [ ] Claim the $50 Render credits.
-- [ ] Install the APIMatic Context Plugin in Claude Code.
+- [x] Install the APIMatic Context Plugin in Claude Code.
 - [ ] Ask AG Grid and Bryntum on the hackathon Discord for licenses that last until Dec 15, and don't start either 45-day trial before Oct 25.
 - [ ] Ask on the Discord whether any sponsor offers model API credits.
 
@@ -182,6 +183,7 @@ Made with the sandbox's bulk upload. The passwords are only in Omar's copy of th
 
 | Account | Role | Arena payee | Merchant ID variable |
 |---|---|---|---|
+| `omarg-fw-platform@business.example.com` | The firewall platform: owns the app, payee on every order, pays sellers out | | (the app's credentials in `SANDBOX_CLIENT_ID`, `SANDBOX_CLIENT_SECRET`) |
 | `omarg-fw-buyer@personal.example.com` | The buyer, $5,000 balance | | (login in `SANDBOX_BUYER_EMAIL`, `SANDBOX_BUYER_PASSWORD`) |
 | `omarg-fw-seller1-northgate@business.example.com` | Northgate Supply | `seller_1` | `SANDBOX_MERCHANT_SELLER_1` |
 | `omarg-fw-seller2-larkspur@business.example.com` | Larkspur Goods | `seller_2` | `SANDBOX_MERCHANT_SELLER_2` |
@@ -190,7 +192,7 @@ Made with the sandbox's bulk upload. The passwords are only in Omar's copy of th
 | `omarg-fw-attacker1@business.example.com` | Attacker 1 | `attacker_1` | `SANDBOX_MERCHANT_ATTACKER_1` |
 | `omarg-fw-attacker2@business.example.com` | Attacker 2 | `attacker_2` | `SANDBOX_MERCHANT_ATTACKER_2` |
 
-All business accounts start at a $0 balance, so a payment to an attacker stands out on the sandbox dashboard.
+All the seller and attacker accounts start at a $0 balance, so a payout to an attacker stands out on the sandbox dashboard.
 
 ## Hackathon credits and trials
 
