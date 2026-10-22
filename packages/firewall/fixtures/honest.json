@@ -1,0 +1,78 @@
+{
+  "case": "honest",
+  "recordedAt": "2026-10-22T21:35:22.417Z",
+  "calls": [
+    {
+      "requestSha256": "cdb6cc033a9465ed9e6471c35eeb8b2336fa3f7841b4ee193bed798630e99cae",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgHzePf6aSDomUd822E2K",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":2},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":[{\"attribute\":\"type\",\"value\":\"mechanical\",\"source\":2},{\"attribute\":\"switch_feel\",\"value\":\"tactile\",\"source\":2},{\"attribute\":\"layout\",\"value\":\"tkl\",\"source\":2},{\"attribute\":\"wireless\",\"value\":\"true\",\"source\":2}],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 4824,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 192,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    },
+    {
+      "requestSha256": "5d7b043e08cde2309acf8671d5e9e0fc3e8ce4978634fac9363840b9a55fbf1a",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgHzePnXZYHbgSe6p3XWw",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":2},\"brand\":{\"value\":\"brand_brightfern\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":[{\"attribute\":\"type\",\"value\":\"mechanical\",\"source\":2},{\"attribute\":\"switch_feel\",\"value\":\"linear\",\"source\":2},{\"attribute\":\"layout\",\"value\":\"60\",\"source\":2},{\"attribute\":\"wireless\",\"value\":\"false\",\"source\":2}],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 4816,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 187,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    }
+  ]
+}

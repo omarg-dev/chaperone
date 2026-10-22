@@ -1,0 +1,42 @@
+{
+  "case": "contradicts_catalog",
+  "recordedAt": "2026-10-22T21:35:40.513Z",
+  "calls": [
+    {
+      "requestSha256": "956abd0e812f2965c3e76ca2c3065c2eb94f545351db79512ebb45a8c6537b19",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgHzfovPBxbSExnoLfQ31",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":1},\"brand\":{\"value\":\"brand_brightfern\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":[{\"attribute\":\"type\",\"value\":\"mechanical\",\"source\":2},{\"attribute\":\"switch_feel\",\"value\":\"tactile\",\"source\":2},{\"attribute\":\"layout\",\"value\":\"60\",\"source\":2},{\"attribute\":\"wireless\",\"value\":\"false\",\"source\":2},{\"attribute\":\"switch_feel\",\"value\":\"linear\",\"source\":5}],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 4818,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 211,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    }
+  ]
+}
