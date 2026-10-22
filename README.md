@@ -55,6 +55,7 @@ Every arena call is written to the event log. Send `X-Parent-Event-Id` with the 
 | `apps/server` | The HTTP server (Hono): the API, and later the websocket and the built web app |
 | `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
 | `packages/arena` | The simulated marketplace: a fictional catalog, seeded scenarios, and what each request means |
+| `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
 | `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |
 
