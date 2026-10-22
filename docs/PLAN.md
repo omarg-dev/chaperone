@@ -33,7 +33,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Plugins | APIMatic's Context Plugin writes the payment integration, which is what qualifies for its prize. The platform's official plugin is installed next to it only for looking at the sandbox, explaining errors and reading docs. |
 | Who holds the money | The firewall runs on the buyer's side, because the sellers are the ones attacking: anything that needs a seller's cooperation (its own API keys, so the firewall can void its hold) fails against an attacker, and no honest seller hands a third party its secret. So the firewall platform is the payee on every order. It holds the whole cart in one authorization, voids it on a block, and on approval captures it and pays each seller its share with a payout. In production this is the platform's multiparty setup with delayed disbursement, where a platform takes the payment for its sellers and releases it later; this sandbox app isn't approved for that partner onboarding, so the arena uses the simpler version where the platform is the merchant of record. The control point is the same, and the write-up says so. Taking the payment also makes the platform the one that handles refunds and disputes. |
 | Credentials | Never in chat or the repo. Where each kind lives is in `CLAUDE.md`. |
-| Working sessions | Omar keeps one conversation for discussion and another for building. A decision made in discussion goes into this file or `CLAUDE.md` the same day, so the build session works from the repo, not from chat history. |
+| Working sessions | One conversation, which hands each step to a subagent and reviews its work before opening the PR. It replaced a split into a discussion session and a build session, where every question bounced between the two. A decision goes into this file or `CLAUDE.md` the same day, because subagents only see the repo. |
 
 ## Progress
 
@@ -118,7 +118,8 @@ Done when: the dashboard shows real-sandbox numbers for all three models, with t
 ## How the work is done
 
 - One step, one PR, opened as a draft into `dev`. A PR stacked on an unmerged one says so at the top.
-- Mundane work (fictional catalog content, boilerplate, version lookups) goes to Claude Haiku subagents; design, gates, eval methodology and payments stay with the main session.
+- Each step is built by a subagent in its own git worktree; steps that don't touch the same files run side by side. The conversation reviews the diff, runs the checks and opens the PR.
+- Mundane work (fictional catalog content, boilerplate, version lookups) goes to Claude Haiku subagents; design, gates, eval methodology and payments go to the main model.
 - Any UI step starts from the design pass, and its PR carries screenshots in light and dark.
 
 ## If we fall behind, cut in this order
