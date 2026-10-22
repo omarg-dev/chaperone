@@ -8,7 +8,35 @@ The product name isn't final, and the repository will be renamed before submissi
 
 ## Status
 
-Planning. The stack is TypeScript (pnpm monorepo, Hono, React + Vite, SQLite); the decisions and milestones are in [docs/PLAN.md](docs/PLAN.md).
+Building the MVP. The decisions, milestones and the step in progress are in [docs/PLAN.md](docs/PLAN.md).
+
+## Running it locally
+
+Needs Node 22 and pnpm (`corepack enable` installs the version the repo pins).
+
+```sh
+pnpm install
+cp .env.example .env
+pnpm dev            # the server, restarting on changes, at http://localhost:3000
+```
+
+`curl localhost:3000/health` answers `{"status":"ok","version":"0.1.0"}`.
+
+Before pushing, run everything CI runs:
+
+```sh
+pnpm lint && pnpm check && pnpm test && pnpm build
+```
+
+The Docker image builds with `docker build -t firewall-server .` and runs on port 3000.
+
+## Layout
+
+| Folder | What's in it |
+|---|---|
+| `apps/server` | The HTTP server (Hono): the API, and later the websocket and the built web app |
+| `packages/` | Libraries the apps share (arena, firewall, events and so on), added as each step needs them |
+| `docs/` | The plan |
 
 ## Branches
 
