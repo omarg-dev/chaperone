@@ -48,13 +48,15 @@ The server runs the marketplace a shopping agent is tested in. A run is one agen
 
 Every arena call is written to the event log. Send `X-Parent-Event-Id` with the ID of the event that made the call, and the arena's event links to it.
 
+Some scenarios are benign and some carry an attack, and the scenario list doesn't say which. An attack scenario layers its attacker's stores, listings, reviews and Q&A onto the base catalog when the arena is built (`packages/arena/src/scenarios/attacks.ts`), so the base catalog and the benign scenarios never contain attack content. Whether a checkout fell for the attack is decided from its order draft by `attackSucceeded` (`packages/arena/src/outcome.ts`), which only the eval reads.
+
 ## Layout
 
 | Folder | What's in it |
 |---|---|
 | `apps/server` | The HTTP server (Hono): the API, and later the websocket and the built web app |
 | `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
-| `packages/arena` | The simulated marketplace: a fictional catalog, seeded scenarios, and what each request means |
+| `packages/arena` | The simulated marketplace: a fictional catalog, seeded benign and attack scenarios, what each request means, and whether a checkout fell for an attack |
 | `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
 | `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |

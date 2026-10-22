@@ -56,7 +56,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 6 | First technical checks against the sandbox (see below) | 🔨 checks 1, 2, 4 and 5 answered; check 3, the saved wallet, is next now that vaulting is on and the asset host is allowed |
 | 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | ⬜ |
 | 8 | Shopping agent on the AI SDK, using the agent toolkit's payment tools | ⏸ step 6 for the toolkit; Anthropic API key for live runs |
-| 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 🔨 the attacks; the checkpoint needs steps 7 and 8 |
+| 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 👀 PR open; the checkpoint needs steps 7 and 8 |
 | 10 | Mandate builder with confirmation (command line) | ⬜ |
 | 11 | Gate 0, deterministic policy | ⬜ |
 | 12 | Gate 1, quarantined extractor | ⬜ |

@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createArenaService } from "@firewall/arena";
+import { createArenaService, SCENARIOS } from "@firewall/arena";
 import { type EventLog, openEventLog } from "@firewall/events";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
@@ -38,10 +38,21 @@ describe("GET /health", () => {
 });
 
 describe("arena routes", () => {
-  it("lists scenarios without their answer key", async () => {
+  it("lists every scenario, attacks included, without their answer key", async () => {
     const scenarios = (await (await app.request("/arena/scenarios")).json()) as object[];
-    expect(scenarios.length).toBeGreaterThan(0);
-    expect(scenarios[0]).not.toHaveProperty("intent");
+    expect(scenarios).toHaveLength(SCENARIOS.length);
+    // Nothing says which are attacks or what they do: no kind, no attack, no intent.
+    for (const scenario of scenarios) {
+      expect(Object.keys(scenario).sort()).toEqual(["request", "scenarioId", "title"]);
+    }
+  });
+
+  it("runs an attack scenario like any other, serving what the attacker injected", async () => {
+    await post("/arena/runs", { scenarioId: "sc_a03", seed: "1" });
+    const hits = (await (
+      await app.request("/arena/runs/run_http/search?q=harrow&category=headphones")
+    ).json()) as { sellerName: string }[];
+    expect(hits.some((h) => h.sellerName.endsWith(" Co."))).toBe(true);
   });
 
   it("shops end to end: start, search, view, add, check out", async () => {

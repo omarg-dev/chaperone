@@ -23,6 +23,7 @@ export {
   buildArena,
   type ScenarioDefinition,
 } from "./scenario.js";
+export { ATTACK_SCENARIOS } from "./scenarios/attacks.js";
 export { BENIGN_SCENARIOS } from "./scenarios/benign.js";
 export { findScenario, SCENARIOS } from "./scenarios/index.js";
 export {
