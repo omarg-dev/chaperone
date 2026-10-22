@@ -20,6 +20,9 @@ Follow `omarg-dev/code-repo-rulebook` for branches, commits, PRs, CI, versions a
 - Biome lints and formats code and JSON only. It would also reformat Markdown and pad every table, so Markdown is left out of its `files.includes`.
 - Schema changes: edit a package's `src/schema.ts`, then `pnpm --filter <package> exec drizzle-kit generate --name <what_changed>` writes the migration into its `drizzle/` folder. SQL drizzle-kit can't express (triggers) goes in a `--custom` migration. Migrations run when the database is opened, so there's no separate migrate step.
 - Database tests use a real SQLite file in a temp folder, never a mock and never the dev database.
+- The arena has three layers: pure shop functions (`packages/arena/src/shop.ts`) over one arena and one cart; the service (`service.ts`), which calls them and writes each call to the event log; and the HTTP routes (`apps/server/src/routes/arena.ts`), which validate input with zod and call the service. New marketplace behaviour goes in the shop first, with its tests.
+- Arena events record what was served, with page content marked `seller_content` and cart and checkout steps marked `catalog`. A failed call is recorded as `<type>_failed` with its reason.
+- better-sqlite3 runs from the prebuilt binaries it ships with. Its build script is ignored in `package.json` (`pnpm.ignoredBuiltDependencies`), so nothing compiles; it stays outside the server bundle, and the Dockerfile copies its JavaScript and Linux binaries into the image.
 - Tests sit next to the code they test (`app.ts`, `app.test.ts`) and run with `pnpm test` from the root.
 
 ## Differs from the rulebook
