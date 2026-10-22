@@ -31,7 +31,7 @@ export function anthropicConfigFromEnv(env: NodeJS.ProcessEnv = process.env): An
   const apiKey = env.FIREWALL_ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
     throw new MissingConfigError(
-      "The mandate builder needs FIREWALL_ANTHROPIC_API_KEY, the app's own Anthropic key. " +
+      "The mandate builder and the gates need FIREWALL_ANTHROPIC_API_KEY, the app's own Anthropic key. " +
         "It never uses ANTHROPIC_API_KEY. See .env.example.",
     );
   }
