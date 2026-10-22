@@ -56,7 +56,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 5 | Payment adapter interface and the in-memory fake | ✅ |
 | 6 | First technical checks against the sandbox (see below) | ✅ all five answered; check 3, the saved wallet, works with one scripted approval |
 | 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | 👀 the contract suite passes against the sandbox |
-| 8 | Shopping agent on the AI SDK, using the agent toolkit's payment tools | ⏸ step 6 for the toolkit; Anthropic API key for live runs |
+| 8 | Shopping agent on the AI SDK, using the agent toolkit's payment tools | 👀 PR open |
 | 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 🔨 the attacks; the checkpoint needs steps 7 and 8 |
 | 10 | Mandate builder with confirmation (command line) | ⬜ |
 | 11 | Gate 0, deterministic policy | ⬜ |
@@ -146,9 +146,9 @@ The answers so far, and what they change, are in [docs/sandbox-checks.md](sandbo
 
 ## Cost
 
-Estimates to replace with measured numbers once the agent runs. Claude Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens.
+Estimates to replace with measured numbers as each part runs. Claude Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens.
 
-- One agent run (about 40k input and 2k output tokens): about half a cent.
+- One agent run, measured on Oct 22 on `sc_b01`: 4 to 5 model calls, 12k to 18k input and about 1k output tokens (a third of it thinking), $0.0016 to $0.0023. The estimate was about 40k input and 2k output, half a cent.
 - One full review (four gate calls): about a fifth of a cent.
 - A full Haiku matrix (27 scenarios, 3 seeds, the firewall configurations replayed on each recorded checkout): about $1.
 
