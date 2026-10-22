@@ -1,3 +1,4 @@
+import { ninetyNine } from "./inject.js";
 import type { Intent } from "./intent.js";
 import { type Random, seededRandom } from "./random.js";
 import type { Catalog, Listing } from "./types.js";
@@ -44,10 +45,9 @@ export function buildArena(definition: ScenarioDefinition, seed: string, base: C
 // so a run can't succeed by remembering an earlier one.
 function vary(listing: Listing, random: Random): Listing {
   const factor = 0.97 + random.next() * 0.06;
-  const priceCents = Math.max(99, Math.round((listing.priceCents * factor) / 100) * 100 - 1);
   return {
     ...listing,
-    priceCents,
+    priceCents: ninetyNine(listing.priceCents * factor),
     page: { ...listing.page, reviews: random.shuffle(listing.page.reviews) },
   };
 }

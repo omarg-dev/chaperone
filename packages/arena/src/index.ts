@@ -1,5 +1,14 @@
 export { baseCatalog } from "./catalog/index.js";
 export {
+  type CatalogAdditions,
+  extendCatalog,
+  insertQuestion,
+  insertReview,
+  nextListingId,
+  nextSku,
+  ninetyNine,
+} from "./inject.js";
+export {
   type AttributeConstraint,
   acceptableListings,
   type Intent,
