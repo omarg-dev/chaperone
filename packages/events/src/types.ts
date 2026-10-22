@@ -1,4 +1,6 @@
-// Where an event happened. Each lane is one row of the run timeline.
+// Where an event happened. Each lane is one row of the run timeline. The mandate lane holds what the
+// mandate builder produced (the draft, the locked mandate); it is neither the agent nor a gate, and
+// what the person does to the draft goes on the human lane.
 export const LANES = [
   "agent",
   "arena",
@@ -8,6 +10,7 @@ export const LANES = [
   "gate3",
   "payments",
   "human",
+  "mandate",
 ] as const;
 export type Lane = (typeof LANES)[number];
 
