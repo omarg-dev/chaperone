@@ -8,7 +8,7 @@ The product name isn't final, and the repository will be renamed before submissi
 
 ## Status
 
-Repository setup only. The stack is TypeScript (pnpm monorepo, Hono, React + Vite, SQLite); the build plan comes next.
+Planning. The stack is TypeScript (pnpm monorepo, Hono, React + Vite, SQLite); the decisions and milestones are in [docs/PLAN.md](docs/PLAN.md).
 
 ## Branches
 
