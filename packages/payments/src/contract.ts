@@ -304,6 +304,24 @@ export function paymentContract(
       expect((await h.adapter.captureAuthorization(fresh.authorizationId)).amountCents).toBe(499);
     });
 
+    // The platform allows one reauthorization per hold, from day 4 to day 29 of the original,
+    // and a reauthorized hold doesn't outlive that window.
+    it("reauthorizes a hold only once, within the original's 29 days", async () => {
+      const id = await authorize();
+      const original = await h.adapter.getAuthorization(id);
+      h.advanceDays?.(4);
+      const fresh = await h.adapter.reauthorize(id);
+      expect(fresh.expiresAt).toBe(original.expiresAt);
+      h.advanceDays?.(4);
+      await expect(h.adapter.reauthorize(fresh.authorizationId)).rejects.toMatchObject({
+        code: "invalid_state",
+      });
+      await expect(h.adapter.reauthorize(id)).rejects.toMatchObject({ code: "invalid_state" });
+      expect((await h.adapter.getAuthorization(fresh.authorizationId)).status).toBe("CREATED");
+      h.advanceDays?.(22);
+      expect((await h.adapter.getAuthorization(fresh.authorizationId)).status).toBe("EXPIRED");
+    });
+
     it("expires an authorization after 29 days", async () => {
       const id = await authorize();
       h.advanceDays?.(30);

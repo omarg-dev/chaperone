@@ -51,6 +51,8 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
   const captures = new Map<string, Capture>();
   const refunds = new Map<string, Refund[]>();
   const payouts = new Map<string, Payout>();
+  // Holds made by reauthorizing, which can't be reauthorized again.
+  const reauthorizations = new Set<string>();
   let sequence = 0;
   const nextId = (prefix: string) => `${prefix}-${String(++sequence).padStart(6, "0")}`;
 
@@ -99,17 +101,21 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
     }
   };
 
+  // A fresh hold gets a new honour period. Its validity runs from the original authorization, so
+  // a reauthorized hold keeps the original's expiry.
   const newAuthorization = (
     from: Pick<Authorization, "orderId" | "amountCents">,
+    expiresAt?: string,
   ): Authorization => {
     const now = clock();
     const authorization: Authorization = {
-      ...from,
+      orderId: from.orderId,
+      amountCents: from.amountCents,
       authorizationId: nextId("AUTH"),
       status: "CREATED",
       createdAt: now.toISOString(),
       honorUntil: new Date(now.getTime() + HONOR_DAYS * DAY_MS).toISOString(),
-      expiresAt: new Date(now.getTime() + VALID_DAYS * DAY_MS).toISOString(),
+      expiresAt: expiresAt ?? new Date(now.getTime() + VALID_DAYS * DAY_MS).toISOString(),
     };
     authorizations.set(authorization.authorizationId, authorization);
     return authorization;
@@ -225,8 +231,20 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
           `Authorization ${authorizationId} is still in its honour period`,
         );
       }
+      // The platform allows one reauthorization per hold. The original is voided below, so it
+      // can't be reauthorized again either.
+      if (reauthorizations.has(authorizationId)) {
+        throw new PaymentError(
+          "invalid_state",
+          `Authorization ${authorizationId} is already a reauthorization; make a new hold instead`,
+        );
+      }
+      // Whether the platform voids the old hold is unverified (docs/sandbox-checks.md, section 6);
+      // the fake does, so only one of the two can be captured.
       authorization.status = "VOIDED";
-      return copy(newAuthorization(authorization));
+      const fresh = newAuthorization(authorization, authorization.expiresAt);
+      reauthorizations.add(fresh.authorizationId);
+      return copy(fresh);
     },
 
     async refundCapture(captureId, amountCents) {

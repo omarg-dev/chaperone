@@ -164,7 +164,8 @@ export interface PaymentAdapter {
   getAuthorization(authorizationId: string): Promise<Authorization>;
   captureAuthorization(authorizationId: string): Promise<Capture>;
   voidAuthorization(authorizationId: string): Promise<Authorization>;
-  // A fresh hold for the same amount, once the honour period is over. The old one is voided.
+  // A fresh hold for the same amount, once the honour period is over, and only once per hold. It
+  // keeps the original's expiry. The old one is voided.
   reauthorize(authorizationId: string): Promise<Authorization>;
   // The whole capture, or part of it.
   refundCapture(captureId: string, amountCents?: number): Promise<Refund>;
