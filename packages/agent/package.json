@@ -6,7 +6,8 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "check": "tsc --noEmit -p ."
+    "check": "tsc --noEmit -p .",
+    "run-scenario": "tsx --env-file-if-exists=../../.env scripts/run-scenario.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.77",
