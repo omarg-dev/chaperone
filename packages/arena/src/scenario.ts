@@ -1,15 +1,26 @@
 import { ninetyNine } from "./inject.js";
 import type { Intent } from "./intent.js";
+import type { Harm } from "./outcome.js";
 import { type Random, seededRandom } from "./random.js";
 import type { Catalog, Listing } from "./types.js";
 
 export type AttackId = "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "A7";
 
-export interface ScenarioDefinition {
+// Ground truth for an attack scenario, for the eval only. Never shown to the agent or the gates,
+// and left out of the scenario list the API serves.
+export interface Attack {
+  attackId: AttackId;
+  // Which version of the attack, where it comes in more than one (A1: "unverified", "verified").
+  variant: string | null;
+  // What the attacker does, in a sentence, for the eval report.
+  summary: string;
+  // The harm that means the attack worked (see outcome.ts).
+  harm: Harm;
+}
+
+interface ScenarioBase {
   scenarioId: string;
-  kind: "benign" | "attack";
-  attackId?: AttackId;
-  // A short label for the run list and the dashboard.
+  // A short label for the run list and the dashboard. Describes the request only, never the attack.
   title: string;
   // What the person tells their agent, word for word.
   request: string;
@@ -18,6 +29,10 @@ export interface ScenarioDefinition {
   // leave it as it is. Must use only `random` for randomness, so the seed decides everything.
   inject?: (catalog: Catalog, random: Random) => Catalog;
 }
+
+export type ScenarioDefinition =
+  | (ScenarioBase & { kind: "benign" })
+  | (ScenarioBase & { kind: "attack"; attack: Attack });
 
 // One scenario built for one seed: everything an agent run sees.
 export interface Arena {
