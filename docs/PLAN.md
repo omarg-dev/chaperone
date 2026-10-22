@@ -30,7 +30,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: MVP step 9, attacks A1, A2 and A4.** Steps 6 to 8 wait on sandbox access (see the checklist at the end), so the steps that don't need it come first.
+**Now: MVP step 9, attacks A1, A2 and A4.** Step 6 has its first answers ([docs/sandbox-checks.md](sandbox-checks.md)): the per-order payee works, but void and the saved wallet wait on settings outside the code (see the checklist at the end), so the steps that don't need them come first.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -46,8 +46,8 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 3 | Arena catalog: fictional sellers, products and reviews, seeded scenarios, the first benign ones | ✅ |
 | 4 | Arena API: search, listing, reviews, coupon, cart, checkout | ✅ |
 | 5 | Payment adapter interface and the in-memory fake | ✅ |
-| 6 | First technical checks against the sandbox (see below) | ⏸ sandbox accounts, credentials, network access |
-| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, per-order payee, saved wallet | ⏸ step 6 |
+| 6 | First technical checks against the sandbox (see below) | ⏸ checks 1, 4 and 5 answered; void needs a merchant's own app credentials, the saved wallet needs vaulting on and the static asset host allowed |
+| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, per-order payee, saved wallet; one order per seller | ⏸ step 6 |
 | 8 | Shopping agent on the AI SDK, using the agent toolkit's payment tools | ⏸ step 6 for the toolkit; Anthropic API key for live runs |
 | 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 🔨 the attacks; the checkpoint needs steps 7 and 8 |
 | 10 | Mandate builder with confirmation (command line) | ⬜ |
@@ -133,6 +133,8 @@ These decide whether the plan holds, so they come before anything else is built:
 4. Which agent toolkit tools we can wrap, which fields (such as the order's custom ID) force a direct API call, and whether the toolkit's tools come in AI SDK form.
 5. Render Workflows has a TypeScript SDK, or a way to run TypeScript tasks.
 
+The answers so far, and what they change, are in [docs/sandbox-checks.md](sandbox-checks.md). In short: 1 yes, but an authorize order holds one purchase unit, so a cart becomes one order per seller; 2 capture yes, void and refund refused for another merchant's hold; 3 not tested yet; 4 the toolkit's order tools can't hold money, so checkout is a direct call; 5 yes.
+
 ## Cost
 
 Estimates to replace with measured numbers once the agent runs. Claude Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens.
@@ -153,9 +155,14 @@ How the $5 stretches:
 ## To do outside the code (Omar)
 
 - [ ] Make `dev` the default branch and delete `main`; branch protection on `dev` and `prod` with Prod guard required on `prod`.
-- [ ] Create the sandbox accounts: one buyer, four sellers, two attackers.
-- [ ] Add the sandbox app's client ID and secret as environment variables in the cloud environment's settings.
-- [ ] Allow the payment sandbox API host and `api.render.com` in the cloud environment's network settings, plus `api.openai.com` when the OpenAI column is added.
+- [x] Create the sandbox accounts: one buyer, four sellers, two attackers.
+- [x] Add the sandbox app's client ID and secret as environment variables in the cloud environment's settings.
+- [x] Allow the payment sandbox API host in the cloud environment's network settings.
+- [ ] Add `SANDBOX_API_URL`, the sandbox REST API's base URL, to the cloud environment's variables.
+- [ ] Allow the platform's static asset host (the checkout page's scripts and styles) in the network settings, so the buyer's one approval can load.
+- [ ] Turn on saving payment methods in the sandbox app's settings.
+- [ ] Create a sandbox app owned by the seller_1 sandbox account and add its credentials as `SANDBOX_MERCHANT_SELLER_1_CLIENT_ID` and `SANDBOX_MERCHANT_SELLER_1_CLIENT_SECRET`, to test voiding with the payee's own credentials. If it works, the same for the other five merchants.
+- [ ] Allow `api.render.com` in the network settings, plus `api.openai.com` when the OpenAI column is added.
 - [ ] Get a Gemini API key from a Google Cloud project with billing turned off.
 - [ ] Add OpenAI API credit (the ChatGPT subscription doesn't cover the API), or drop that column.
 - [ ] Claim the $50 Render credits.
