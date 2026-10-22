@@ -9,4 +9,11 @@ export {
 } from "./fake.js";
 export { type PaymentEventContext, recordPayments } from "./record.js";
 export { checkPayable, unitAmountCents } from "./rules.js";
+export {
+  createSandboxPaymentAdapter,
+  type SandboxConfig,
+  type SandboxPaymentAdapter,
+  sandboxConfigFromEnv,
+  type WalletSetup,
+} from "./sandbox.js";
 export * from "./types.js";

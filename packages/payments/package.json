@@ -8,9 +8,14 @@
   },
   "scripts": {
     "check": "tsc --noEmit -p .",
-    "sandbox-checks": "node scripts/sandbox-checks.ts"
+    "test:sandbox": "vitest run --config vitest.sandbox.config.ts",
+    "sandbox-checks": "tsx scripts/sandbox-checks.ts"
   },
   "dependencies": {
-    "@firewall/events": "workspace:*"
+    "@firewall/events": "workspace:*",
+    "@paypal/paypal-server-sdk": "2.5.0"
+  },
+  "devDependencies": {
+    "tsx": "4.23.15"
   }
 }
