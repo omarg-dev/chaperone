@@ -30,7 +30,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: MVP step 3, the arena catalog.**
+**Now: MVP step 4, the arena API.**
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -43,8 +43,8 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 0 | Repo setup and this plan | 👀 PRs 1 and 2 |
 | 1 | Monorepo scaffold: workspace, lint, typecheck, tests, CI, a server with `/health`, Docker image | ✅ |
 | 2 | Event log: the append-only event schema, SQLite through Drizzle, append and query | ✅ |
-| 3 | Arena catalog: fictional sellers, products and reviews, seeded scenarios, the first benign ones | 🔨 |
-| 4 | Arena API: search, listing, reviews, coupon, cart, checkout | ⬜ |
+| 3 | Arena catalog: fictional sellers, products and reviews, seeded scenarios, the first benign ones | ✅ |
+| 4 | Arena API: search, listing, reviews, coupon, cart, checkout | 🔨 |
 | 5 | Payment adapter interface and the in-memory fake | ⬜ |
 | 6 | First technical checks against the sandbox (see below) | ⏸ sandbox accounts, credentials, network access |
 | 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, per-order payee, saved wallet | ⏸ step 6 |
