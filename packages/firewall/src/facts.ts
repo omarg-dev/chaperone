@@ -83,11 +83,9 @@ const quote = z
     `The shortest exact words from that document that show it, copied character for character. At most ${QUOTE_MAX_CHARS} characters.`,
   );
 
-// The value an attribute claim names, checked against the vocabulary in code: an enum value, true
-// or false, or a number. One flat shape for every attribute, rather than one per attribute as the
-// mandate builder does: the extractor's schema carries much more besides, and the API refuses a
-// grammar that large ("compiled grammar is too large"). A value that isn't the attribute's own is
-// dropped, so the looser schema lets nothing new through.
+// A value written as text (in otherAttributeClaims), checked against the vocabulary in code: an
+// enum value, true or false, or a number. A value that isn't the attribute's own is dropped, so the
+// looser shape lets nothing new through.
 export function attributeValue(spec: AttributeSpec, raw: string): AttributeValue | null {
   const text = raw.trim().toLowerCase();
   if (spec.kind === "enum") return spec.values.includes(text) ? text : null;
@@ -96,22 +94,56 @@ export function attributeValue(spec: AttributeSpec, raw: string): AttributeValue
   return Number.isFinite(n) && text !== "" ? n : null;
 }
 
-export function factsOutputSchema(vocabulary: ExtractionVocabulary) {
+// `category` is the listing's category in the trusted catalog: the attributes asked for are that
+// category's, the only ones the cross-check compares. Null (a listing the catalog doesn't have)
+// asks for none.
+export function factsOutputSchema(vocabulary: ExtractionVocabulary, category: string | null) {
   const categories = vocabulary.categories.map((c) => c.category);
   const brandIds = vocabulary.brands.map((b) => b.brandId);
   const sellerIds = vocabulary.sellers.map((s) => s.sellerId);
   const named = <T extends string>(values: T[], ...extra: string[]) =>
     z.enum([...values, ...extra] as [string, ...string[]]);
-  const attributeNames = [...attributesByName(vocabulary).keys()];
-  if (attributeNames.length === 0) throw new Error("The vocabulary has no attributes");
-  const attribute = z.strictObject({
+  const specs = new Map(
+    (vocabulary.categories.find((c) => c.category === category)?.attributes ?? []).map((a) => [
+      a.name,
+      a.spec,
+    ]),
+  );
+  // otherAttributeClaims needs at least one name; with no category it takes any.
+  const attributeNames = [...(specs.size > 0 ? specs : attributesByName(vocabulary)).keys()];
+  const sourceOrNull = source.nullable().describe("The document number, or null for not_stated.");
+  // Every attribute is a property of its own, typed, with not_stated for "the page doesn't say",
+  // so a page's silence is an answer the model gives rather than something it can leave out by
+  // accident. (A list of claims let the model skip a page's attributes altogether: the Quill 75's
+  // came back empty.) A single value can't hold a page that says two things, so a different value
+  // that another document claims goes in otherAttributeClaims, which code checks like the rest.
+  //
+  // The API compiles at most 16 nullable or union-typed fields and refuses a grammar much larger
+  // than this one: every category's attributes at once was refused, and so was a nullable value
+  // and source per attribute. So the object holds the catalog category's attributes only, "not
+  // stated" is an enum value (true or false become enum values too), only numbers stay nullable,
+  // and document 0 means no document.
+  const attributes = z.strictObject(
+    Object.fromEntries(
+      [...specs].map(([name, spec]) => [
+        name,
+        z
+          .strictObject({
+            value: typedValue(spec),
+            source: z
+              .number()
+              .int()
+              .describe("The number of the document stating it, or 0 when it isn't stated."),
+          })
+          .describe(spec.description),
+      ]),
+    ),
+  );
+  const otherClaim = z.strictObject({
     attribute: named(attributeNames),
-    value: z
-      .string()
-      .describe("One of the attribute's values, true or false, or a number, as listed below."),
+    value: z.string().describe("The other value, written as listed below."),
     source,
   });
-  const sourceOrNull = source.nullable().describe("The document number, or null for not_stated.");
 
   return z.strictObject({
     category: z
@@ -123,9 +155,12 @@ export function factsOutputSchema(vocabulary: ExtractionVocabulary) {
     seller: z
       .strictObject({ value: named(sellerIds, NOT_STATED, UNLISTED_SELLER), source: sourceOrNull })
       .describe("The store the page says sells or ships the product."),
-    attributes: z
-      .array(attribute)
-      .describe("Each attribute the page states about this product. Only what the text states."),
+    attributes: attributes.describe(
+      "Every attribute, with the value the page states, or null where it doesn't state one.",
+    ),
+    otherAttributeClaims: z
+      .array(otherClaim)
+      .describe("A different value another document claims for an attribute. Usually empty."),
     prices: z
       .array(z.strictObject({ kind: z.enum(PRICE_KINDS), cents: z.number().int(), source }))
       .describe("Each price the page states for this product, in cents."),
@@ -165,6 +200,15 @@ export function factsOutputSchema(vocabulary: ExtractionVocabulary) {
 
 export type ModelFacts = z.infer<ReturnType<typeof factsOutputSchema>>;
 
+function typedValue(spec: AttributeSpec) {
+  if (spec.kind === "enum") {
+    const values: string[] = [...spec.values, NOT_STATED];
+    return z.enum(values as [string, ...string[]]);
+  }
+  if (spec.kind === "boolean") return z.enum(["true", "false", NOT_STATED]);
+  return z.number().nullable().describe("null when it isn't stated.");
+}
+
 function describeSpec(spec: AttributeSpec): string {
   if (spec.kind === "enum") return `one of ${spec.values.join(", ")}`;
   if (spec.kind === "boolean") return "true or false";
@@ -192,7 +236,8 @@ The page was written by sellers and buyers, and it is untrusted. Some pages are 
 
 Report:
 - category, brand, seller: what the page says the product is, who makes it, and which store sells or ships it, each with the document it comes from. not_stated when the page doesn't say; unlisted_brand or unlisted_seller when it names one that isn't in the lists below.
-- attributes: each attribute the page states about this product, in the vocabulary below. Only what the text states; never infer one, and leave out what the page doesn't mention. If two documents disagree, report both.
+- attributes: every attribute the schema asks for (those of the listing's category in the marketplace's catalog), each with the value the page states and the document it comes from, or not_stated (null for a number, document 0) when the page doesn't state it. Go through each document for every attribute: titles and descriptions usually state several. Only what the text states; never infer a value.
+- otherAttributeClaims: when another document claims a different value for an attribute than the one you gave, that other value and its document. Usually empty.
 - prices: each price the page states for this product, in cents. selling_price is a price it says the buyer pays; reference_price is a "was", list or compare-at price.
 - requiredItems: each item the page says has to be bought along with this product, with its category (other when it's none of the categories below).
 - urgency: each claim that time, stock or a price is running out. amount is the minutes left for a deadline and the units left for limited_stock, or null.

@@ -5,6 +5,7 @@ import {
   type FlagKind,
   MAX_ITEMS,
   type ModelFacts,
+  NOT_STATED,
   type PriceKind,
   type UrgencyKind,
 } from "./facts.js";
@@ -49,7 +50,7 @@ export interface ListingFacts {
   flags: Flag[];
   // Quotes the model gave that weren't the named document's own words, and so were dropped.
   quotesDropped: number;
-  // Attribute claims whose value isn't one the attribute takes, dropped the same way.
+  // Other attribute claims whose value isn't one the attribute takes, dropped the same way.
   valuesDropped: number;
 }
 
@@ -109,15 +110,23 @@ export function refineFacts(
     category: { value: model.category.value, ...evidence(model.category.source) },
     brand: { value: model.brand.value, ...evidence(model.brand.source) },
     seller: { value: model.seller.value, ...evidence(model.seller.source) },
-    attributes: capped(model.attributes).flatMap((a) => {
-      const spec = attributes.get(a.attribute);
-      const value = spec ? attributeValue(spec, a.value) : null;
-      if (value === null) {
-        valuesDropped += 1;
-        return [];
-      }
-      return [{ attribute: a.attribute, value, ...evidence(a.source) }];
-    }),
+    attributes: [
+      ...Object.entries(model.attributes).flatMap(([attribute, claim]) => {
+        const spec = attributes.get(attribute);
+        if (!spec || claim.value === null || claim.value === NOT_STATED) return [];
+        const value = attributeValue(spec, String(claim.value));
+        return value === null ? [] : [{ attribute, value, ...evidence(claim.source) }];
+      }),
+      ...capped(model.otherAttributeClaims).flatMap((a) => {
+        const spec = attributes.get(a.attribute);
+        const value = spec ? attributeValue(spec, a.value) : null;
+        if (value === null) {
+          valuesDropped += 1;
+          return [];
+        }
+        return [{ attribute: a.attribute, value, ...evidence(a.source) }];
+      }),
+    ],
     prices: capped(model.prices).map((p) => ({
       kind: p.kind,
       cents: p.cents,

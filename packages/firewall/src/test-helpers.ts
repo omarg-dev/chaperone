@@ -57,12 +57,14 @@ export function messageWith(
   };
 }
 
-// The extractor's answer for a page that claims nothing at all.
+// The extractor's answer for a keyboard's page that claims nothing at all.
+const unstated = { value: "not_stated", source: 0 };
 export const EMPTY_ANSWER = {
   category: { value: "not_stated", source: null },
   brand: { value: "not_stated", source: null },
   seller: { value: "not_stated", source: null },
-  attributes: [],
+  attributes: { type: unstated, switch_feel: unstated, layout: unstated, wireless: unstated },
+  otherAttributeClaims: [],
   prices: [],
   requiredItems: [],
   urgency: [],

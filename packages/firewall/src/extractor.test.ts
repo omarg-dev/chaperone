@@ -25,7 +25,7 @@ const attack = listingWith([
 
 describe("the extractor's request", () => {
   const { extractor } = extractorAnswering(baseCatalog, messageWith(JSON.stringify(EMPTY_ANSWER)));
-  const request = extractor.request(attack);
+  const request = extractor.request(attack, "keyboard");
 
   it("runs on the gates' one model, with the answer held to the facts schema", () => {
     expect(request.model).toBe("claude-haiku-5-5");
@@ -71,7 +71,7 @@ describe("the extractor's answer", () => {
         usage: { input_tokens: 5000, output_tokens: 300 },
       }),
     );
-    const result = await extractor.extract(attack);
+    const result = await extractor.extract(attack, "keyboard");
     expect(sent).toHaveLength(1);
     expect(result.facts).toEqual(EMPTY_ANSWER);
     expect(result.tokens).toMatchObject({ inputTokens: 5000, outputTokens: 300 });
@@ -92,7 +92,7 @@ describe("the extractor's answer", () => {
     ],
   ])("fails as %s, never guessing facts, and still says what it cost", async (code, response) => {
     const { extractor } = extractorAnswering(baseCatalog, response);
-    const failure = await extractor.extract(attack).catch((e: unknown) => e);
+    const failure = await extractor.extract(attack, "keyboard").catch((e: unknown) => e);
     expect(failure).toBeInstanceOf(ExtractionError);
     expect((failure as ExtractionError).code).toBe(code);
     expect((failure as ExtractionError).details.costUsd).toBeGreaterThan(0);
@@ -111,7 +111,9 @@ describe("the extractor's answer", () => {
       ),
       vocabulary: extractionVocabulary(baseCatalog),
     });
-    await expect(extractor.extract(attack)).rejects.toMatchObject({ code: "api_error" });
+    await expect(extractor.extract(attack, "keyboard")).rejects.toMatchObject({
+      code: "api_error",
+    });
   });
 });
 
@@ -131,7 +133,7 @@ describe("test_model_clients_use_the_apps_own_config", () => {
       client: createAnthropicClient(anthropicConfigFromEnv(), { fetch: replay.fetch }),
       vocabulary: extractionVocabulary(baseCatalog),
     });
-    await extractor.extract(attack);
+    await extractor.extract(attack, "keyboard");
     const [call] = replay.sent;
     expect(call?.url).toBe("https://models.firewall.test/v1/messages");
     expect(call?.headers.get("x-api-key")).toBe("the-apps-own-key");

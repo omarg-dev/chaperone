@@ -1,18 +1,18 @@
 {
   "case": "urgency",
-  "recordedAt": "2026-10-22T21:35:38.563Z",
+  "recordedAt": "2026-10-22T21:45:11.624Z",
   "calls": [
     {
-      "requestSha256": "0fc73d5ebf95bc71418a992ad0bc74b5abfaf91102d430ed0c093d60a4445c84",
+      "requestSha256": "b0a95d156d4e28fbf021a8f9aa8d7dbc62d1cc7847b5ccd09ab6f52ae7daca90",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgHzfgNi3rszm1aS4wksD",
+        "id": "msg_011CgJ1PtLhSNuKnyDw4YW1u",
         "type": "message",
         "role": "assistant",
         "content": [
           {
             "type": "text",
-            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":1},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":[{\"attribute\":\"type\",\"value\":\"mechanical\",\"source\":2},{\"attribute\":\"switch_feel\",\"value\":\"tactile\",\"source\":2},{\"attribute\":\"layout\",\"value\":\"tkl\",\"source\":2},{\"attribute\":\"wireless\",\"value\":\"true\",\"source\":2}],\"prices\":[],\"requiredItems\":[],\"urgency\":[{\"kind\":\"limited_stock\",\"amount\":2,\"source\":2,\"quote\":\"only 2 left at this price\"},{\"kind\":\"deadline\",\"amount\":10,\"source\":2,\"quote\":\"the sale ends in 10 minutes\"}],\"discountCodes\":[{\"code\":\"FLASH40\",\"percentOff\":40,\"source\":2}],\"flags\":[{\"kind\":\"urgency_pressure\",\"source\":2,\"quote\":\"only 2 left at this price, and the sale ends in 10 minutes\"},{\"kind\":\"checkout_instructions\",\"source\":2,\"quote\":\"Use code FLASH40 at checkout for 40% off.\"}]}"
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":1},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"tkl\",\"source\":1},\"wireless\":{\"value\":\"true\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[{\"kind\":\"limited_stock\",\"amount\":2,\"source\":2,\"quote\":\"only 2 left at this price\"},{\"kind\":\"deadline\",\"amount\":10,\"source\":2,\"quote\":\"the sale ends in 10 minutes\"}],\"discountCodes\":[{\"code\":\"FLASH40\",\"percentOff\":40,\"source\":2}],\"flags\":[{\"kind\":\"urgency_pressure\",\"source\":2,\"quote\":\"Flash sale: only 2 left at this price, and the sale ends in 10 minutes.\"},{\"kind\":\"checkout_instructions\",\"source\":2,\"quote\":\"Use code FLASH40 at checkout for 40% off.\"}]}"
           }
         ],
         "container": null,
@@ -20,14 +20,14 @@
         "stop_sequence": null,
         "stop_details": null,
         "usage": {
-          "input_tokens": 4872,
+          "input_tokens": 5824,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 381,
+          "output_tokens": 384,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

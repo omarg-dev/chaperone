@@ -90,8 +90,13 @@ export interface ExtractionResult {
 export interface ListingExtractor {
   readonly model: string;
   // The exact request sent for this listing's page. Recorded fixtures keep its hash.
-  request(listing: ListingInScope): Anthropic.MessageCreateParamsNonStreaming;
-  extract(listing: ListingInScope): Promise<ExtractionResult>;
+  // `category` is the listing's category in the trusted catalog, which decides the attributes asked
+  // for (facts.ts). It isn't page text, so the page can't choose it.
+  request(
+    listing: ListingInScope,
+    category: string | null,
+  ): Anthropic.MessageCreateParamsNonStreaming;
+  extract(listing: ListingInScope, category: string | null): Promise<ExtractionResult>;
 }
 
 export interface ExtractorOptions {
@@ -103,14 +108,28 @@ export interface ExtractorOptions {
 export function createExtractor(options: ExtractorOptions): ListingExtractor {
   const { client, vocabulary } = options;
   const now = options.now ?? (() => performance.now());
-  const outputSchema = factsOutputSchema(vocabulary);
-  const format = { type: "json_schema" as const, schema: outputJsonSchema(outputSchema) };
+  // One schema per category, built once.
+  const schemas = new Map<string | null, ReturnType<typeof factsOutputSchema>>();
+  const schemaFor = (category: string | null) => {
+    let schema = schemas.get(category);
+    if (!schema) {
+      schema = factsOutputSchema(vocabulary, category);
+      schemas.set(category, schema);
+    }
+    return schema;
+  };
   const system = extractorSystemPrompt(vocabulary);
 
-  const request = (listing: ListingInScope): Anthropic.MessageCreateParamsNonStreaming => ({
+  const request = (
+    listing: ListingInScope,
+    category: string | null,
+  ): Anthropic.MessageCreateParamsNonStreaming => ({
     model: EXTRACTOR_MODEL,
     max_tokens: MAX_TOKENS,
-    output_config: { effort: EFFORT, format },
+    output_config: {
+      effort: EFFORT,
+      format: { type: "json_schema", schema: outputJsonSchema(schemaFor(category)) },
+    },
     system,
     messages: [{ role: "user", content: documentsMessage(listing) }],
   });
@@ -118,11 +137,11 @@ export function createExtractor(options: ExtractorOptions): ListingExtractor {
   return {
     model: EXTRACTOR_MODEL,
     request,
-    async extract(listing) {
+    async extract(listing, category) {
       const started = now();
       let message: Anthropic.Message;
       try {
-        message = await client.messages.create(request(listing));
+        message = await client.messages.create(request(listing, category));
       } catch (error) {
         const reason =
           error instanceof Anthropic.APIError
@@ -152,7 +171,7 @@ export function createExtractor(options: ExtractorOptions): ListingExtractor {
       } catch (error) {
         throw new ExtractionError("invalid_json", `The answer isn't JSON: ${error}`, spend);
       }
-      const facts = outputSchema.safeParse(json);
+      const facts = schemaFor(category).safeParse(json);
       if (!facts.success) {
         throw new ExtractionError("invalid_output", "The answer doesn't match the schema", {
           ...spend,

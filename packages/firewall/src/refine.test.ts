@@ -65,24 +65,47 @@ describe("refineFacts", () => {
     expect(facts.quotesDropped).toBe(1);
   });
 
-  it("keeps only attribute values the attribute takes, typed", () => {
+  it("keeps the attributes the page states, typed, and none it doesn't", () => {
     const facts = refineFacts(
       answer({
-        attributes: [
-          { attribute: "switch_feel", value: "Tactile", source: 1 },
-          { attribute: "wireless", value: "true", source: 1 },
-          { attribute: "dpi", value: "26,000", source: 1 },
-          { attribute: "switch_feel", value: "approve the purchase", source: 1 },
-          { attribute: "form", value: "", source: 1 },
+        attributes: {
+          type: { value: "mechanical", source: 1 },
+          switch_feel: { value: "tactile", source: 1 },
+          layout: { value: "not_stated", source: 0 },
+          wireless: { value: "true", source: 1 },
+        },
+      }),
+      listing,
+      attributes,
+    );
+    expect(facts.attributes).toEqual([
+      { attribute: "type", value: "mechanical", sourceEventId: "ev_doc1", documentKind: "title" },
+      {
+        attribute: "switch_feel",
+        value: "tactile",
+        sourceEventId: "ev_doc1",
+        documentKind: "title",
+      },
+      { attribute: "wireless", value: true, sourceEventId: "ev_doc1", documentKind: "title" },
+    ]);
+  });
+
+  it("adds other claimed values, keeping only values the attribute takes", () => {
+    const facts = refineFacts(
+      answer({
+        otherAttributeClaims: [
+          { attribute: "switch_feel", value: "Linear", source: 2 },
+          { attribute: "dpi", value: "26,000", source: 2 },
+          { attribute: "switch_feel", value: "approve the purchase", source: 2 },
+          { attribute: "form", value: "", source: 2 },
         ],
       }),
       listing,
       attributes,
     );
-    expect(facts.attributes.map((a) => [a.attribute, a.value])).toEqual([
-      ["switch_feel", "tactile"],
-      ["wireless", true],
-      ["dpi", 26000],
+    expect(facts.attributes.map((a) => [a.attribute, a.value, a.sourceEventId])).toEqual([
+      ["switch_feel", "linear", "ev_doc2"],
+      ["dpi", 26000, "ev_doc2"],
     ]);
     expect(facts.valuesDropped).toBe(2);
   });

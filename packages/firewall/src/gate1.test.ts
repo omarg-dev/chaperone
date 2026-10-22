@@ -133,6 +133,61 @@ describe("Gate 1 on recorded extractions", () => {
   });
 });
 
+// What each recorded page states, by hand from its text, and what the extractor has to return for
+// it. A stated attribute the extractor misses is a contradiction the cross-check can't see.
+const HALVARD_STATES = {
+  type: "mechanical",
+  switch_feel: "tactile",
+  layout: "tkl",
+  wireless: true,
+};
+const STATED: Record<string, Record<string, Record<string, string | boolean>>> = {
+  honest: {
+    [HALVARD]: HALVARD_STATES,
+    lst_keyboard_01_1: { type: "mechanical", switch_feel: "linear", layout: "60", wireless: false },
+  },
+  poisoned_review: {
+    [HALVARD]: HALVARD_STATES,
+    [QUILL]: { type: "mechanical", switch_feel: "linear", layout: "75", wireless: true },
+  },
+  required_addon: { [HALVARD]: HALVARD_STATES },
+  urgency: { [HALVARD]: HALVARD_STATES },
+  // The edited page says tactile; its honest reviews still say linear.
+  contradicts_catalog: {
+    lst_keyboard_01_1: {
+      type: "mechanical",
+      switch_feel: "tactile",
+      layout: "60",
+      wireless: false,
+    },
+  },
+  injection: { [HALVARD]: HALVARD_STATES },
+};
+
+describe("attribute recall on the recorded pages", () => {
+  it.each(Object.keys(STATED))("returns every attribute the pages in %s state", async (name) => {
+    const { gate } = await gateOn(name);
+    for (const [listingId, stated] of Object.entries(STATED[name] ?? {})) {
+      const first = new Map<string, unknown>();
+      for (const a of review(gate, listingId).facts.attributes) {
+        if (!first.has(a.attribute)) first.set(a.attribute, a.value);
+      }
+      expect(Object.fromEntries(first), listingId).toEqual(stated);
+    }
+  });
+
+  it("also reports a different value another document claims", async () => {
+    const { gate } = await gateOn("contradicts_catalog");
+    const feel = review(gate, "lst_keyboard_01_1")
+      .facts.attributes.filter((a) => a.attribute === "switch_feel")
+      .map((a) => [a.value, a.documentKind]);
+    expect(feel).toEqual([
+      ["tactile", "description"],
+      ["linear", "review"],
+    ]);
+  });
+});
+
 describe("Gate 1's events", () => {
   it("writes its input, each listing's facts and its verdict to the gate1 lane", async () => {
     const { gate, run } = await gateOn("poisoned_review");

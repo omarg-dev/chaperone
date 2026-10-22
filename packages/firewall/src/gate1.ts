@@ -60,10 +60,14 @@ const addTokens = (a: TokenCounts, b: TokenCounts | undefined): TokenCounts =>
       }
     : a;
 
-async function attempt(extractor: ListingExtractor, listing: ListingInScope): Promise<Attempt> {
+async function attempt(
+  extractor: ListingExtractor,
+  listing: ListingInScope,
+  category: string | null,
+): Promise<Attempt> {
   if (listing.documents.length === 0) return { kind: "nothing_to_read" };
   try {
-    return { kind: "extracted", result: await extractor.extract(listing) };
+    return { kind: "extracted", result: await extractor.extract(listing, category) };
   } catch (error) {
     // Anything else is a bug, not a page the extractor couldn't read.
     if (error instanceof ExtractionError) return { kind: "failed", error };
@@ -111,7 +115,10 @@ export async function runGate1(
   });
 
   // Side by side: the gate takes about as long as its slowest page.
-  const attempts = await Promise.all(scope.listings.map((l) => attempt(extractor, l)));
+  const records = scope.listings.map((l) => catalogRecord(catalog, l.listingId));
+  const attempts = await Promise.all(
+    scope.listings.map((l, i) => attempt(extractor, l, records[i]?.category ?? null)),
+  );
 
   let tokens = ZERO;
   let cost = 0;
@@ -149,7 +156,7 @@ export async function runGate1(
       listing,
       attributes,
     );
-    const disagreements = crossCheck(facts, catalogRecord(catalog, listing.listingId));
+    const disagreements = crossCheck(facts, records[i] ?? null);
     const review: ListingReview = {
       listingId: listing.listingId,
       inCart: listing.inCart,
