@@ -10,13 +10,9 @@
 // and the buyer's login (SANDBOX_BUYER_EMAIL, SANDBOX_BUYER_PASSWORD) for the scripted
 // approvals. Every amount is a dollar or two, and payouts go to seller_1 and seller_2 only.
 
-import {
-  Client,
-  Environment,
-  OrdersController,
-  PaymentsController,
-} from "@paypal/paypal-server-sdk";
+import { Client, Environment, OrdersController } from "@paypal/paypal-server-sdk";
 import { approveAsBuyer, buyerLoginFromEnv } from "../sandbox/buyer.js";
+import { splitPayouts } from "../src/rules.js";
 import { createSandboxPaymentAdapter, sandboxConfigFromEnv } from "../src/sandbox.js";
 import { type CreateOrderInput, type LineItemInput, PaymentError } from "../src/types.js";
 
@@ -32,7 +28,7 @@ try {
   process.exit(2);
 }
 const adapter = createSandboxPaymentAdapter(config);
-// Two reads the adapter doesn't expose: who an order pays, and what a capture nets after fees.
+// One read the adapter doesn't expose: who an order pays.
 const sdk = new Client({
   clientCredentialsAuthCredentials: {
     oAuthClientId: config.clientId,
@@ -42,7 +38,6 @@ const sdk = new Client({
   timeout: 30_000,
 });
 const orders = new OrdersController(sdk);
-const payments = new PaymentsController(sdk);
 
 const results: { check: string; answer: string; ok: boolean; ms?: number }[] = [];
 
@@ -174,24 +169,19 @@ if (vaultId) {
     const capture = await timed(() =>
       adapter.captureAuthorization(second.value?.authorizationId as string),
     );
-    const net = capture.value
-      ? (await payments.getCapturedPayment({ captureId: capture.value.captureId })).result
-          .sellerReceivableBreakdown?.netAmount?.value
-      : undefined;
+    const net = capture.value?.netAmountCents;
     record(
       "2. capture the whole cart",
       capture.value
-        ? `${capture.value.status}, the platform nets ${net} of 2.00`
+        ? `${capture.value.status}, the platform nets ${((net ?? 0) / 100).toFixed(2)} of 2.00`
         : (capture.error ?? "?"),
-      capture.value?.status === "COMPLETED",
+      capture.value?.status === "COMPLETED" && typeof net === "number",
       capture.ms,
     );
-    if (capture.value) {
+    if (capture.value && typeof net === "number") {
       const captureId = capture.value.captureId;
-      for (const seller of ["seller_1", "seller_2"]) {
-        const share = lines
-          .filter((item) => item.payeeKey === seller)
-          .reduce((sum, item) => sum + item.quantity * item.unitAmountCents, 0);
+      // Each seller gets its share of the net, not its gross lines (docs/PLAN.md, "Fees").
+      for (const { payeeKey: seller, amountCents: share } of splitPayouts(net, lines)) {
         const started = Date.now();
         const sent = await timed(() =>
           adapter.createPayout({ captureId, payeeKey: seller, amountCents: share }),
@@ -209,7 +199,7 @@ if (vaultId) {
         );
       }
       const repeat = await timed(() =>
-        adapter.createPayout({ captureId, payeeKey: "seller_1", amountCents: 100 }),
+        adapter.createPayout({ captureId, payeeKey: "seller_1", amountCents: 1 }),
       );
       record(
         "2. paying the same seller twice from one capture is refused",

@@ -19,6 +19,15 @@ export const VALID_DAYS = 29;
 // The firewall platform's own account: the payee on every order, and who payouts come from.
 export const PLATFORM_ACCOUNT = "FAKE-PLATFORM";
 
+// The platform's processing fee on a capture, as the sandbox charged it: a $2.00 capture netted
+// $1.44 (docs/sandbox-checks.md, section 6). The fake's one fee model; refunds don't give it back.
+export const FEE_PERCENT = 3.49;
+export const FEE_FIXED_CENTS = 49;
+
+export function processingFeeCents(amountCents: number): number {
+  return Math.min(amountCents, Math.round((amountCents * FEE_PERCENT) / 100) + FEE_FIXED_CENTS);
+}
+
 export interface FakeOptions {
   // Payee key to merchant ID. A key with no entry is refused, as an unknown payee would be.
   merchants?: Record<string, string>;
@@ -29,8 +38,8 @@ export interface FakePaymentAdapter extends PaymentAdapter {
   // The buyer following the approval link. The sandbox does this with a scripted sandbox login;
   // here it's immediate.
   approve(orderId: string): Promise<void>;
-  // Money each account holds, in cents: the platform's captures less its refunds and payouts,
-  // and each merchant's payouts received. Accounts with nothing are left out.
+  // Money each account holds, in cents: what the platform's captures netted after fees, less its
+  // refunds and payouts, and each merchant's payouts received. Accounts with nothing are left out.
   balances(): Record<string, number>;
 }
 
@@ -208,6 +217,7 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
         captureId: nextId("CAPTURE"),
         authorizationId,
         amountCents: authorization.amountCents,
+        netAmountCents: authorization.amountCents - processingFeeCents(authorization.amountCents),
         status: "COMPLETED",
         createdAt: clock().toISOString(),
       };
@@ -312,7 +322,7 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
         totals[account] = (totals[account] ?? 0) + cents;
       };
       for (const capture of captures.values()) {
-        add(PLATFORM_ACCOUNT, capture.amountCents - refundedCents(capture.captureId));
+        add(PLATFORM_ACCOUNT, (capture.netAmountCents ?? 0) - refundedCents(capture.captureId));
       }
       for (const payout of payouts.values()) {
         if (payout.status !== "SUCCESS") continue;

@@ -100,6 +100,10 @@ export interface Capture {
   captureId: string;
   authorizationId: string;
   amountCents: number;
+  // What the platform received once its processing fee came off: what the sellers' payouts are
+  // split from (docs/PLAN.md, "Fees"). Null while the capture is pending, when the platform
+  // doesn't report it yet.
+  netAmountCents: number | null;
   status: "COMPLETED" | "PENDING" | "PARTIALLY_REFUNDED" | "REFUNDED" | "DECLINED" | "FAILED";
   createdAt: string;
 }

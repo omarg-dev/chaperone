@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { splitPayouts } from "./rules.js";
 import type {
   Authorization,
   CreateOrderInput,
@@ -172,6 +173,16 @@ export function paymentContract(
       await fails(h.adapter.captureAuthorization(auth.authorizationId), "invalid_state");
     });
 
+    // The sellers are paid out of what the platform received, so the capture has to say what that
+    // was (docs/PLAN.md, "Fees").
+    it("reports what the platform received from a capture, after its fees", async () => {
+      const capture = await captured();
+      const net = capture.netAmountCents as number;
+      expect(Number.isInteger(net)).toBe(true);
+      expect(net).toBeGreaterThan(0);
+      expect(net).toBeLessThan(200);
+    });
+
     it("voids a held authorization, after which it can't be captured or voided again", async () => {
       const auth = await hold();
       expect((await h.adapter.voidAuthorization(auth.authorizationId)).status).toBe("VOIDED");
@@ -188,15 +199,19 @@ export function paymentContract(
       await fails(h.adapter.refundCapture(capture.captureId, 1), "over_refund");
     });
 
-    it("pays a seller its share of a capture, landing with that seller", async () => {
-      const capture = await captured([
+    it("pays a seller its share of what the platform received, landing with that seller", async () => {
+      const items = [
         line({ payeeKey: h.payees[0], unitAmountCents: 150 }),
         line({ lineId: "line_2", payeeKey: h.payees[1], unitAmountCents: 100 }),
-      ]);
+      ];
+      const capture = await captured(items);
+      const shares = splitPayouts(capture.netAmountCents as number, items);
+      expect(shares.map((share) => share.payeeKey)).toEqual(h.payees);
+      const share = shares[1]?.amountCents as number;
       const payout = await h.adapter.createPayout({
         captureId: capture.captureId,
         payeeKey: h.payees[1],
-        amountCents: 100,
+        amountCents: share,
       });
       expect(payout).toMatchObject({ captureId: capture.captureId, payeeKey: h.payees[1] });
       const read = await landed(payout.payoutId);
@@ -205,19 +220,23 @@ export function paymentContract(
         captureId: capture.captureId,
         payeeKey: h.payees[1],
         merchantId: payout.merchantId,
-        amountCents: 100,
+        amountCents: share,
         status: "SUCCESS",
       });
     });
 
     it("pays a seller once per capture, so a retried payout can't pay twice", async () => {
       const capture = await captured();
-      const payout = { captureId: capture.captureId, payeeKey: h.payees[0], amountCents: 200 };
+      const payout = {
+        captureId: capture.captureId,
+        payeeKey: h.payees[0],
+        amountCents: capture.netAmountCents as number,
+      };
       await h.adapter.createPayout(payout);
       await fails(h.adapter.createPayout(payout), "duplicate");
     });
 
-    it("won't pay out of an unknown capture, more than was captured, or a refunded one", async () => {
+    it("won't pay out of an unknown capture, more than the platform received, or a refund", async () => {
       await fails(
         h.adapter.createPayout({
           captureId: "CAPTURE-NOPE",
@@ -231,7 +250,7 @@ export function paymentContract(
         h.adapter.createPayout({
           captureId: capture.captureId,
           payeeKey: h.payees[0],
-          amountCents: 201,
+          amountCents: (capture.netAmountCents as number) + 1,
         }),
         "invalid_request",
       );
@@ -240,7 +259,7 @@ export function paymentContract(
         h.adapter.createPayout({
           captureId: capture.captureId,
           payeeKey: h.payees[0],
-          amountCents: 200,
+          amountCents: capture.netAmountCents as number,
         }),
         "invalid_state",
       );

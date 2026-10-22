@@ -49,7 +49,7 @@ describe("recordPayments", () => {
     const payout = await payments.createPayout({
       captureId: capture.captureId,
       payeeKey: "seller_1",
-      amountCents: 500,
+      amountCents: capture.netAmountCents as number,
     });
     await payments.getPayout(payout.payoutId);
 
@@ -70,7 +70,7 @@ describe("recordPayments", () => {
     expect(events[0]?.payload).toMatchObject({ result: { orderId: order.orderId } });
     expect(events[1]?.payload).toMatchObject({ input: [order.orderId, { vaultId: "VAULT" }] });
     expect(events[3]?.payload).toMatchObject({
-      input: [{ captureId: capture.captureId, payeeKey: "seller_1", amountCents: 500 }],
+      input: [{ captureId: capture.captureId, payeeKey: "seller_1", amountCents: 434 }],
       result: { payoutId: payout.payoutId, status: "PENDING" },
     });
   });

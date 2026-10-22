@@ -196,6 +196,9 @@ export function createSandboxPaymentAdapter(config: SandboxConfig): SandboxPayme
         .supplementaryData?.relatedIds?.authorizationId ??
       "",
     amountCents: cents(result.amount?.value),
+    netAmountCents: result.sellerReceivableBreakdown?.netAmount
+      ? cents(result.sellerReceivableBreakdown.netAmount.value)
+      : null,
     status: (result.status ?? "PENDING") as Capture["status"],
     createdAt: result.createTime ?? "",
   });
