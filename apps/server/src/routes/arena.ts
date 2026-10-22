@@ -1,4 +1,4 @@
-import { type ArenaService, type CallOptions, SCENARIOS } from "@firewall/arena";
+import { type ArenaService, CATEGORIES, type CallOptions, SCENARIOS } from "@firewall/arena";
 import { zValidator } from "@hono/zod-validator";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
@@ -9,7 +9,7 @@ const startRun = z.object({
 });
 const searchQuery = z.object({
   q: z.string().optional(),
-  category: z.enum(["keyboard", "headphones", "mouse"]).optional(),
+  category: z.enum(CATEGORIES).optional(),
   maxPriceCents: z.coerce.number().int().positive().optional(),
 });
 const addLine = z.object({
