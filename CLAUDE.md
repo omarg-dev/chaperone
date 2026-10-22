@@ -18,6 +18,8 @@ Follow `omarg-dev/code-repo-rulebook` for branches, commits, PRs, CI, versions a
 - Imports use `.js` extensions (`./app.js` for `app.ts`), as NodeNext module resolution requires.
 - The version lives only in the root `package.json`; the server reads it from there, and a test checks the changelog's latest entry names the same version.
 - Biome lints and formats code and JSON only. It would also reformat Markdown and pad every table, so Markdown is left out of its `files.includes`.
+- Schema changes: edit a package's `src/schema.ts`, then `pnpm --filter <package> exec drizzle-kit generate --name <what_changed>` writes the migration into its `drizzle/` folder. SQL drizzle-kit can't express (triggers) goes in a `--custom` migration. Migrations run when the database is opened, so there's no separate migrate step.
+- Database tests use a real SQLite file in a temp folder, never a mock and never the dev database.
 - Tests sit next to the code they test (`app.ts`, `app.test.ts`) and run with `pnpm test` from the root.
 
 ## Differs from the rulebook
@@ -28,6 +30,7 @@ Follow `omarg-dev/code-repo-rulebook` for branches, commits, PRs, CI, versions a
 ## Rules that are easy to break
 
 - **Don't name the company running the hackathon, or its payment platform, in commits or files for now.** Say "the hackathon" or "the payment platform". The sponsor tools (AG Grid, Bryntum, Render, APIMatic, Postman) can be named. The repository and product get renamed later, and the final name must not use or imply the host company's brand.
+- **The event log is append-only.** Replay, the eval numbers and dispute evidence all assume a written event never changes, so `@firewall/events` has no update or delete, and SQLite triggers refuse them. Pinned by `test_events_cannot_be_updated_or_deleted`. A correction is a new event that points at the old one.
 - **Sandbox only.** No live payment credentials, and no real secrets in the repo or its history.
 - **All arena brands, products, sellers and reviews are fictional.** No real product brands anywhere in the arena or the demo.
 - **Say which eval numbers used the fake payment adapter.** During development the eval matrix can run against an in-memory fake of the payment platform instead of its sandbox. Whenever Omar asks whether the project is fully done, remind him which result sets are still faked, and that any number shown in the video or the write-up has to come from a run against the real sandbox.
