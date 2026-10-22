@@ -37,7 +37,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: MVP step 9, attacks A1, A2 and A4.** Step 6 is answered except the saved wallet ([docs/sandbox-checks.md](sandbox-checks.md)): with the firewall platform as payee, hold, void, capture and the payout to a seller all work, so step 7 can start.
+**Now: MVP step 9, attacks A1, A2 and A4, with step 7's PR open.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -53,8 +53,8 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 3 | Arena catalog: fictional sellers, products and reviews, seeded scenarios, the first benign ones | ✅ |
 | 4 | Arena API: search, listing, reviews, coupon, cart, checkout | ✅ |
 | 5 | Payment adapter interface and the in-memory fake | ✅ |
-| 6 | First technical checks against the sandbox (see below) | 🔨 checks 1, 2, 4 and 5 answered; check 3, the saved wallet, is next now that vaulting is on and the asset host is allowed |
-| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | ⬜ |
+| 6 | First technical checks against the sandbox (see below) | ✅ all five answered; check 3, the saved wallet, works with one scripted approval |
+| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | 👀 the contract suite passes against the sandbox |
 | 8 | Shopping agent on the AI SDK, using the agent toolkit's payment tools | ⏸ step 6 for the toolkit; Anthropic API key for live runs |
 | 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 🔨 the attacks; the checkpoint needs steps 7 and 8 |
 | 10 | Mandate builder with confirmation (command line) | ⬜ |
@@ -141,7 +141,7 @@ These decide whether the plan holds, so they come before anything else is built:
 4. Which agent toolkit tools we can wrap, which fields (such as the order's custom ID) force a direct API call, and whether the toolkit's tools come in AI SDK form.
 5. Render Workflows has a TypeScript SDK, or a way to run TypeScript tasks.
 
-The answers so far, and what they change, are in [docs/sandbox-checks.md](sandbox-checks.md). In short: 1 yes, but an authorize order holds one purchase unit, so a cart becomes one order per seller; 2 capture yes, void and refund refused for another merchant's hold; 3 not tested yet; 4 the toolkit's order tools can't hold money, so checkout is a direct call; 5 yes.
+The answers so far, and what they change, are in [docs/sandbox-checks.md](sandbox-checks.md). In short: 1 yes, but an authorize order holds one purchase unit, which stopped mattering once the platform became the payee: a cart is one order; 2 capture yes, void and refund refused for another merchant's hold; 3 yes, with one scripted approval, and the per-order link works as the fallback; 4 the toolkit's order tools can't hold money, so checkout is a direct call; 5 yes.
 
 ## Cost
 
