@@ -25,8 +25,14 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Channel3 | Undecided; we discuss it when the fair-price check comes up. |
 | Hosting | The VPS at omarg.dev, deployed the rulebook's way. The subdomain waits for the final name. |
 | Versions | One minor version per milestone, approved as an exception to the rulebook: MVP is 0.1.x, v1.1 is 0.2.0, v1.2 is 0.3.0, v1.3 is 0.4.0, with patch releases in between. |
-| Sandbox accounts | One buyer (personal), four honest sellers (business), two attackers (business). |
-| Credentials | Sandbox and model API keys are environment variables in the cloud environment's settings, never in chat or the repo. |
+| Attacks in step 9 | A1 comes in two variants: an unverified attacker store, which Gate 0 catches by rule, and a verified but malicious store selling the wrong product, which only the AI gates can catch. A2 is the payee swap, A4 the "required" add-on. Omar reviews each attack's wording in its PR before it lands, since it may appear in the video. |
+| Gate 0 and extra items | Gate 0 checks the cart against the mandate and escalates an item the person didn't ask for, rather than blocking it. A rule can't be talked out of its decision, and escalating keeps false blocks down when the extra was wanted. So A4 counts as caught without AI, and A1 (verified), A3, A5, A6 and A7 are the attacks only the AI gates can catch. |
+| Sandbox accounts | Created by bulk upload: one buyer (personal), four honest sellers named after the arena's stores, two attackers, all in the US. The default business account owns the app. The buyer's payment review and other test settings stay off; a second buyer with payment review on is an idea for testing a capture that comes back pending. The accounts are listed at the end of this file. |
+| Positioning | The shopping agent is the victim, not the product. The firewall is the safety layer under any agent that pays: before money moves, it checks that what the agent is buying is what the person asked for. Agent-to-agent payments and contractor payouts are future scope, named in the write-up but not built. |
+| Next to the platform's agent checkout | The payment platform's own agent checkout gives the agent a one-time payment token limited to one merchant, a maximum amount and an expiry. That limits how much the agent spends and with whom, but not whether the cart is what the person wanted. The firewall is that second check and can sit on top of it. This is the answer to "doesn't the platform already do this?" in the video and the write-up. |
+| Plugins | APIMatic's Context Plugin writes the payment integration, which is what qualifies for its prize. The platform's official plugin is installed next to it only for looking at the sandbox, explaining errors and reading docs. |
+| Credentials | Never in chat or the repo. Where each kind lives is in `CLAUDE.md`. |
+| Working sessions | Omar keeps one conversation for discussion and another for building. A decision made in discussion goes into this file or `CLAUDE.md` the same day, so the build session works from the repo, not from chat history. |
 
 ## Progress
 
@@ -162,3 +168,32 @@ How the $5 stretches:
 - [ ] Install the APIMatic Context Plugin in Claude Code.
 - [ ] Ask AG Grid and Bryntum on the hackathon Discord for licenses that last until Dec 15, and don't start either 45-day trial before Oct 25.
 - [ ] Ask on the Discord whether any sponsor offers model API credits.
+
+## Sandbox accounts
+
+Made with the sandbox's bulk upload. The passwords are only in Omar's copy of the upload file and the environment; the emails aren't secret.
+
+| Account | Role | Arena payee | Merchant ID variable |
+|---|---|---|---|
+| `omarg-fw-buyer@personal.example.com` | The buyer, $5,000 balance | | (login in `SANDBOX_BUYER_EMAIL`, `SANDBOX_BUYER_PASSWORD`) |
+| `omarg-fw-seller1-northgate@business.example.com` | Northgate Supply | `seller_1` | `SANDBOX_MERCHANT_SELLER_1` |
+| `omarg-fw-seller2-larkspur@business.example.com` | Larkspur Goods | `seller_2` | `SANDBOX_MERCHANT_SELLER_2` |
+| `omarg-fw-seller3-quayside@business.example.com` | Quayside Gadgets | `seller_3` | `SANDBOX_MERCHANT_SELLER_3` |
+| `omarg-fw-seller4-ember@business.example.com` | Ember Market | `seller_4` | `SANDBOX_MERCHANT_SELLER_4` |
+| `omarg-fw-attacker1@business.example.com` | Attacker 1 | `attacker_1` | `SANDBOX_MERCHANT_ATTACKER_1` |
+| `omarg-fw-attacker2@business.example.com` | Attacker 2 | `attacker_2` | `SANDBOX_MERCHANT_ATTACKER_2` |
+
+All business accounts start at a $0 balance, so a payment to an attacker stands out on the sandbox dashboard.
+
+## Hackathon credits and trials
+
+| Offer | What | When to claim |
+|---|---|---|
+| Render | $50 of credits, through Render's claim portal | Now; needed for the eval on Render Workflows (v1.2) |
+| APIMatic | A free subscription for participants who use its Context Plugin | Now; the plugin is in use |
+| AG Grid | 45-day AG Studio trial | Not before Oct 25 (ask on Discord for a license lasting to Dec 15 first); needed from about Oct 30 |
+| Bryntum | 45-day trial | Same as AG Grid |
+| Channel3 | 20,000 free credits with the hackathon code on its sponsor page | Only if we decide to use it (around Oct 27) |
+| KERNEL, Elastic, Zapier, Postman, Astropods | Free tiers and support; no specific credits found | Not needed |
+| GitHub Student Developer Pack | GitHub Pro (branch rules and environments on a private repo) and other student offers | Now |
+
