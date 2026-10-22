@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b05",
+  "requestText": "Buy me wireless earbuds under $100.",
+  "recordedAt": "2026-10-22T17:46:31.471Z",
+  "requestSha256": "3c101cbc15f23e67c3b0988e33e74e5d00523f1153395696052c3695de0f2e2d",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgHhCHtNGmjevjPtiGXNE",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"headphones\",\"constraints\":[{\"attribute\":\"form\",\"op\":\"eq\",\"value\":\"in_ear\"},{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":10000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 3866,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 136,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

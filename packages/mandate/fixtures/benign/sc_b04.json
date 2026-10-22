@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b04",
+  "requestText": "Get me a basic keyboard for the office, nothing over $60.",
+  "recordedAt": "2026-10-22T17:46:29.289Z",
+  "requestSha256": "89108bfee28acf8b5312a20fce73a900b597e4d3825a4887befbed80ab5dc22c",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgHhCB56TJicBaS8wqjxk",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"keyboard\",\"constraints\":[],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":6000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[\"basic\"]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 3872,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 95,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}
