@@ -27,9 +27,14 @@ describe("recordPayments", () => {
       currency: "USD",
       customId: "md_1:run_pay",
       invoiceId: "inv_1",
-      vaultId: "VAULT",
       purchaseUnits: [
-        { referenceId: "a", payeeKey: "seller_1", description: "x", amountCents: 500 },
+        {
+          referenceId: "cart",
+          description: "Cart",
+          items: [
+            { lineId: "a", payeeKey: "seller_1", name: "x", quantity: 1, unitAmountCents: 500 },
+          ],
+        },
       ],
     });
     const verdict = log.append({
@@ -39,12 +44,22 @@ describe("recordPayments", () => {
       provenance: "system",
     });
     context.parentId = verdict.eventId;
-    await payments.authorizeOrder(order.orderId);
+    const auth = await payments.authorizeOrder(order.orderId, { vaultId: "VAULT" });
+    const capture = await payments.captureAuthorization(auth.authorizationId);
+    const payout = await payments.createPayout({
+      captureId: capture.captureId,
+      payeeKey: "seller_1",
+      amountCents: 500,
+    });
+    await payments.getPayout(payout.payoutId);
 
     const events = log.listRun("run_pay").filter((e) => e.lane === "payments");
     expect(events.map((e) => (e.payload as { operation: string }).operation)).toEqual([
       "create_order",
       "authorize_order",
+      "capture",
+      "payout",
+      "get_payout",
     ]);
     expect(events[0]).toMatchObject({
       type: "payment_call",
@@ -53,6 +68,11 @@ describe("recordPayments", () => {
     });
     expect(events[1]?.parentId).toBe(verdict.eventId);
     expect(events[0]?.payload).toMatchObject({ result: { orderId: order.orderId } });
+    expect(events[1]?.payload).toMatchObject({ input: [order.orderId, { vaultId: "VAULT" }] });
+    expect(events[3]?.payload).toMatchObject({
+      input: [{ captureId: capture.captureId, payeeKey: "seller_1", amountCents: 500 }],
+      result: { payoutId: payout.payoutId, status: "PENDING" },
+    });
   });
 
   it("records a failed call with its error code, then rethrows", async () => {

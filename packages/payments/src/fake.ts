@@ -1,10 +1,14 @@
+import { checkPayable, unitAmountCents } from "./rules.js";
 import {
   type Authorization,
+  type AuthorizeOptions,
   type Capture,
   type CreateOrderInput,
   type Order,
   type PaymentAdapter,
   PaymentError,
+  type Payout,
+  type PayoutInput,
   type Refund,
 } from "./types.js";
 
@@ -12,8 +16,8 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // The platform honours a capture in full for 3 days, and keeps an authorization for 29.
 export const HONOR_DAYS = 3;
 export const VALID_DAYS = 29;
-// An order holds at most 10 purchase units.
-export const MAX_PURCHASE_UNITS = 10;
+// The firewall platform's own account: the payee on every order, and who payouts come from.
+export const PLATFORM_ACCOUNT = "FAKE-PLATFORM";
 
 export interface FakeOptions {
   // Payee key to merchant ID. A key with no entry is refused, as an unknown payee would be.
@@ -22,10 +26,11 @@ export interface FakeOptions {
 }
 
 export interface FakePaymentAdapter extends PaymentAdapter {
-  // The buyer following the approval link. The sandbox adapter does this with a scripted
-  // sandbox login; here it's immediate.
+  // The buyer following the approval link. The sandbox does this with a scripted sandbox login;
+  // here it's immediate.
   approve(orderId: string): Promise<void>;
-  // Money each merchant has received: captures less refunds, in cents.
+  // Money each account holds, in cents: the platform's captures less its refunds and payouts,
+  // and each merchant's payouts received. Accounts with nothing are left out.
   balances(): Record<string, number>;
 }
 
@@ -36,8 +41,8 @@ export const DEFAULT_MERCHANTS: Record<string, string> = Object.fromEntries(
   ]),
 );
 
-// The payment platform, in memory. Faithful to the states and time limits the firewall depends
-// on, and to nothing else.
+// The payment platform, in memory. Faithful to the states, refusals and time limits the firewall
+// depends on, and to nothing else.
 export function createFakePaymentAdapter(options: FakeOptions = {}): FakePaymentAdapter {
   const merchants = options.merchants ?? DEFAULT_MERCHANTS;
   const clock = options.clock ?? (() => new Date());
@@ -45,6 +50,7 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
   const authorizations = new Map<string, Authorization>();
   const captures = new Map<string, Capture>();
   const refunds = new Map<string, Refund[]>();
+  const payouts = new Map<string, Payout>();
   let sequence = 0;
   const nextId = (prefix: string) => `${prefix}-${String(++sequence).padStart(6, "0")}`;
 
@@ -53,6 +59,24 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
     if (!found) throw new PaymentError("not_found", `No ${what} "${id}"`);
     return found;
   };
+
+  const positiveCents = (value: number, what: string) => {
+    if (!Number.isInteger(value) || value <= 0) {
+      throw new PaymentError(
+        "invalid_request",
+        `${what} must be a positive whole number of cents, got ${value}`,
+      );
+    }
+  };
+
+  const merchantFor = (payeeKey: string): string => {
+    const merchantId = merchants[payeeKey];
+    if (!merchantId) throw new PaymentError("invalid_request", `Unknown payee "${payeeKey}"`);
+    return merchantId;
+  };
+
+  const refundedCents = (captureId: string) =>
+    (refunds.get(captureId) ?? []).reduce((sum, r) => sum + r.amountCents, 0);
 
   // An authorization past its validity period reads as expired, whatever it was before.
   const current = (authorization: Authorization): Authorization => {
@@ -76,7 +100,7 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
   };
 
   const newAuthorization = (
-    from: Pick<Authorization, "orderId" | "referenceId" | "merchantId" | "amountCents">,
+    from: Pick<Authorization, "orderId" | "amountCents">,
   ): Authorization => {
     const now = clock();
     const authorization: Authorization = {
@@ -96,37 +120,42 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
   return {
     async createOrder(input: CreateOrderInput) {
       const units = input.purchaseUnits;
-      if (units.length === 0 || units.length > MAX_PURCHASE_UNITS) {
+      if (units.length > 1) {
         throw new PaymentError(
-          "invalid_request",
-          `An order needs 1 to ${MAX_PURCHASE_UNITS} purchase units, got ${units.length}`,
+          "unsupported_intent",
+          `An authorize order holds one purchase unit, got ${units.length}`,
         );
       }
-      if (new Set(units.map((u) => u.referenceId)).size !== units.length) {
-        throw new PaymentError("invalid_request", "Purchase unit reference IDs must be unique");
+      const [unit] = units;
+      if (!unit || unit.items.length === 0) {
+        throw new PaymentError("invalid_request", "An order needs one purchase unit with items");
       }
-      const purchaseUnits = units.map((unit) => {
-        if (!Number.isInteger(unit.amountCents) || unit.amountCents <= 0) {
-          throw new PaymentError(
-            "invalid_request",
-            `Amount must be a positive whole number of cents, got ${unit.amountCents}`,
-          );
+      if (new Set(unit.items.map((item) => item.lineId)).size !== unit.items.length) {
+        throw new PaymentError("invalid_request", "Line IDs must be unique within the order");
+      }
+      for (const item of unit.items) {
+        positiveCents(item.unitAmountCents, "A line's unit amount");
+        if (!Number.isInteger(item.quantity) || item.quantity < 1) {
+          throw new PaymentError("invalid_request", `Quantity must be a whole number from 1`);
         }
-        const merchantId = merchants[unit.payeeKey];
-        if (!merchantId) {
-          throw new PaymentError("invalid_request", `Unknown payee "${unit.payeeKey}"`);
-        }
-        return { ...unit, merchantId };
-      });
+        merchantFor(item.payeeKey);
+      }
       const orderId = nextId("ORDER");
       const order: Order = {
         orderId,
-        status: input.vaultId ? "APPROVED" : "PAYER_ACTION_REQUIRED",
+        status: "PAYER_ACTION_REQUIRED",
         currency: input.currency,
-        purchaseUnits,
+        purchaseUnits: [
+          {
+            referenceId: unit.referenceId,
+            description: unit.description,
+            amountCents: unitAmountCents(unit),
+            items: unit.items.map((item) => ({ ...item })),
+          },
+        ],
         customId: input.customId,
         invoiceId: input.invoiceId,
-        approveUrl: input.vaultId ? null : `https://fake.payments.test/approve/${orderId}`,
+        approveUrl: `https://fake.payments.test/approve/${orderId}`,
         createdAt: clock().toISOString(),
       };
       orders.set(orderId, order);
@@ -146,25 +175,19 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
       return copy(find(orders, orderId, "order"));
     },
 
-    async authorizeOrder(orderId) {
+    async authorizeOrder(orderId, options: AuthorizeOptions = {}) {
       const order = find(orders, orderId, "order");
-      if (order.status === "PAYER_ACTION_REQUIRED") {
+      // A saved wallet is the buyer's approval, given in advance.
+      if (order.status === "PAYER_ACTION_REQUIRED" && !options.vaultId) {
         throw new PaymentError("payer_action_required", `Order ${orderId} isn't approved yet`);
       }
-      if (order.status !== "APPROVED") {
+      if (order.status !== "APPROVED" && order.status !== "PAYER_ACTION_REQUIRED") {
         throw new PaymentError("invalid_state", `Order ${orderId} is ${order.status}`);
       }
       order.status = "COMPLETED";
-      return order.purchaseUnits.map((unit) =>
-        copy(
-          newAuthorization({
-            orderId,
-            referenceId: unit.referenceId,
-            merchantId: unit.merchantId,
-            amountCents: unit.amountCents,
-          }),
-        ),
-      );
+      order.approveUrl = null;
+      const amountCents = order.purchaseUnits.reduce((sum, unit) => sum + unit.amountCents, 0);
+      return copy(newAuthorization({ orderId, amountCents }));
     },
 
     async getAuthorization(authorizationId) {
@@ -178,7 +201,6 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
       const capture: Capture = {
         captureId: nextId("CAPTURE"),
         authorizationId,
-        merchantId: authorization.merchantId,
         amountCents: authorization.amountCents,
         status: "COMPLETED",
         createdAt: clock().toISOString(),
@@ -209,12 +231,12 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
 
     async refundCapture(captureId, amountCents) {
       const capture = find(captures, captureId, "capture");
-      const refunded = (refunds.get(captureId) ?? []).reduce((sum, r) => sum + r.amountCents, 0);
-      const remaining = capture.amountCents - refunded;
+      const remaining = capture.amountCents - refundedCents(captureId);
       const amount = amountCents ?? remaining;
-      if (!Number.isInteger(amount) || amount <= 0) {
-        throw new PaymentError("invalid_request", `Refund must be positive cents, got ${amount}`);
+      if (remaining === 0) {
+        throw new PaymentError("over_refund", `Capture ${captureId} is fully refunded`);
       }
+      positiveCents(amount, "A refund");
       if (amount > remaining) {
         throw new PaymentError(
           "over_refund",
@@ -225,6 +247,7 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
         refundId: nextId("REFUND"),
         captureId,
         amountCents: amount,
+        status: "COMPLETED",
         createdAt: clock().toISOString(),
       };
       refunds.set(captureId, [...(refunds.get(captureId) ?? []), refund]);
@@ -232,17 +255,53 @@ export function createFakePaymentAdapter(options: FakeOptions = {}): FakePayment
       return copy(refund);
     },
 
+    async createPayout(input: PayoutInput) {
+      const merchantId = merchantFor(input.payeeKey);
+      positiveCents(input.amountCents, "A payout");
+      const capture = find(captures, input.captureId, "capture");
+      checkPayable(capture, input.amountCents);
+      for (const payout of payouts.values()) {
+        if (payout.captureId === input.captureId && payout.payeeKey === input.payeeKey) {
+          throw new PaymentError(
+            "duplicate",
+            `${input.payeeKey} was already paid out of capture ${input.captureId}`,
+          );
+        }
+      }
+      const payout: Payout = {
+        payoutId: nextId("PAYOUT"),
+        captureId: input.captureId,
+        payeeKey: input.payeeKey,
+        merchantId,
+        amountCents: input.amountCents,
+        status: "PENDING",
+        createdAt: clock().toISOString(),
+      };
+      payouts.set(payout.payoutId, payout);
+      return copy(payout);
+    },
+
+    // A payout lands by the time anyone looks again, like the sandbox's does within a minute.
+    async getPayout(payoutId) {
+      const payout = find(payouts, payoutId, "payout");
+      payout.status = "SUCCESS";
+      return copy(payout);
+    },
+
     balances() {
       const totals: Record<string, number> = {};
+      const add = (account: string, cents: number) => {
+        totals[account] = (totals[account] ?? 0) + cents;
+      };
       for (const capture of captures.values()) {
-        const refunded = (refunds.get(capture.captureId) ?? []).reduce(
-          (sum, r) => sum + r.amountCents,
-          0,
-        );
-        totals[capture.merchantId] =
-          (totals[capture.merchantId] ?? 0) + capture.amountCents - refunded;
+        add(PLATFORM_ACCOUNT, capture.amountCents - refundedCents(capture.captureId));
       }
-      return totals;
+      for (const payout of payouts.values()) {
+        if (payout.status !== "SUCCESS") continue;
+        add(PLATFORM_ACCOUNT, -payout.amountCents);
+        add(payout.merchantId, payout.amountCents);
+      }
+      return Object.fromEntries(Object.entries(totals).filter(([, cents]) => cents !== 0));
     },
   };
 }

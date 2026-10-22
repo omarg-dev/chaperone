@@ -1,40 +1,61 @@
-// The payment platform's order and authorization flow, as the firewall uses it. Two adapters
-// implement it: the in-memory fake (fake.ts) for development and the eval matrix, and the sandbox
-// adapter (step 7) for real runs. Both pass the same contract tests (contract.ts).
+// The payment platform's order, authorization and payout flow, as the firewall uses it. Two
+// adapters implement it: the in-memory fake (fake.ts) for development and the eval matrix, and the
+// sandbox adapter (sandbox.ts) for real runs. Both pass the same contract tests (contract.ts).
 //
-// The flow: an order is created with intent "authorize" and one purchase unit per seller, each
-// naming its payee. Once the buyer has approved it (a saved wallet approves at once; otherwise
-// the buyer follows an approval link), authorizing it holds the money without moving it. The
-// review tree then captures each authorization (approve), voids it (block), or leaves it held
-// (escalate), reauthorizing if a person takes longer than the hold lasts.
+// The firewall platform is the payee on every order (docs/PLAN.md, "Who holds the money"). A cart
+// is one order with one purchase unit and no payee field, so the money goes to the platform's own
+// account, the one the app's credentials belong to. Each line item says which seller it is for,
+// which is what the payouts read and what Gate 0 checks.
+//
+// The flow: create the order, then authorize it, which holds the whole cart without moving it.
+// Authorizing needs the buyer's approval: a saved wallet gives it at once, otherwise the buyer
+// follows the order's approval link first. The review tree then captures the hold (approve) and
+// pays each seller its share with a payout, voids it (block), or leaves it held (escalate),
+// reauthorizing if a person takes longer than the hold lasts. A refund is of the platform's own
+// capture; getting money back from a seller already paid out is a separate matter.
 
-// Which sandbox merchant account a purchase unit pays, by key. Each adapter maps keys to real
-// merchant IDs from its own configuration.
+// Which sandbox merchant account a line pays out to, by key (`seller_1` ... `attacker_2`). Each
+// adapter maps keys to real merchant IDs from its own configuration.
 export type PayeeKey = string;
 
-export interface PurchaseUnitInput {
-  // Unique within the order; the order draft's listing ID works.
-  referenceId: string;
+export interface LineItemInput {
+  // Unique within the order; the cart line's listing ID works.
+  lineId: string;
+  // The seller this line pays out to once the hold is captured.
   payeeKey: PayeeKey;
+  name: string;
+  // A whole number, at least 1.
+  quantity: number;
+  unitAmountCents: number;
+}
+
+export interface PurchaseUnitInput {
+  referenceId: string;
   description: string;
-  amountCents: number;
+  // The unit's amount is the sum of its lines; there's no separate total to disagree with them.
+  items: LineItemInput[];
 }
 
 export interface CreateOrderInput {
   currency: "USD";
+  // Always exactly one: an authorize order holds one purchase unit, and the platform refuses more
+  // (`unsupported_intent`). It's a list because that's what the platform takes, so the refusal is
+  // the platform's and the contract can show the fake refuses the same.
   purchaseUnits: PurchaseUnitInput[];
   // Carried on the order so every platform object links back to the event log.
   customId: string;
   invoiceId: string;
-  // A saved buyer wallet approves the order at once. Without one, the order waits for the buyer
-  // to follow its approval link.
-  vaultId?: string;
 }
 
 export type OrderStatus = "PAYER_ACTION_REQUIRED" | "APPROVED" | "COMPLETED" | "VOIDED";
 
-export interface PurchaseUnit extends PurchaseUnitInput {
-  merchantId: string;
+export interface LineItem extends LineItemInput {}
+
+export interface PurchaseUnit {
+  referenceId: string;
+  description: string;
+  amountCents: number;
+  items: LineItem[];
 }
 
 export interface Order {
@@ -49,13 +70,23 @@ export interface Order {
   createdAt: string;
 }
 
-export type AuthorizationStatus = "CREATED" | "CAPTURED" | "VOIDED" | "EXPIRED";
+export interface AuthorizeOptions {
+  // A saved buyer wallet, which approves the order as it's authorized, with no link to follow.
+  vaultId?: string;
+}
+
+// PENDING and DENIED come from the platform's own review of a payment; the fake never makes them.
+export type AuthorizationStatus =
+  | "CREATED"
+  | "PENDING"
+  | "CAPTURED"
+  | "DENIED"
+  | "VOIDED"
+  | "EXPIRED";
 
 export interface Authorization {
   authorizationId: string;
   orderId: string;
-  referenceId: string;
-  merchantId: string;
   amountCents: number;
   status: AuthorizationStatus;
   createdAt: string;
@@ -68,9 +99,8 @@ export interface Authorization {
 export interface Capture {
   captureId: string;
   authorizationId: string;
-  merchantId: string;
   amountCents: number;
-  status: "COMPLETED" | "PARTIALLY_REFUNDED" | "REFUNDED";
+  status: "COMPLETED" | "PENDING" | "PARTIALLY_REFUNDED" | "REFUNDED" | "DECLINED" | "FAILED";
   createdAt: string;
 }
 
@@ -78,17 +108,43 @@ export interface Refund {
   refundId: string;
   captureId: string;
   amountCents: number;
+  status: "COMPLETED" | "PENDING" | "CANCELLED" | "FAILED";
+  createdAt: string;
+}
+
+export interface PayoutInput {
+  // The platform's capture the money comes from. A seller is paid at most once per capture, so a
+  // retried payout can't pay twice.
+  captureId: string;
+  payeeKey: PayeeKey;
+  amountCents: number;
+}
+
+// PENDING until the money reaches the seller's account, which takes the sandbox under a minute.
+// FAILED covers every way it doesn't arrive (refused, returned, unclaimed, reversed).
+export type PayoutStatus = "PENDING" | "SUCCESS" | "FAILED";
+
+export interface Payout {
+  payoutId: string;
+  captureId: string;
+  payeeKey: PayeeKey;
+  merchantId: string;
+  amountCents: number;
+  status: PayoutStatus;
   createdAt: string;
 }
 
 export type PaymentErrorCode =
   | "not_found"
   | "invalid_request"
+  | "unsupported_intent"
   | "payer_action_required"
   | "invalid_state"
   | "expired"
   | "too_early"
-  | "over_refund";
+  | "over_refund"
+  | "duplicate"
+  | "platform_error";
 
 export class PaymentError extends Error {
   constructor(
@@ -103,8 +159,8 @@ export class PaymentError extends Error {
 export interface PaymentAdapter {
   createOrder(input: CreateOrderInput): Promise<Order>;
   getOrder(orderId: string): Promise<Order>;
-  // Holds the money: one authorization per purchase unit.
-  authorizeOrder(orderId: string): Promise<Authorization[]>;
+  // Holds the money: one authorization for the whole order.
+  authorizeOrder(orderId: string, options?: AuthorizeOptions): Promise<Authorization>;
   getAuthorization(authorizationId: string): Promise<Authorization>;
   captureAuthorization(authorizationId: string): Promise<Capture>;
   voidAuthorization(authorizationId: string): Promise<Authorization>;
@@ -112,4 +168,7 @@ export interface PaymentAdapter {
   reauthorize(authorizationId: string): Promise<Authorization>;
   // The whole capture, or part of it.
   refundCapture(captureId: string, amountCents?: number): Promise<Refund>;
+  // Pays a seller its share of a capture, from the platform's balance.
+  createPayout(input: PayoutInput): Promise<Payout>;
+  getPayout(payoutId: string): Promise<Payout>;
 }
