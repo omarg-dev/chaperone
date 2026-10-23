@@ -29,6 +29,9 @@ export function anthropicConfigFromEnv(env: NodeJS.ProcessEnv = process.env): An
         "It never uses ANTHROPIC_API_KEY. See .env.example.",
     );
   }
-  const baseUrl = env.FIREWALL_ANTHROPIC_BASE_URL?.trim() || DEFAULT_ANTHROPIC_BASE_URL;
+  // The AI SDK's provider expects /v1 in the base URL and the official SDK adds it itself, so the
+  // one variable both read may be written either way: this side makes sure it ends in /v1.
+  const raw = env.FIREWALL_ANTHROPIC_BASE_URL?.trim() || DEFAULT_ANTHROPIC_BASE_URL;
+  const baseUrl = `${raw.replace(/\/+$/, "").replace(/\/v1$/, "")}/v1`;
   return { apiKey, baseUrl };
 }
