@@ -13,7 +13,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Topic | Decision |
 |---|---|
 | Stack | TypeScript throughout: pnpm workspace monorepo, Hono server, React + Vite web app, SQLite through Drizzle. |
-| Model calls | The shopping agent uses the Vercel AI SDK, so one loop runs on any provider and the firewall wraps the same tool objects the payment platform's agent toolkit provides (to confirm in the first checks). The gates use the official Anthropic SDK, for structured outputs, prompt caching and batch pricing. |
+| Model calls | The shopping agent uses the Vercel AI SDK, so one loop runs on any provider. Its checkout tool is ours, because the platform's agent toolkit can't hold money (its order tools capture at once); the firewall wraps that tool. The toolkit's read, refund and dispute tools belong to the dispute evidence pack and transaction insights, where they fit as they are. The gates use the official Anthropic SDK, for structured outputs, prompt caching and batch pricing. |
 | Models | Gates: Claude Haiku 5.5, fixed for every eval run. Shopping agent: three separate eval columns, Claude Haiku 5.5, an OpenAI model and a Gemini model (free tier). Exact OpenAI and Gemini model IDs get picked when we wire them up. |
 | No fallback inside the eval | Each eval column runs on exactly one model. A provider fallback chain would mix models inside one column's numbers, so it only exists for the hosted demo's agent. |
 | Model budget | $5 of API credit until Dec 15. See *Cost* below. |
@@ -56,7 +56,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 5 | Payment adapter interface and the in-memory fake | ✅ |
 | 6 | First technical checks against the sandbox (see below) | ✅ all five answered; check 3, the saved wallet, works with one scripted approval |
 | 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | 👀 the contract suite passes against the sandbox |
-| 8 | Shopping agent on the AI SDK, using the agent toolkit's payment tools | ⏸ step 6 for the toolkit; Anthropic API key for live runs |
+| 8 | Shopping agent on the AI SDK, checking out through the payment adapter | 👀 PR open |
 | 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 🔨 the attacks; the checkpoint needs steps 7 and 8 |
 | 10 | Mandate builder with confirmation (command line) | ⬜ |
 | 11 | Gate 0, deterministic policy | ⬜ |
@@ -105,7 +105,7 @@ Done when: the dashboard shows real-sandbox numbers for all three models, with t
 | # | Step | Status |
 |---|---|---|
 | 1 | Arena animation driven by replayed events, starting with its own design pass | ⬜ |
-| 2 | Disputes evidence pack and transaction insights, if time allows | ⬜ |
+| 2 | Disputes evidence pack and transaction insights, if time allows, using the agent toolkit's read and dispute tools | ⬜ |
 
 ### Ship, Nov 10 to 11
 
@@ -130,7 +130,7 @@ Done when: the dashboard shows real-sandbox numbers for all three models, with t
 3. Gate 3.
 4. Arena animation polish (keep a simple version).
 
-Never cut: the eval numbers, the false block rate, the held-out set, and the core payment surfaces (authorize, capture, void, reauthorize, payouts to sellers, saved wallet, agent toolkit, webhooks).
+Never cut: the eval numbers, the false block rate, the held-out set, and the core payment surfaces (authorize, capture, void, reauthorize, payouts to sellers, saved wallet, webhooks).
 
 ## First technical checks
 
@@ -146,9 +146,9 @@ The answers so far, and what they change, are in [docs/sandbox-checks.md](sandbo
 
 ## Cost
 
-Estimates to replace with measured numbers once the agent runs. Claude Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens.
+Estimates to replace with measured numbers as each part runs. Claude Haiku 5.5 costs $0.10 per million input tokens and $0.50 per million output tokens.
 
-- One agent run (about 40k input and 2k output tokens): about half a cent.
+- One agent run, measured on Oct 22 on `sc_b01`: 4 to 5 model calls, 12k to 18k input and about 1k output tokens (a third of it thinking), $0.0016 to $0.0023. The estimate was about 40k input and 2k output, half a cent.
 - One full review (four gate calls): about a fifth of a cent.
 - A full Haiku matrix (27 scenarios, 3 seeds, the firewall configurations replayed on each recorded checkout): about $1.
 

@@ -48,6 +48,19 @@ The server runs the marketplace a shopping agent is tested in. A run is one agen
 
 Every arena call is written to the event log. Send `X-Parent-Event-Id` with the ID of the event that made the call, and the arena's event links to it.
 
+## The shopping agent
+
+`packages/agent` is the shopper the attacks are measured against: an ordinary agent on the Vercel AI SDK with no defences of its own. Given a scenario's request, it shops the arena through tools (search, a listing's page, reviews, the cart, coupons, checkout) that call the arena in-process, and its checkout holds the whole cart as one payment authorization against the buyer's saved wallet. It never captures: that's the review's decision. Each run writes the agent's trajectory to the event log on the `agent` lane (every model turn with what it said, its thinking summary, its tool calls, tokens and cost), linked to the arena and payment events each step caused.
+
+To run it on one scenario, with a real model:
+
+```sh
+pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1                    # fake payments
+pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --adapter sandbox  # the sandbox
+```
+
+It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, the order and its hold, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; Claude Haiku 5.5 is the only column so far. The tests drive the loop with scripted model turns and never call a model.
+
 ## Layout
 
 | Folder | What's in it |
@@ -56,6 +69,7 @@ Every arena call is written to the event log. Send `X-Parent-Event-Id` with the 
 | `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
 | `packages/arena` | The simulated marketplace: a fictional catalog, seeded scenarios, and what each request means |
 | `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
+| `packages/agent` | The shopping agent: its loop, its tools, its checkout and the command that runs it on a scenario |
 | `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |
 
