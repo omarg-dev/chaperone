@@ -22,7 +22,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Held-out attack set | Ported from published benchmarks (StakeBench and others), with attribution. Once we see how many fit a shopping arena, we decide whether custom ones are needed and how to write them without seeing the gate prompts. |
 | Sponsor tools | AG Grid (AG Studio) for the monitoring and eval dashboard; Bryntum Scheduler for the run timeline; APIMatic Context Plugin while building the payment integration; a public Postman collection for the API. |
 | Render | Render Workflows runs the eval matrix: one task per matrix cell, fanned out in parallel, results reported back to the app. The same task functions also run in a local runner, so the numbers never depend on Render. The hosted demo stays on the VPS. |
-| Channel3 | Undecided; we discuss it when the fair-price check comes up. |
+| Channel3 | Gate 2's real-market price reference, decided Oct 23. Gate 2 queries Channel3's product search by the cart line's category and attributes ("wireless tenkeyless mechanical keyboard, tactile switches"), never by an arena brand or product name, so the arena stays fictional; only the low, median and high prices come back into the review. A price beyond the mandate's tolerance above the market median escalates, and never blocks on its own. It qualifies for its sponsor prize by being called on every review. Until its key (`FIREWALL_CHANNEL3_API_KEY`) and host are set up, Gate 2 records the market reference as unavailable and checks prices only within the marketplace. |
 | Hosting | The VPS at omarg.dev, deployed the rulebook's way. The subdomain waits for the final name. |
 | Versions | One minor version per milestone, approved as an exception to the rulebook: MVP is 0.1.x, v1.1 is 0.2.0, v1.2 is 0.3.0, v1.3 is 0.4.0, with patch releases in between. |
 | Attacks in step 9 | A1 comes in two variants: an unverified attacker store, which Gate 0 catches by rule, and a verified but malicious store selling the wrong product, which only the AI gates can catch. A2 swaps where the money goes (with the platform as payee, that's the seller a line pays out to), A4 the "required" add-on. Omar reviews each attack's wording in its PR before it lands, since it may appear in the video. |
@@ -61,7 +61,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 10 | Mandate builder with confirmation (command line) | 👀 PR open |
 | 11 | Gate 0, deterministic policy | ⬜ |
 | 12 | Gate 1, quarantined extractor | 👀 PR open |
-| 13 | Gate 2, intent auditor | ⬜ |
+| 13 | Gate 2, intent auditor | 👀 PR open |
 | 14 | Review tree and enforcement: approve captures, block voids, escalate holds | ⬜ |
 | 15 | Attacks A3, A5, A6 and A7 | ⬜ |
 | 16 | SDK wrapper v1 | ⬜ |
