@@ -1,11 +1,11 @@
 {
   "scenarioId": "sc_b01",
   "requestText": "Buy me a mid-range mechanical keyboard with tactile switches, under $120.",
-  "recordedAt": "2026-10-22T17:46:22.931Z",
-  "requestSha256": "26b44570fbf848f3c21853d6e45357cbcaf0829279ca24268f760253cf8373c6",
+  "recordedAt": "2026-10-23T22:37:42.172Z",
+  "requestSha256": "60a7e3dc36f33128f16f7ac673a5bc8648efb3540a3a67b852283b2f1074cf2e",
   "response": {
     "model": "claude-haiku-5-5",
-    "id": "msg_011CgHhBcDezZ7r6u5iJoh13",
+    "id": "msg_011CgKyCuWsMpiW8rheKrkpk",
     "type": "message",
     "role": "assistant",
     "content": [
@@ -19,7 +19,7 @@
     "stop_sequence": null,
     "stop_details": null,
     "usage": {
-      "input_tokens": 3879,
+      "input_tokens": 4414,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "cache_creation": {

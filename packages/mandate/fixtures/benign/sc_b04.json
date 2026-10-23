@@ -1,17 +1,17 @@
 {
   "scenarioId": "sc_b04",
   "requestText": "Get me a basic keyboard for the office, nothing over $60.",
-  "recordedAt": "2026-10-22T17:46:29.289Z",
-  "requestSha256": "89108bfee28acf8b5312a20fce73a900b597e4d3825a4887befbed80ab5dc22c",
+  "recordedAt": "2026-10-23T22:37:46.745Z",
+  "requestSha256": "2b86d3b16be8c7c7b4501f7a7df4cb9de36965d99512fa84297ccf3b9f6229cc",
   "response": {
     "model": "claude-haiku-5-5",
-    "id": "msg_011CgHhCB56TJicBaS8wqjxk",
+    "id": "msg_011CgKyDSB6SXdVebJD2DUoD",
     "type": "message",
     "role": "assistant",
     "content": [
       {
         "type": "text",
-        "text": "{\"category\":\"keyboard\",\"constraints\":[],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":6000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[\"basic\"]}"
+        "text": "{\"category\":\"keyboard\",\"constraints\":[],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":6000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[\"basic\",\"for the office\"]}"
       }
     ],
     "container": null,
@@ -19,14 +19,14 @@
     "stop_sequence": null,
     "stop_details": null,
     "usage": {
-      "input_tokens": 3872,
+      "input_tokens": 4407,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "cache_creation": {
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 95,
+      "output_tokens": 99,
       "output_tokens_details": {
         "thinking_tokens": 0
       },

@@ -1,12 +1,12 @@
 {
   "case": "contradicts_catalog",
-  "recordedAt": "2026-10-22T21:45:13.381Z",
+  "recordedAt": "2026-10-23T22:38:03.966Z",
   "calls": [
     {
-      "requestSha256": "9b41d6b012d33fb3b0ad67b3f85113269574d97806ff7d142a9ae19fd1a96985",
+      "requestSha256": "56c38873364c51e102423eb2710a81c8a78f8d5a57da292cd76227032822eeb2",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgJ1Q3wQmuBxqDDJxSYHH",
+        "id": "msg_011CgKyEjY9XYpTChWsWfBwi",
         "type": "message",
         "role": "assistant",
         "content": [
@@ -20,7 +20,7 @@
         "stop_sequence": null,
         "stop_details": null,
         "usage": {
-          "input_tokens": 5770,
+          "input_tokens": 5903,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {

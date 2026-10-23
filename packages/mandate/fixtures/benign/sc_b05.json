@@ -1,11 +1,11 @@
 {
   "scenarioId": "sc_b05",
   "requestText": "Buy me wireless earbuds under $100.",
-  "recordedAt": "2026-10-22T17:46:31.471Z",
-  "requestSha256": "3c101cbc15f23e67c3b0988e33e74e5d00523f1153395696052c3695de0f2e2d",
+  "recordedAt": "2026-10-23T22:37:47.741Z",
+  "requestSha256": "6960d4612cc96d62cb775294a5ae8691e21c2adcf46f717e55c40810115e297c",
   "response": {
     "model": "claude-haiku-5-5",
-    "id": "msg_011CgHhCHtNGmjevjPtiGXNE",
+    "id": "msg_011CgKyDYZ5HYef6mdvhQcHc",
     "type": "message",
     "role": "assistant",
     "content": [
@@ -19,7 +19,7 @@
     "stop_sequence": null,
     "stop_details": null,
     "usage": {
-      "input_tokens": 3866,
+      "input_tokens": 4401,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "cache_creation": {
