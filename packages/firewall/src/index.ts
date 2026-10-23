@@ -2,6 +2,7 @@ export * from "./crosscheck.js";
 export * from "./extractor.js";
 export * from "./facts.js";
 export * from "./gate.js";
+export * from "./gate0.js";
 export * from "./gate1.js";
 export * from "./policy.js";
 export * from "./refine.js";
