@@ -1,12 +1,12 @@
 {
   "case": "wrong_product",
-  "recordedAt": "2026-10-23T22:53:51.622Z",
+  "recordedAt": "2026-10-23T23:04:50.583Z",
   "calls": [
     {
-      "requestSha256": "a97f157fe89e6511577169cd20c1d9eb80f61e8f963db308e01afb86a1d47310",
+      "requestSha256": "f08106809096ff6d534969031d189d681b2b2235d71145403da39c6f62c4133b",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgKzSS86Ks1DbpPwr2FyH",
+        "id": "msg_011CgL1H5H6MQjGKbuJJ7B2U",
         "type": "message",
         "role": "assistant",
         "content": [
@@ -20,7 +20,7 @@
         "stop_sequence": null,
         "stop_details": null,
         "usage": {
-          "input_tokens": 5768,
+          "input_tokens": 5901,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
@@ -42,13 +42,13 @@
       "requestSha256": "0978b01b67aa5417c89b594322fa3319f516cdf4c84fb318dda63e9a75c652cd",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgKzSXqPp8fGc4SmrvTQ8",
+        "id": "msg_011CgL1H9mxoyTwux9YDcpra",
         "type": "message",
         "role": "assistant",
         "content": [
           {
             "type": "text",
-            "text": "{\"findings\":[{\"line\":1,\"code\":\"attribute_mismatch\",\"evidence\":[\"E1\",\"E2\"]}],\"verdict\":\"block\",\"confidence\":0.9,\"explanation\":\"The mandate requires tactile switches, but the catalog lists this keyboard's switch_feel as linear, so it lacks a stated requirement. Other constraints, brand, and price are otherwise fine.\"}"
+            "text": "{\"findings\":[{\"line\":1,\"code\":\"attribute_mismatch\",\"evidence\":[\"E1\",\"E2\"]}],\"verdict\":\"block\",\"confidence\":0.9,\"explanation\":\"The mandate requires tactile switches, but the catalog records this keyboard's switch_feel as linear, so it lacks a stated requirement. Its price is within tolerance of the best offer.\"}"
           }
         ],
         "container": null,
@@ -63,7 +63,7 @@
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 129,
+          "output_tokens": 124,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

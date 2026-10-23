@@ -422,11 +422,21 @@ describe("test_reviewers_never_see_raw_seller_content", () => {
     },
   );
 
-  it("takes no line title from the checkout", async () => {
+  it("takes no page title from the checkout or the page", async () => {
     const { gate2, run } = await gatesOn("steered");
-    const checkout = run.log.listRun(run.runId).find((e) => e.type === "checkout");
-    const payload = checkout?.payload as { result: { lines: { title: string }[] } } | undefined;
-    const title = payload?.result.lines[0]?.title ?? "";
+    const events = run.log.listRun(run.runId);
+    const checkout = events.find((e) => e.type === "checkout");
+    if (!checkout) throw new Error("The run has no checkout");
+    const lines = (checkout.payload as { result: { lines: Record<string, unknown>[] } }).result
+      .lines;
+    expect(lines[0]).not.toHaveProperty("title");
+    const viewed = events.find(
+      (e) =>
+        e.type === "listing_viewed" &&
+        (e.payload as { result: { listingId: string } }).result.listingId === HALVARD,
+    );
+    if (!viewed) throw new Error("The run never viewed the listing");
+    const title = (viewed.payload as { result: { page: { title: string } } }).result.page.title;
     expect(title).toBeTruthy();
     expect(JSON.stringify(gate2.view?.data)).not.toContain(title);
     expect(gate2.lines[0]?.line.listingId).toBe(HALVARD);

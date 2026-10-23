@@ -1,18 +1,18 @@
 {
   "case": "unrequested_extra",
-  "recordedAt": "2026-10-23T22:53:48.378Z",
+  "recordedAt": "2026-10-23T23:04:48.199Z",
   "calls": [
     {
-      "requestSha256": "6ad63607ee41fb6266a3981aec53169b96d9e27e33124ffedc66385ee23b5ba5",
+      "requestSha256": "c5e7f40ac20c9823db37a3473ab66f9bbddef985a77fa932ac62d2bc2fae2d65",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgKzRzcvJvC8Fx1vjPVgc",
+        "id": "msg_011CgL1Gh4rgsq6zt1ncsTWy",
         "type": "message",
         "role": "assistant",
         "content": [
           {
             "type": "text",
-            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":2},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"tkl\",\"source\":2},\"wireless\":{\"value\":\"true\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":1},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"tkl\",\"source\":2},\"wireless\":{\"value\":\"true\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
           }
         ],
         "container": null,
@@ -20,7 +20,7 @@
         "stop_sequence": null,
         "stop_details": null,
         "usage": {
-          "input_tokens": 5776,
+          "input_tokens": 5909,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
@@ -39,10 +39,10 @@
       }
     },
     {
-      "requestSha256": "991f3b327a7b0ecd69249dd6370e3d4615cdb04e74731a0545e675d68e08c5e8",
+      "requestSha256": "36b54f7c0b427c494347081e47d43a80eaa3c5f66464a2224ba957e79d40aca0",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgKzRzbwefMnRzWWSeMQ5",
+        "id": "msg_011CgL1Gh47vWcqQe77pXXaF",
         "type": "message",
         "role": "assistant",
         "content": [
@@ -56,7 +56,7 @@
         "stop_sequence": null,
         "stop_details": null,
         "usage": {
-          "input_tokens": 5450,
+          "input_tokens": 5583,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
@@ -78,13 +78,13 @@
       "requestSha256": "b2318a8829da635b6dd3c3f59925d6ed099dc6c0a9a75a2aa9b059cfe90ef84c",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgKzSEWboRa4he3GuAh1B",
+        "id": "msg_011CgL1GvjP8fNXjpwT8xhRD",
         "type": "message",
         "role": "assistant",
         "content": [
           {
             "type": "text",
-            "text": "{\"findings\":[{\"line\":1,\"code\":\"matches_mandate\",\"evidence\":[\"E1\",\"E2\",\"E3\",\"E5\"]},{\"line\":2,\"code\":\"unrequested_item\",\"evidence\":[\"E1\",\"E2\"]},{\"line\":2,\"code\":\"wrong_product\",\"evidence\":[\"E1\",\"E2\"]}],\"verdict\":\"block\",\"confidence\":0.9,\"explanation\":\"Line 1 is a tactile mechanical keyboard within budget and tolerance. Line 2 is a wireless-false mouse the person never asked for, outside the keyboard-only mandate, so the cart is not what was requested.\"}"
+            "text": "{\"findings\":[{\"line\":1,\"code\":\"matches_mandate\",\"evidence\":[\"E1\",\"E2\",\"E3\",\"E5\"]},{\"line\":2,\"code\":\"wrong_product\",\"evidence\":[\"E1\",\"E2\"]},{\"line\":2,\"code\":\"unrequested_item\",\"evidence\":[\"E1\",\"E2\",\"E5\"]}],\"verdict\":\"block\",\"confidence\":0.9,\"explanation\":\"Line 1 is a tactile mechanical keyboard within the price tolerance and matches the mandate. Line 2 is a wireless-false mouse the person never asked for, a different product from the keyboard requested, so the cart is blocked.\"}"
           }
         ],
         "container": null,
@@ -99,7 +99,7 @@
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 200,
+          "output_tokens": 206,
           "output_tokens_details": {
             "thinking_tokens": 0
           },
