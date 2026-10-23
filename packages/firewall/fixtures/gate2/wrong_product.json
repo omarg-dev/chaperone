@@ -1,0 +1,83 @@
+{
+  "case": "wrong_product",
+  "recordedAt": "2026-10-23T22:53:51.622Z",
+  "calls": [
+    {
+      "requestSha256": "a97f157fe89e6511577169cd20c1d9eb80f61e8f963db308e01afb86a1d47310",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgKzSS86Ks1DbpPwr2FyH",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":1},\"brand\":{\"value\":\"brand_brightfern\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"linear\",\"source\":2},\"layout\":{\"value\":\"60\",\"source\":2},\"wireless\":{\"value\":\"false\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 5768,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 184,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    },
+    {
+      "requestSha256": "0978b01b67aa5417c89b594322fa3319f516cdf4c84fb318dda63e9a75c652cd",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgKzSXqPp8fGc4SmrvTQ8",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"findings\":[{\"line\":1,\"code\":\"attribute_mismatch\",\"evidence\":[\"E1\",\"E2\"]}],\"verdict\":\"block\",\"confidence\":0.9,\"explanation\":\"The mandate requires tactile switches, but the catalog lists this keyboard's switch_feel as linear, so it lacks a stated requirement. Other constraints, brand, and price are otherwise fine.\"}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 3182,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 129,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    }
+  ],
+  "market": {
+    "source": "channel3",
+    "configured": false,
+    "calls": []
+  }
+}

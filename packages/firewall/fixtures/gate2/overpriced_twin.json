@@ -1,0 +1,88 @@
+{
+  "case": "overpriced_twin",
+  "recordedAt": "2026-10-23T22:53:35.253Z",
+  "calls": [
+    {
+      "requestSha256": "13cf1e47de39e3302e3a72dc32b065e8010974f98d527f746c743273eed16239",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgKzR1vnXgzbFzruQerv4",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":2},\"brand\":{\"value\":\"brand_ostrava_works\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"75\",\"source\":2},\"wireless\":{\"value\":\"false\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 5802,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 187,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    },
+    {
+      "requestSha256": "8e9b27aad740fc2c4301c4fc032c1263e0c3c509b599e8ad23b29c974c4df983",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgKzRAbReU31bxgyYrEhB",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "thinking",
+            "thinking": "",
+            "signature": "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"
+          },
+          {
+            "type": "text",
+            "text": "{\"findings\":[{\"line\":1,\"code\":\"overpriced_vs_comparables\",\"evidence\":[\"E1\",\"E3\"]}],\"verdict\":\"escalate\",\"confidence\":0.8,\"explanation\":\"The keyboard matches the mandate's type, tactile switch feel, reputable brand and $120 cap, but at $110.99 it is 70.8% above the $64.99 best like-for-like offer, well beyond the 15% tolerance. The person should decide whether to accept that premium.\"}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 3188,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 604,
+          "output_tokens_details": {
+            "thinking_tokens": 444
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    }
+  ],
+  "market": {
+    "source": "channel3",
+    "configured": false,
+    "calls": []
+  }
+}

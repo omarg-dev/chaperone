@@ -8,6 +8,8 @@ import {
   extractorReplaying,
   loadRecording,
   messageWith,
+  wordRuns,
+  words,
 } from "./test-helpers.js";
 
 // Gate 1 over scripted arena runs, with the extractor's answers recorded once from the live model
@@ -266,14 +268,6 @@ describe("Gate 1's events", () => {
 // What Gate 1 hands them (its result and the reviewer view) must contain no run of words from any
 // page the agent was served, attack text included, though Gate 1 read all of it.
 describe("test_reviewers_never_see_raw_seller_content", () => {
-  const words = (text: string) => text.toLowerCase().match(/[\p{L}\p{N}']+/gu) ?? [];
-  const runsOf = (text: string, n = 4) => {
-    const w = words(text);
-    return w.length < n
-      ? []
-      : w.slice(0, w.length - n + 1).map((_, i) => w.slice(i, i + n).join(" "));
-  };
-
   it.each(FIXTURE_CASES.map((c) => c.name))("holds for %s", async (name) => {
     const { gate, run } = await gateOn(name);
     const served = gate1Scope(run.log.listRun(run.runId)).listings.flatMap((l) =>
@@ -281,7 +275,7 @@ describe("test_reviewers_never_see_raw_seller_content", () => {
     );
     const handedOn = words(JSON.stringify(gate.reviewerView)).join(" ");
     const leaked = served
-      .flatMap((text) => runsOf(text))
+      .flatMap((text) => wordRuns(text))
       .filter((phrase) => handedOn.includes(phrase));
     expect(leaked).toEqual([]);
     expect(JSON.stringify(gate.reviewerView)).not.toMatch(/"quote"/);
