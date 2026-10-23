@@ -214,7 +214,7 @@ export function createShoppingTools(session: RunSession) {
             totalCents: draft.totalCents,
             lines: draft.lines.map((l) => ({
               listingId: l.listingId,
-              title: l.title,
+              productName: l.productName,
               quantity: l.quantity,
               totalCents: l.totalCents,
             })),

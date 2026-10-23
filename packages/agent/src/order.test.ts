@@ -8,7 +8,7 @@ const line = (
 ): OrderDraft["lines"][number] => ({
   listingId: "lst_1",
   sku: "kb_1",
-  title: "Keyboard",
+  productName: "Halvard TKL",
   sellerId: "sel_1",
   payeeKey: "seller_1",
   unitPriceCents: 9999,
@@ -47,14 +47,14 @@ describe("orderInputFromDraft", () => {
       {
         lineId: "lst_1",
         payeeKey: "seller_1",
-        name: "Keyboard",
+        name: "Halvard TKL",
         quantity: 1,
         unitAmountCents: 9999,
       },
       {
         lineId: "lst_2",
         payeeKey: "attacker_1",
-        name: "Keyboard",
+        name: "Halvard TKL",
         quantity: 2,
         unitAmountCents: 500,
       },
@@ -82,8 +82,8 @@ describe("orderInputFromDraft", () => {
     expect(unitAmountCents(unit)).toBe(2248);
   });
 
-  it("cuts a seller's long title to the platform's limit", () => {
-    const input = orderInputFromDraft(draft([line({ title: "x".repeat(300) })]), ids);
+  it("cuts a long product name to the platform's limit", () => {
+    const input = orderInputFromDraft(draft([line({ productName: "x".repeat(300) })]), ids);
     expect(input.purchaseUnits[0]?.items[0]?.name).toHaveLength(127);
   });
 });
