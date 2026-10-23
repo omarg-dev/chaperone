@@ -42,11 +42,13 @@ const allOf =
 
 type Keyboard = AttributesOf<"keyboard">;
 type Headphones = AttributesOf<"headphones">;
+type Accessory = AttributesOf<"accessory">;
 
 const CATEGORY_DESCRIPTIONS: { [C in Category]: string } = {
   keyboard: "Computer keyboards.",
   headphones: "Headphones of every form, earbuds included.",
   mouse: "Computer mice.",
+  accessory: "Add-ons sold to go with a keyboard, headphones or a mouse.",
 };
 
 export const ATTRIBUTES: { [C in Category]: CategoryAttributes<C> } = {
@@ -83,6 +85,19 @@ export const ATTRIBUTES: { [C in Category]: CategoryAttributes<C> } = {
     wireless: { kind: "boolean", description: "Connects without a cable." },
     dpi: { kind: "number", unit: "dpi", description: "Sensor resolution." },
     weight_g: { kind: "number", unit: "grams", description: "Weight." },
+  },
+  accessory: {
+    kind: {
+      kind: "enum",
+      values: allOf<Accessory["kind"]>()("receiver", "cable", "case", "ear_tips"),
+      description:
+        "What the add-on is: a wireless receiver, a cable, a carrying case, or replacement ear tips.",
+    },
+    fits: {
+      kind: "enum",
+      values: allOf<Accessory["fits"]>()("keyboard", "headphones", "mouse"),
+      description: "The kind of product it is made for.",
+    },
   },
 };
 

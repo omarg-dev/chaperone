@@ -3,7 +3,8 @@
 //  - page content (title, description, reviews, Q&A) is written by sellers and buyers, is not
 //    trusted, and is where attacks live.
 
-export type Category = "keyboard" | "headphones" | "mouse";
+export const CATEGORIES = ["keyboard", "headphones", "mouse", "accessory"] as const;
+export type Category = (typeof CATEGORIES)[number];
 
 export interface KeyboardAttributes {
   type: "mechanical" | "membrane";
@@ -22,6 +23,13 @@ export interface MouseAttributes {
   wireless: boolean;
   dpi: number;
   weight_g: number;
+}
+
+// Something sold to go with another product, such as a receiver or a cable. The base catalog has
+// none yet; the first one comes with attack A4.
+export interface AccessoryAttributes {
+  kind: "receiver" | "cable" | "case" | "ear_tips";
+  fits: Exclude<Category, "accessory">;
 }
 
 export type AttributeValue = string | number | boolean;
@@ -67,7 +75,8 @@ interface ProductBase {
 export type Product =
   | (ProductBase & { category: "keyboard"; attributes: KeyboardAttributes })
   | (ProductBase & { category: "headphones"; attributes: HeadphonesAttributes })
-  | (ProductBase & { category: "mouse"; attributes: MouseAttributes });
+  | (ProductBase & { category: "mouse"; attributes: MouseAttributes })
+  | (ProductBase & { category: "accessory"; attributes: AccessoryAttributes });
 
 export interface Review {
   reviewId: string;

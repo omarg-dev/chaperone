@@ -81,7 +81,7 @@ const checkedOut = z.object({
       z.object({
         listingId: z.string(),
         sku: z.string(),
-        title: z.string(),
+        productName: z.string(),
         sellerId: z.string(),
         payeeKey: z.string(),
         unitPriceCents: z.number(),

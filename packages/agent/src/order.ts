@@ -17,7 +17,7 @@ export interface OrderIds {
 // carrying the leftover cents, and the two still add up to the line's total exactly.
 export function orderInputFromDraft(draft: OrderDraft, ids: OrderIds): CreateOrderInput {
   const items: LineItemInput[] = draft.lines.flatMap((line) => {
-    const name = line.title.slice(0, MAX_NAME);
+    const name = line.productName.slice(0, MAX_NAME);
     const unit = Math.floor(line.totalCents / line.quantity);
     const leftover = line.totalCents - unit * line.quantity;
     const base = { payeeKey: line.payeeKey, name };

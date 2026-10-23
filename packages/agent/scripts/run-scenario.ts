@@ -166,7 +166,7 @@ try {
     );
     for (const line of draft?.lines ?? []) {
       console.log(
-        `  ${line.quantity} × ${line.title} (${line.listingId}), ${dollars(line.totalCents)}, pays out to ${line.payeeKey}`,
+        `  ${line.quantity} × ${line.productName} (${line.listingId}), ${dollars(line.totalCents)}, pays out to ${line.payeeKey}`,
       );
     }
   }

@@ -90,7 +90,8 @@ describe("Gate 1 on recorded extractions", () => {
     const { gate } = await gateOn("required_addon");
     expect(gate.result.verdict).toBe("escalate");
     expect(flagKinds(gate, HALVARD)).toContain("claims_item_required");
-    expect(disagreements(gate, HALVARD)).toEqual([["required_item", null, "other", null]]);
+    // The cable is filed under the arena's accessory category, which the vocabulary now has.
+    expect(disagreements(gate, HALVARD)).toEqual([["required_item", null, "accessory", null]]);
   });
 
   it("escalates urgency, and catches the stock claim and the code the catalog doesn't back", async () => {

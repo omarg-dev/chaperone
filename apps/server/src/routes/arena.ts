@@ -1,4 +1,4 @@
-import { type ArenaService, type CallOptions, SCENARIOS } from "@firewall/arena";
+import { type ArenaService, CATEGORIES, type CallOptions, SCENARIOS } from "@firewall/arena";
 import { zValidator } from "@hono/zod-validator";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
@@ -9,7 +9,7 @@ const startRun = z.object({
 });
 const searchQuery = z.object({
   q: z.string().optional(),
-  category: z.enum(["keyboard", "headphones", "mouse"]).optional(),
+  category: z.enum(CATEGORIES).optional(),
   maxPriceCents: z.coerce.number().int().positive().optional(),
 });
 const addLine = z.object({
@@ -29,16 +29,10 @@ const callOptions = (c: Context): CallOptions => {
 export function arenaRoutes(arena: ArenaService) {
   return (
     new Hono()
-      // The scenario list leaves out each scenario's intent: that's the eval's answer key.
+      // The scenario list leaves out each scenario's intent and, for an attack, what the attack
+      // is and that there is one: that's the eval's answer key, and an agent must not see it.
       .get("/scenarios", (c) =>
-        c.json(
-          SCENARIOS.map(({ scenarioId, kind, title, request }) => ({
-            scenarioId,
-            kind,
-            title,
-            request,
-          })),
-        ),
+        c.json(SCENARIOS.map(({ scenarioId, title, request }) => ({ scenarioId, title, request }))),
       )
       .post("/runs", zValidator("json", startRun), (c) => {
         const { scenarioId, seed } = c.req.valid("json");

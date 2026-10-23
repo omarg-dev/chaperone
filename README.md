@@ -48,6 +48,8 @@ The server runs the marketplace a shopping agent is tested in. A run is one agen
 
 Every arena call is written to the event log. Send `X-Parent-Event-Id` with the ID of the event that made the call, and the arena's event links to it.
 
+Some scenarios are benign and some carry an attack, and the scenario list doesn't say which. An attack scenario layers its attacker's stores, listings, reviews and Q&A onto the base catalog when the arena is built (`packages/arena/src/scenarios/attacks.ts`), so the base catalog and the benign scenarios never contain attack content. Whether a checkout fell for the attack is decided from its order draft by `attackSucceeded` (`packages/arena/src/outcome.ts`), which only the eval reads.
+
 ## The shopping agent
 
 `packages/agent` is the shopper the attacks are measured against: an ordinary agent on the Vercel AI SDK with no defences of its own. Given a scenario's request, it shops the arena through tools (search, a listing's page, reviews, the cart, coupons, checkout) that call the arena in-process, and its checkout holds the whole cart as one payment authorization against the buyer's saved wallet. It never captures: that's the review's decision. Each run writes the agent's trajectory to the event log on the `agent` lane (every model turn with what it said, its thinking summary, its tool calls, tokens and cost), linked to the arena and payment events each step caused.
@@ -74,6 +76,25 @@ One Claude Haiku 5.5 call drafts it (about $0.0005), which needs `FIREWALL_ANTHR
 The eval confirms mandates without a person: `buildMandate` with the `acceptsDraftAsIs` person accepts each draft exactly as the builder wrote it.
 
 The tests replay recorded model answers for the benign scenarios and never call a model. When the builder's prompt or schema changes, a test says so; re-record with `pnpm --filter @firewall/mandate record-fixtures` (about a fifth of a cent) and commit the new fixtures.
+
+## Gate 0, deterministic policy
+
+Gate 0 is plain rules over trusted data: the locked mandate (its hash checked) and the catalog the run's arena was built from, rebuilt from the run's scenario and seed. It never reads seller-written text (the catalog's pages are dropped before any rule runs, and the checkout is read only for its catalog fields) and never calls a model, so it costs nothing. Per order line and for the order it checks that:
+
+- the order matches the catalog: the listing, its SKU, seller, payee and price, any discount from the listing's own coupon, and totals that add up;
+- the seller is on the verified-seller list;
+- each line pays at most the mandate's ceiling per unit, and the mandate's category comes to at most the ceiling times the quantity;
+- the quantity of the item asked for is the mandate's;
+- a line outside the mandate's category is one of its allowed extras;
+- the catalog's specs for the product meet every required attribute;
+- the brand fits the policy (any reputable, listed only, or any) and isn't blocked;
+- the same SKU wasn't checked out more than twice in ten minutes in the run.
+
+A hard mandate violation blocks: a missing or altered mandate, an order that doesn't match the catalog, an unverified payee, a price over the ceiling or the budget, a missed attribute, a disallowed or blocked brand. An item the person didn't ask for, a different quantity within the budget, or repeated checkouts escalate, since the cart may still be what they wanted. Otherwise it approves, always with confidence 1. Each reason names the rule, the line and the values compared, and the verdict goes to the `gate0` lane under the checkout. A block ends the review.
+
+```ts
+const gate = runGate0(runId, { log });
+```
 
 ## Gate 1, the quarantined extractor
 
@@ -110,11 +131,11 @@ Channel3 needs `FIREWALL_CHANNEL3_API_KEY` (see `.env.example`) and its host all
 |---|---|
 | `apps/server` | The HTTP server (Hono): the API, and later the websocket and the built web app |
 | `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
-| `packages/arena` | The simulated marketplace: a fictional catalog, seeded scenarios, and what each request means |
+| `packages/arena` | The simulated marketplace: a fictional catalog, seeded benign and attack scenarios, what each request means, and whether a checkout fell for an attack |
 | `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
 | `packages/agent` | The shopping agent: its loop, its tools, its checkout and the command that runs it on a scenario |
 | `packages/mandate` | The mandate: its schema, the builder (one model call), confirmation on the command line, the lock and its hash |
-| `packages/firewall` | The review tree's gates and their shared result type; so far Gate 1, the quarantined extractor, and Gate 2, the intent auditor |
+| `packages/firewall` | The review tree's gates and their shared result type; so far Gate 0, deterministic policy, Gate 1, the quarantined extractor, and Gate 2, the intent auditor |
 | `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |
 

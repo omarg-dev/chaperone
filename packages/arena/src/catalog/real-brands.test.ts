@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { buildArena } from "../scenario.js";
+import { SCENARIOS } from "../scenarios/index.js";
 import { baseCatalog } from "./index.js";
 import { NAME_ONLY, REAL_BRANDS } from "./real-brands.js";
 
@@ -30,18 +32,36 @@ function closeToRealBrand(name: string): string | undefined {
   });
 }
 
-const catalog = baseCatalog;
-const names = [
-  ...catalog.brands.map((b) => b.name),
-  ...catalog.sellers.map((s) => s.name),
-  ...catalog.products.map((p) => p.name),
+// The base catalog, and every scenario's arena over a few seeds, since attack scenarios bring
+// their own stores, products and writing.
+const catalogs = [
+  baseCatalog,
+  ...SCENARIOS.flatMap((s) =>
+    ["1", "2", "3"].map((seed) => buildArena(s, seed, baseCatalog).catalog),
+  ),
 ];
-const texts = catalog.listings.flatMap((l) => [
-  l.page.title,
-  l.page.description,
-  ...l.page.reviews.map((r) => r.text),
-  ...l.page.qa.flatMap((q) => [q.question, q.answer]),
-]);
+const names = [
+  ...new Set(
+    catalogs.flatMap((catalog) => [
+      ...catalog.brands.map((b) => b.name),
+      ...catalog.sellers.map((s) => s.name),
+      ...catalog.products.map((p) => p.name),
+    ]),
+  ),
+];
+const texts = [
+  ...new Set(
+    catalogs.flatMap((catalog) => [
+      ...catalog.products.map((p) => p.description),
+      ...catalog.listings.flatMap((l) => [
+        l.page.title,
+        l.page.description,
+        ...l.page.reviews.map((r) => r.text),
+        ...l.page.qa.flatMap((q) => [q.question, q.answer]),
+      ]),
+    ]),
+  ),
+];
 
 describe("test_arena_uses_no_real_brands", () => {
   it.each(names)("%s is not a real brand or one letter from one", (name) => {
