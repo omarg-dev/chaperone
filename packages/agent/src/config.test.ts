@@ -64,6 +64,22 @@ describe("test_model_clients_use_the_apps_own_config", () => {
     ).toBe("https://models.firewall.test/v1");
   });
 
+  it("accepts the base URL with or without /v1, since the mandate builder reads it too", () => {
+    for (const written of [
+      "https://models.firewall.test",
+      "https://models.firewall.test/",
+      "https://models.firewall.test/v1",
+      "https://models.firewall.test/v1/",
+    ]) {
+      expect(
+        anthropicConfigFromEnv({
+          FIREWALL_ANTHROPIC_API_KEY: "k",
+          FIREWALL_ANTHROPIC_BASE_URL: written,
+        }).baseUrl,
+      ).toBe("https://models.firewall.test/v1");
+    }
+  });
+
   it("refuses to run live without the app's key, even when the SDK's key is set", () => {
     expect(() => anthropicConfigFromEnv({ ANTHROPIC_API_KEY: "junk" })).toThrow(MissingConfigError);
     expect(() => anthropicConfigFromEnv({})).toThrow(/FIREWALL_ANTHROPIC_API_KEY/);

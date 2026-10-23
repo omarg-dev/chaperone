@@ -38,7 +38,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: MVP step 9, attacks A1, A2 and A4, with step 7's PR open.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now: MVP step 9, attacks A1, A2 and A4, with steps 7 and 8 merged and step 10's PR open.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -55,10 +55,10 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 4 | Arena API: search, listing, reviews, coupon, cart, checkout | ✅ |
 | 5 | Payment adapter interface and the in-memory fake | ✅ |
 | 6 | First technical checks against the sandbox (see below) | ✅ all five answered; check 3, the saved wallet, works with one scripted approval |
-| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | 👀 the contract suite passes against the sandbox |
-| 8 | Shopping agent on the AI SDK, checking out through the payment adapter | 👀 PR open |
+| 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | ✅ the contract suite passes against the sandbox |
+| 8 | Shopping agent on the AI SDK, checking out through the payment adapter | ✅ |
 | 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 🔨 the attacks; the checkpoint needs steps 7 and 8 |
-| 10 | Mandate builder with confirmation (command line) | ⬜ |
+| 10 | Mandate builder with confirmation (command line) | 👀 PR open |
 | 11 | Gate 0, deterministic policy | ⬜ |
 | 12 | Gate 1, quarantined extractor | ⬜ |
 | 13 | Gate 2, intent auditor | ⬜ |
