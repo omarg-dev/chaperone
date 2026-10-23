@@ -16,7 +16,10 @@ export type Lane = (typeof LANES)[number];
 
 // Where the information in an event came from. Gate 3 and the timeline's causal arrows depend on
 // this: an agent decision whose inputs trace back to seller_content is the signature of an attack.
-export const PROVENANCES = ["user", "catalog", "seller_content", "system"] as const;
+// extracted marks typed facts the quarantined extractor (Gate 1) read out of seller content: enums,
+// numbers and capped quotes kept as evidence, never the raw text. They are neither the firewall's
+// own judgement (system) nor raw seller_content, and the timeline and Gate 3 need to tell them apart.
+export const PROVENANCES = ["user", "catalog", "seller_content", "extracted", "system"] as const;
 export type Provenance = (typeof PROVENANCES)[number];
 
 // Known event types. The column is open text so a new kind of event doesn't need a migration;

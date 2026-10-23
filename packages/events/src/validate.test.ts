@@ -22,7 +22,9 @@ describe("validateNewEvent", () => {
       "runId is required",
       "type is required",
       expect.stringContaining("lane must be one of agent, arena, gate0"),
-      expect.stringContaining("provenance must be one of user, catalog, seller_content, system"),
+      expect.stringContaining(
+        "provenance must be one of user, catalog, seller_content, extracted, system",
+      ),
       "costUsd must be a number of 0 or more, got NaN",
       "latencyMs must be a whole number of 0 or more, got 1.5",
     ]);
