@@ -59,7 +59,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 8 | Shopping agent on the AI SDK, checking out through the payment adapter | ✅ |
 | 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 🔨 the attacks; the checkpoint needs steps 7 and 8 |
 | 10 | Mandate builder with confirmation (command line) | 👀 PR open |
-| 11 | Gate 0, deterministic policy | ⬜ |
+| 11 | Gate 0, deterministic policy | 👀 PR open |
 | 12 | Gate 1, quarantined extractor | 👀 PR open |
 | 13 | Gate 2, intent auditor | ⬜ |
 | 14 | Review tree and enforcement: approve captures, block voids, escalate holds | ⬜ |
