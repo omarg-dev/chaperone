@@ -54,8 +54,39 @@ export const REAL_BRANDS = [
   "Xiaomi",
   "Huawei",
   "Nothing",
+  // Accessories: receivers, cables, cases, ear tips.
+  "Belkin",
+  "UGREEN",
+  "Baseus",
+  "Satechi",
+  "Monoprice",
+  "Cable Matters",
+  "Aukey",
+  "Vention",
+  "Orico",
+  "Inateck",
+  "Sabrent",
+  "StarTech",
+  "Tripp Lite",
+  "Mophie",
+  "Spigen",
+  "OtterBox",
+  "Nomad",
+  "Twelve South",
+  "Native Union",
+  "Comply",
+  "SpinFit",
+  "Insignia",
 ] as const;
 
 // "Nothing" is a real headphone brand and also a common word, so text checks skip it and only
-// names are compared against it.
-export const NAME_ONLY = new Set<string>(["Nothing", "Apple", "Cherry", "Astro", "Pixel"]);
+// names are compared against it. The same goes for the other common words here.
+export const NAME_ONLY = new Set<string>([
+  "Nothing",
+  "Apple",
+  "Cherry",
+  "Astro",
+  "Pixel",
+  "Comply",
+  "Nomad",
+]);

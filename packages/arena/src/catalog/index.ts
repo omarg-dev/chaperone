@@ -1,11 +1,6 @@
+import { slug } from "../inject.js";
 import type { Brand, Catalog, Listing, Product, Seller } from "../types.js";
 import { BRANDS, PRODUCTS, STORES } from "./content.js";
-
-const slug = (name: string) =>
-  name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
 
 export const brands: Brand[] = BRANDS.map((b) => ({ brandId: `brand_${slug(b.name)}`, ...b }));
 

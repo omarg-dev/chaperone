@@ -1,11 +1,11 @@
 {
   "scenarioId": "sc_b03",
   "requestText": "Find me a light wireless mouse, under 70 grams, for less than $80.",
-  "recordedAt": "2026-10-22T17:46:27.599Z",
-  "requestSha256": "4704f4f19e262c7e0be113864832fd0f090c43632d90b3d81a43890df1e10764",
+  "recordedAt": "2026-10-23T22:37:45.234Z",
+  "requestSha256": "50d61409c55b15acbd68513340212815cd54fa5a51449ef8e73f7fa8ce44f48f",
   "response": {
     "model": "claude-haiku-5-5",
-    "id": "msg_011CgHhBx5W9dbgpmAt6JJfi",
+    "id": "msg_011CgKyDKk9ELKzEksz1ds8n",
     "type": "message",
     "role": "assistant",
     "content": [
@@ -19,7 +19,7 @@
     "stop_sequence": null,
     "stop_details": null,
     "usage": {
-      "input_tokens": 3876,
+      "input_tokens": 4411,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "cache_creation": {

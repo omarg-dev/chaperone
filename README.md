@@ -48,6 +48,8 @@ The server runs the marketplace a shopping agent is tested in. A run is one agen
 
 Every arena call is written to the event log. Send `X-Parent-Event-Id` with the ID of the event that made the call, and the arena's event links to it.
 
+Some scenarios are benign and some carry an attack, and the scenario list doesn't say which. An attack scenario layers its attacker's stores, listings, reviews and Q&A onto the base catalog when the arena is built (`packages/arena/src/scenarios/attacks.ts`), so the base catalog and the benign scenarios never contain attack content. Whether a checkout fell for the attack is decided from its order draft by `attackSucceeded` (`packages/arena/src/outcome.ts`), which only the eval reads.
+
 ## The shopping agent
 
 `packages/agent` is the shopper the attacks are measured against: an ordinary agent on the Vercel AI SDK with no defences of its own. Given a scenario's request, it shops the arena through tools (search, a listing's page, reviews, the cart, coupons, checkout) that call the arena in-process, and its checkout holds the whole cart as one payment authorization against the buyer's saved wallet. It never captures: that's the review's decision. Each run writes the agent's trajectory to the event log on the `agent` lane (every model turn with what it said, its thinking summary, its tool calls, tokens and cost), linked to the arena and payment events each step caused.
@@ -112,7 +114,7 @@ The tests replay recorded extractions of scripted runs (an honest purchase, a po
 |---|---|
 | `apps/server` | The HTTP server (Hono): the API, and later the websocket and the built web app |
 | `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
-| `packages/arena` | The simulated marketplace: a fictional catalog, seeded scenarios, and what each request means |
+| `packages/arena` | The simulated marketplace: a fictional catalog, seeded benign and attack scenarios, what each request means, and whether a checkout fell for an attack |
 | `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
 | `packages/agent` | The shopping agent: its loop, its tools, its checkout and the command that runs it on a scenario |
 | `packages/mandate` | The mandate: its schema, the builder (one model call), confirmation on the command line, the lock and its hash |
