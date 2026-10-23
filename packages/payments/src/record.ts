@@ -1,5 +1,5 @@
 import type { EventLog } from "@firewall/events";
-import { type PaymentAdapter, PaymentError } from "./types.js";
+import { type AuthorizeOptions, type PaymentAdapter, PaymentError } from "./types.js";
 
 export interface PaymentEventContext {
   runId: string;
@@ -49,7 +49,9 @@ export function recordPayments(
   return {
     createOrder: wrap("create_order", (input) => adapter.createOrder(input)),
     getOrder: wrap("get_order", (id) => adapter.getOrder(id)),
-    authorizeOrder: wrap("authorize_order", (id) => adapter.authorizeOrder(id)),
+    authorizeOrder: wrap("authorize_order", (id: string, options?: AuthorizeOptions) =>
+      adapter.authorizeOrder(id, options),
+    ),
     getAuthorization: wrap("get_authorization", (id) => adapter.getAuthorization(id)),
     captureAuthorization: wrap("capture", (id) => adapter.captureAuthorization(id)),
     voidAuthorization: wrap("void", (id) => adapter.voidAuthorization(id)),
@@ -57,5 +59,7 @@ export function recordPayments(
     refundCapture: wrap("refund", (id: string, amount?: number) =>
       adapter.refundCapture(id, amount),
     ),
+    createPayout: wrap("payout", (input) => adapter.createPayout(input)),
+    getPayout: wrap("get_payout", (id) => adapter.getPayout(id)),
   };
 }
