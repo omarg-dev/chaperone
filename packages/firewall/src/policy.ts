@@ -5,7 +5,7 @@ import type { GateResult } from "./gate.js";
 // Gate 0's rules: plain comparisons between the locked mandate and the marketplace's catalog
 // records, for each order line and for the order. No model, no seller-written text. The catalog is
 // cut down to its trusted fields at the door (trustedCatalog), and the order lines Gate 0 reads
-// carry no title, so nothing a seller wrote can reach a rule.
+// keep only their catalog fields, so nothing a seller wrote can reach a rule.
 //
 // What a failed rule does (ON_FAILURE):
 //  - It blocks when the cart breaks something the person stated outright, or something the
@@ -62,8 +62,8 @@ export interface RuleCheck {
   eventIds?: string[];
 }
 
-// The catalog-sourced fields of a checkout line, as the checkout event records them. The line's
-// title is page content and deliberately not here.
+// The catalog-sourced fields of a checkout line, as the checkout event records them. Anything else
+// the event carries on a line is left out, so page content can't come in that way.
 export interface OrderLine {
   listingId: string;
   sku: string;

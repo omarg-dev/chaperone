@@ -17,7 +17,7 @@ import {
 // the run's own catalog, rebuilt from the run's scenario and seed. It runs the rules in policy.ts,
 // and writes one verdict event (system) to the gate0 lane under the checkout, with no model cost.
 // It never reads page content: the catalog's pages are dropped before any rule sees it, and the
-// checkout's line titles are never parsed. Pinned by test_gate0_never_reads_seller_content.
+// checkout is read only for its catalog fields. Pinned by test_gate0_never_reads_seller_content.
 
 export class Gate0InputError extends Error {
   constructor(message: string) {
@@ -27,7 +27,7 @@ export class Gate0InputError extends Error {
 }
 
 // The checkout as the arena service writes it ({ request, result }), cut to its catalog fields.
-// zod drops every key not named here, the line titles included.
+// zod drops every key not named here, so nothing else on a line (a title, say) reaches a rule.
 const orderLine = z.object({
   listingId: z.string(),
   sku: z.string(),

@@ -77,7 +77,7 @@ The tests replay recorded model answers for the benign scenarios and never call 
 
 ## Gate 0, deterministic policy
 
-Gate 0 is plain rules over trusted data: the locked mandate (its hash checked) and the catalog the run's arena was built from, rebuilt from the run's scenario and seed. It never reads seller-written text (the catalog's pages are dropped before any rule runs, and the checkout's line titles are never parsed) and never calls a model, so it costs nothing. Per order line and for the order it checks that:
+Gate 0 is plain rules over trusted data: the locked mandate (its hash checked) and the catalog the run's arena was built from, rebuilt from the run's scenario and seed. It never reads seller-written text (the catalog's pages are dropped before any rule runs, and the checkout is read only for its catalog fields) and never calls a model, so it costs nothing. Per order line and for the order it checks that:
 
 - the order matches the catalog: the listing, its SKU, seller, payee and price, any discount from the listing's own coupon, and totals that add up;
 - the seller is on the verified-seller list;
