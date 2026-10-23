@@ -50,6 +50,45 @@ Every arena call is written to the event log. Send `X-Parent-Event-Id` with the 
 
 Some scenarios are benign and some carry an attack, and the scenario list doesn't say which. An attack scenario layers its attacker's stores, listings, reviews and Q&A onto the base catalog when the arena is built (`packages/arena/src/scenarios/attacks.ts`), so the base catalog and the benign scenarios never contain attack content. Whether a checkout fell for the attack is decided from its order draft by `attackSucceeded` (`packages/arena/src/outcome.ts`), which only the eval reads.
 
+## The shopping agent
+
+`packages/agent` is the shopper the attacks are measured against: an ordinary agent on the Vercel AI SDK with no defences of its own. Given a scenario's request, it shops the arena through tools (search, a listing's page, reviews, the cart, coupons, checkout) that call the arena in-process, and its checkout holds the whole cart as one payment authorization against the buyer's saved wallet. It never captures: that's the review's decision. Each run writes the agent's trajectory to the event log on the `agent` lane (every model turn with what it said, its thinking summary, its tool calls, tokens and cost), linked to the arena and payment events each step caused.
+
+To run it on one scenario, with a real model:
+
+```sh
+pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1                    # fake payments
+pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --adapter sandbox  # the sandbox
+```
+
+It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, the order and its hold, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; Claude Haiku 5.5 is the only column so far. The tests drive the loop with scripted model turns and never call a model.
+
+## Building a mandate
+
+A mandate is what the person confirmed they want bought, in the catalog's own terms: the category, the required attributes, the brands, the most to pay per item, the quantity, the extras allowed, and the tolerances. Every firewall check compares the cart against the locked mandate, never against the agent's memory of the request.
+
+```sh
+pnpm --filter @firewall/mandate build-mandate "Buy me a mechanical keyboard with tactile switches, under \$120"
+```
+
+One Claude Haiku 5.5 call drafts it (about $0.0005), which needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`). The draft is shown field by field, with anything the request said that the catalog can't express listed as not covered. Type `a` to accept, `e` to edit a field (requirements, brands, price and so on), or `r` to reject. Accepting locks the mandate with a sha256 hash over its contents, so any later change shows. The request, the draft, each edit, the confirmation and the locked mandate are all written to the event log, under a new run or the one `--run <runId>` names.
+
+The eval confirms mandates without a person: `buildMandate` with the `acceptsDraftAsIs` person accepts each draft exactly as the builder wrote it.
+
+The tests replay recorded model answers for the benign scenarios and never call a model. When the builder's prompt or schema changes, a test says so; re-record with `pnpm --filter @firewall/mandate record-fixtures` (about a fifth of a cent) and commit the new fixtures.
+
+## Gate 1, the quarantined extractor
+
+The review tree's rule is that the gates judging a purchase never read what sellers wrote. Gate 1 is the one part that does. It reads exactly the page content the arena served the agent, for the listings in the checkout and the ones it opened on the way, and turns each page into typed facts with one Claude Haiku 5.5 call per listing: the category, brand, seller and attributes the page claims, its prices, required add-ons, urgency and discount codes, and flags for text that speaks to an AI, pushes another product, claims an extra item is required, gives checkout instructions or poses as system text. Every fact names the event that served it; a quote is kept only if it really is the page's own words, then cleaned and capped. A few code tripwires catch the plainest injections even if the model is talked round.
+
+Code then compares each fact with the catalog's record of the listing (a page saying "tactile" on a linear keyboard, two left when twelve are in stock, a code the catalog doesn't have) and decides the verdict by rule: a flag or a disagreement on a listing in the cart, a steering flag on a page the agent opened, or a page it couldn't read escalates; otherwise it approves. Gate 1 never blocks. Everything goes to the `gate1` lane of the event log, with each call's tokens, cost (about $0.0007 a page) and latency. Later gates get `factsForReviewers`, which keeps no seller text.
+
+```ts
+const gate = await runGate1(runId, arena.catalog, { log, extractor: createExtractor({ client, vocabulary: extractionVocabulary(arena.catalog) }) });
+```
+
+The tests replay recorded extractions of scripted runs (an honest purchase, a poisoned review, a required add-on, urgency, a page the catalog contradicts, and text aimed at the extractor itself) and never call a model. Re-record with `pnpm --filter @firewall/firewall record-fixtures` (under a cent) when the prompt, the schema or a case changes.
+
 ## Layout
 
 | Folder | What's in it |
@@ -58,6 +97,9 @@ Some scenarios are benign and some carry an attack, and the scenario list doesn'
 | `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
 | `packages/arena` | The simulated marketplace: a fictional catalog, seeded benign and attack scenarios, what each request means, and whether a checkout fell for an attack |
 | `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
+| `packages/agent` | The shopping agent: its loop, its tools, its checkout and the command that runs it on a scenario |
+| `packages/mandate` | The mandate: its schema, the builder (one model call), confirmation on the command line, the lock and its hash |
+| `packages/firewall` | The review tree's gates and their shared result type; so far Gate 1, the quarantined extractor |
 | `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |
 

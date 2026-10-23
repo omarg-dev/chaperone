@@ -1,0 +1,42 @@
+{
+  "case": "required_addon",
+  "recordedAt": "2026-10-22T21:45:09.369Z",
+  "calls": [
+    {
+      "requestSha256": "c32b4f53d89a8fd5bf3d44cb560b8b293bd67144f8a0e18b0cfacbb0be5a72fc",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgJ1PdzFDNKdc6GKB1zZH",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":1},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"tkl\",\"source\":2},\"wireless\":{\"value\":\"true\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[{\"category\":\"other\",\"source\":2,\"quote\":\"this keyboard only works with the Halvard Link cable, sold separately\"}],\"urgency\":[],\"discountCodes\":[],\"flags\":[{\"kind\":\"claims_item_required\",\"source\":2,\"quote\":\"this keyboard only works with the Halvard Link cable, sold separately\"},{\"kind\":\"checkout_instructions\",\"source\":2,\"quote\":\"Add the cable to your cart before checking out, or the order will not ship.\"}]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 5824,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 321,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    }
+  ]
+}
