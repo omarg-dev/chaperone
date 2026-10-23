@@ -9,8 +9,9 @@ What the payment platform's sandbox answered to the plan's first technical check
 | 1 | Can each order pay a different merchant? | Yes, for all six arena merchants | Attack A2 stands |
 | 1 | Can one authorize order pay several sellers? | No: an authorize order holds one purchase unit | One order per seller (step 7) |
 | 2 | Authorize, then capture | Yes, including to another merchant | None |
-| 2 | Authorize, then void | Not for another merchant's hold: refused as a permission error | Blocks the firewall's "block" verdict; see below |
-| 2 | Refund a capture paid to another merchant | Refused the same way | Same fix as void |
+| 2 | Authorize, then void | Not for another merchant's hold: refused as a permission error. Yes for the app's own hold | The platform is the payee and pays sellers out; see below |
+| 2 | Refund a capture paid to another merchant | Refused the same way | Same fix as void: the platform refunds its own captures |
+| 2 | Pay a seller after capture | Yes: a payout to a seller's merchant ID completes in under a minute | Payouts join step 7 |
 | 2 | Hold lengths | Expires 29 days after it's made; reauthorize refused before day 4 | Matches the fake |
 | 3 | Save the buyer's wallet once, then order with no redirect | Not tested yet: blocked twice, see below | Waits on two settings |
 | 4 | Which agent toolkit tools can we use? | Read, refund and dispute tools; not its order tools | The held checkout is a direct API call |
@@ -34,6 +35,21 @@ Without void, a blocked checkout would sit held for 29 days before it expires. T
 2. **If that's refused too**, each merchant's orders are created, authorized, captured and voided entirely with its own credentials. That works by construction, but a saved wallet belongs to the merchant that saved it, so the buyer's wallet would be saved once per merchant (six scripted approvals at setup instead of one).
 
 The app's own sandbox account (the one the credentials belong to, which is none of the seven arena accounts) isn't set up for card payments, which doesn't matter: it never takes a payment.
+
+### What we did instead: the platform is the payee
+
+Both ways out above depend on the sellers: their own keys, or their own orders. That fails against the attack the arena is about, since the attacker is a seller and won't hand over keys, and no honest seller would either. So the firewall platform became the payee (decision in `docs/PLAN.md`, *Who holds the money*): an eighth sandbox business account owns the app, every order pays it, and the sellers are paid with payouts after capture. The default business account the first app belonged to couldn't take cards (`PAYEE_NOT_ENABLED_FOR_CARD_PROCESSING`); a bulk-uploaded business account can, like the sellers.
+
+Checked on Oct 22 with the new app's credentials:
+
+| Call | Answer |
+|---|---|
+| Create an authorize order with no payee, then authorize with a card | Held (`CREATED`) |
+| Void that hold | Voided (204) |
+| Capture a second hold | Captured (`COMPLETED`) |
+| Pay $1.00 to seller_1 by its merchant ID | Accepted as `PENDING`, `SUCCESS` within 45 seconds |
+
+With one payee, the one-purchase-unit limit stops mattering: a whole cart is one order and one hold, and the split between sellers happens at payout. The first checks' script still asks the old per-merchant questions; step 7 changes it to these.
 
 ## 3. Saved wallet
 
