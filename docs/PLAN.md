@@ -175,6 +175,7 @@ How the $5 stretches:
 - [ ] Get a Gemini API key from a Google Cloud project with billing turned off.
 - [ ] Add OpenAI API credit (the ChatGPT subscription doesn't cover the API), or drop that column.
 - [ ] Claim the $50 Render credits.
+- [ ] Create a Channel3 developer account and apply the hackathon code; add the key as a network secret for `api.trychannel3.com` (header `x-api-key`), or as `FIREWALL_CHANNEL3_API_KEY`, and allow `api.trychannel3.com` in the network settings. Then record Gate 2's fixtures with real market prices (`pnpm --filter @firewall/firewall record-gate2-fixtures`).
 - [x] Install the APIMatic Context Plugin in Claude Code.
 - [ ] Ask AG Grid and Bryntum on the hackathon Discord for licenses that last until Dec 15, and don't start either 45-day trial before Oct 25.
 - [ ] Ask on the Discord whether any sponsor offers model API credits.
@@ -204,7 +205,7 @@ All the seller and attacker accounts start at a $0 balance, so a payout to an at
 | APIMatic | A free subscription for participants who use its Context Plugin | Now; the plugin is in use |
 | AG Grid | 45-day AG Studio trial | Not before Oct 25 (ask on Discord for a license lasting to Dec 15 first); needed from about Oct 30 |
 | Bryntum | 45-day trial | Same as AG Grid |
-| Channel3 | 20,000 free credits with the hackathon code on its sponsor page | Only if we decide to use it (around Oct 27) |
+| Channel3 | 20,000 free credits with the hackathon code on its sponsor page | Now; Gate 2's market price reference |
 | KERNEL, Elastic, Zapier, Postman, Astropods | Free tiers and support; no specific credits found | Not needed |
 | GitHub Student Developer Pack | GitHub Pro (branch rules and environments on a private repo) and other student offers | Now |
 
