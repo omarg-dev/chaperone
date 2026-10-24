@@ -1,6 +1,9 @@
 // Where an event happened. Each lane is one row of the run timeline. The mandate lane holds what the
 // mandate builder produced (the draft, the locked mandate); it is neither the agent nor a gate, and
-// what the person does to the draft goes on the human lane.
+// what the person does to the draft goes on the human lane. The review lane holds the review tree's
+// own events: that it started, the verdict it combined from the gates', and what was done about it
+// (captured, voided, or held for the person). No gate's lane fits them: each gate's lane is that
+// gate's, and the payments lane is the platform's calls, not the decision behind them.
 export const LANES = [
   "agent",
   "arena",
@@ -11,6 +14,7 @@ export const LANES = [
   "payments",
   "human",
   "mandate",
+  "review",
 ] as const;
 export type Lane = (typeof LANES)[number];
 
