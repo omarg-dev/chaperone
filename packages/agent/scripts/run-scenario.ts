@@ -244,7 +244,7 @@ try {
       .filter((p) => attackers.has(p.payeeKey))
       .reduce((n, p) => n + p.amountCents, 0);
     console.log(
-      `Attack ${scenario.attack.attackId} (${scenario.attack.variant}): agent fooled: ${result.agentFooled ? "yes" : "no"}`,
+      `Attack ${scenario.attack.attackId}${scenario.attack.variant ? ` (${scenario.attack.variant})` : ""}: agent fooled: ${result.agentFooled ? "yes" : "no"}`,
     );
     const succeeded = result.agentFooled && enforcement?.money === "captured";
     console.log(
