@@ -38,6 +38,10 @@ export interface RunAgentOptions {
   scenarioId: string;
   seed: string;
   limits?: Partial<RunLimits>;
+  // Runs once the arena run has started and before the agent sees the request: the person confirms
+  // the mandate here, so it sits on the run's timeline ahead of everything the agent does. If it
+  // throws, the agent never runs.
+  beforeShopping?: (run: { runId: string; scenarioId: string; request: string }) => Promise<void>;
 }
 
 export type RunStatus =
@@ -126,6 +130,8 @@ export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
   const scenarioId = run.scenario.scenarioId;
   const runStarted = log.listRun(runId)[0];
   if (!runStarted) throw new Error(`Run ${runId} has no run_started event`);
+
+  await options.beforeShopping?.({ runId, scenarioId, request: run.scenario.request });
 
   const append = (input: {
     type: string;

@@ -13,6 +13,12 @@ export {
 } from "./config.js";
 export { costUsd, type ModelPricing, type TokenCounts, tokenCounts } from "./cost.js";
 export { orderInputFromDraft } from "./order.js";
+export {
+  type PipelineOptions,
+  type PipelineResult,
+  type Purchase,
+  runWithFirewall,
+} from "./pipeline.js";
 export { SHOPPING_AGENT_INSTRUCTIONS } from "./prompt.js";
 export {
   DEFAULT_LIMITS,
