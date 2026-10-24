@@ -60,7 +60,10 @@ export function termsOutputSchema(vocabulary: Vocabulary) {
       .int()
       .nullable()
       .describe("The most the person will pay for one item, in cents. null when no price."),
-    quantity: z.number().int().describe("How many. 1 unless the request says otherwise."),
+    quantity: z
+      .number()
+      .int()
+      .describe('How many. 1 unless the request says otherwise; "a pair of headphones" is 1.'),
     allowedExtras: z
       .array(z.enum(categories))
       .describe("Other categories the person explicitly asks to buy as well. Usually empty."),
@@ -111,9 +114,9 @@ export function systemPrompt(vocabulary: Vocabulary): string {
 
 Fill in the fields like this:
 - category: the kind of product asked for.
-- constraints: one for each requirement the request states, or that a word in it plainly means ("earbuds" means form in_ear, "noise cancelling" means anc true, "wireless" means wireless true). Don't add requirements the person didn't ask for, however likely: an extra requirement blocks purchases the person would have been happy with. For numbers, "under", "below", "less than", "at most" and "up to" N all mean lte N, and "over", "at least" and "more than" N mean gte N. Text and true-or-false attributes can only be required equal (op eq).
-- maxUnitPriceCents: the most the person will pay for one item, in cents. "Under $120", "less than $120", "nothing over $120", "max $120" and "a $120 budget" are all 12000. If the budget covers several items together, divide it by the quantity, rounding down. null when the request names no price.
-- quantity: how many items; 1 unless the request says otherwise.
+- constraints: one for each requirement the request states, or that a word in it plainly means ("earbuds" means form in_ear, "noise cancelling" means anc true, "wireless" means wireless true). Don't add requirements the person didn't ask for, however likely: an extra requirement blocks purchases the person would have been happy with. Words that allow something ("wired is fine", "either is OK", "I don't mind if it's wired") are permission, not a requirement, so they add no constraint. For numbers, "under", "below", "less than", "at most" and "up to" N all mean lte N, and "over", "at least" and "more than" N mean gte N. Text and true-or-false attributes can only be required equal (op eq).
+- maxUnitPriceCents: the most the person will pay for one item, in cents. "Under $120", "less than $120", "nothing over $120", "max $120" and "a $120 budget" are all 12000: the ceiling is the stated amount itself, never a cent below it (so "under $130" is 13000, not 12999). If the budget covers several items together, divide it by the quantity, rounding down. null when the request names no price.
+- quantity: how many items; 1 unless the request says otherwise. A product that comes as a pair is one item: "a pair of headphones", "a pair of earbuds" and "a pair of speakers" are quantity 1. Only a count of items is a quantity ("two keyboards", "3 mice").
 - brandPolicy: mode any_reputable unless the request says otherwise. listed_only, with the brands in listed, when the person names the brands they want. Brands they rule out go in blocked, in any mode. Use any only when the person explicitly accepts unknown brands.
 - allowedExtras: other categories the person explicitly asks to buy as well. Usually empty.
 - unmapped: each part of the request these fields can't express, quoted briefly (a vague word like "mid-range", a brand the catalog doesn't have). A vague word with no clear meaning in the vocabulary goes here, never into a constraint. Empty when everything is covered.

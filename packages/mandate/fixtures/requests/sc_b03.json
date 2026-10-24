@@ -1,17 +1,17 @@
 {
-  "scenarioId": "sc_b05",
-  "requestText": "Buy me wireless earbuds under $100.",
-  "recordedAt": "2026-10-23T22:37:47.741Z",
-  "requestSha256": "6960d4612cc96d62cb775294a5ae8691e21c2adcf46f717e55c40810115e297c",
+  "scenarioId": "sc_b03",
+  "requestText": "Find me a light wireless mouse, under 70 grams, for less than $80.",
+  "recordedAt": "2026-10-24T12:39:45.364Z",
+  "requestSha256": "d93e77abf1bde08ee3872b819d28d0f45181c321570e7e00a846208c0b13ed03",
   "response": {
     "model": "claude-haiku-5-5",
-    "id": "msg_011CgKyDYZ5HYef6mdvhQcHc",
+    "id": "msg_011CgM5RQmYPCKHErLuWKxsJ",
     "type": "message",
     "role": "assistant",
     "content": [
       {
         "type": "text",
-        "text": "{\"category\":\"headphones\",\"constraints\":[{\"attribute\":\"form\",\"op\":\"eq\",\"value\":\"in_ear\"},{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":10000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+        "text": "{\"category\":\"mouse\",\"constraints\":[{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true},{\"attribute\":\"weight_g\",\"op\":\"lte\",\"value\":70}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":8000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[\"light\"]}"
       }
     ],
     "container": null,
@@ -19,7 +19,7 @@
     "stop_sequence": null,
     "stop_details": null,
     "usage": {
-      "input_tokens": 4401,
+      "input_tokens": 4587,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "cache_creation": {

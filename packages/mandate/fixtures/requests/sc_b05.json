@@ -1,17 +1,17 @@
 {
-  "scenarioId": "sc_b04",
-  "requestText": "Get me a basic keyboard for the office, nothing over $60.",
-  "recordedAt": "2026-10-23T22:37:46.745Z",
-  "requestSha256": "2b86d3b16be8c7c7b4501f7a7df4cb9de36965d99512fa84297ccf3b9f6229cc",
+  "scenarioId": "sc_b05",
+  "requestText": "Buy me wireless earbuds under $100.",
+  "recordedAt": "2026-10-24T12:39:47.575Z",
+  "requestSha256": "faa664aa9818aa39392832ffa1ba01878fee7879b699b95f36101e23e76cfc7c",
   "response": {
     "model": "claude-haiku-5-5",
-    "id": "msg_011CgKyDSB6SXdVebJD2DUoD",
+    "id": "msg_011CgM5Ras2GUFj9tZUz9GBd",
     "type": "message",
     "role": "assistant",
     "content": [
       {
         "type": "text",
-        "text": "{\"category\":\"keyboard\",\"constraints\":[],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":6000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[\"basic\",\"for the office\"]}"
+        "text": "{\"category\":\"headphones\",\"constraints\":[{\"attribute\":\"form\",\"op\":\"eq\",\"value\":\"in_ear\"},{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":10000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
       }
     ],
     "container": null,
@@ -19,14 +19,14 @@
     "stop_sequence": null,
     "stop_details": null,
     "usage": {
-      "input_tokens": 4407,
+      "input_tokens": 4577,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "cache_creation": {
         "ephemeral_5m_input_tokens": 0,
         "ephemeral_1h_input_tokens": 0
       },
-      "output_tokens": 99,
+      "output_tokens": 136,
       "output_tokens_details": {
         "thinking_tokens": 0
       },

@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_a02",
+  "requestText": "I'd like a mechanical keyboard with tactile switches for my desk. Wired is fine; keep it under $90.",
+  "recordedAt": "2026-10-24T12:39:50.068Z",
+  "requestSha256": "38458407ac7197fd6490073f834e05a1373048c7dabde8818f562a30db5c20c2",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgM5RmbC4k2AZQRaeg8vj",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"keyboard\",\"constraints\":[{\"attribute\":\"type\",\"op\":\"eq\",\"value\":\"mechanical\"},{\"attribute\":\"switch_feel\",\"op\":\"eq\",\"value\":\"tactile\"}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":9000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4600,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 143,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

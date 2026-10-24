@@ -1,18 +1,18 @@
 import { readFileSync } from "node:fs";
-import { BENIGN_SCENARIOS } from "@firewall/arena";
+import { SCENARIOS } from "@firewall/arena";
 import { describe, expect, it } from "vitest";
 import { compareWithIntent } from "./accuracy.js";
 import { type RecordedResponse, requestSha256 } from "./recorded.js";
 import { builderAnswering } from "./test-helpers.js";
 
-// The builder's live answers to every benign scenario's request, recorded once with
+// The builder's live answers to every scenario's request (the attack scenarios' requests are the person's own, honest ones), recorded once with
 // `pnpm --filter @firewall/mandate record-fixtures` and replayed here. Nothing calls a model.
 const load = (scenarioId: string): RecordedResponse =>
   JSON.parse(
-    readFileSync(new URL(`../fixtures/benign/${scenarioId}.json`, import.meta.url), "utf8"),
+    readFileSync(new URL(`../fixtures/requests/${scenarioId}.json`, import.meta.url), "utf8"),
   );
 
-describe.each(BENIGN_SCENARIOS.map((s) => [s.scenarioId, s] as const))(
+describe.each(SCENARIOS.map((s) => [s.scenarioId, s] as const))(
   "the recorded draft for %s",
   (scenarioId, scenario) => {
     const fixture = load(scenarioId);
