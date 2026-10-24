@@ -15,6 +15,7 @@
     "@firewall/arena": "workspace:*",
     "@firewall/events": "workspace:*",
     "@firewall/mandate": "workspace:*",
+    "@firewall/payments": "workspace:*",
     "zod": "4.6.7"
   },
   "devDependencies": {

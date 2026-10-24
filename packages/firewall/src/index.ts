@@ -1,6 +1,7 @@
 export * from "./auditor.js";
 export * from "./comparables.js";
 export * from "./crosscheck.js";
+export * from "./enforce.js";
 export * from "./extractor.js";
 export * from "./facts.js";
 export * from "./gate.js";

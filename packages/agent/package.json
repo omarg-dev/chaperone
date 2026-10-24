@@ -7,12 +7,15 @@
   },
   "scripts": {
     "check": "tsc --noEmit -p .",
-    "run-scenario": "tsx --env-file-if-exists=../../.env scripts/run-scenario.ts"
+    "run-scenario": "tsx --env-file-if-exists=../../.env scripts/run-scenario.ts",
+    "decide-run": "tsx --env-file-if-exists=../../.env scripts/decide-run.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.77",
     "@firewall/arena": "workspace:*",
     "@firewall/events": "workspace:*",
+    "@firewall/firewall": "workspace:*",
+    "@firewall/mandate": "workspace:*",
     "@firewall/payments": "workspace:*",
     "ai": "7.0.134",
     "zod": "4.6.7"
