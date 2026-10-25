@@ -77,6 +77,25 @@ The eval confirms mandates without a person: `buildMandate` with the `acceptsDra
 
 The tests replay recorded model answers for the benign scenarios and never call a model. When the builder's prompt or schema changes, a test says so; re-record with `pnpm --filter @firewall/mandate record-fixtures` (about a fifth of a cent) and commit the new fixtures.
 
+## Gate 0, deterministic policy
+
+Gate 0 is plain rules over trusted data: the locked mandate (its hash checked) and the catalog the run's arena was built from, rebuilt from the run's scenario and seed. It never reads seller-written text (the catalog's pages are dropped before any rule runs, and the checkout is read only for its catalog fields) and never calls a model, so it costs nothing. Per order line and for the order it checks that:
+
+- the order matches the catalog: the listing, its SKU, seller, payee and price, any discount from the listing's own coupon, and totals that add up;
+- the seller is on the verified-seller list;
+- each line pays at most the mandate's ceiling per unit, and the mandate's category comes to at most the ceiling times the quantity;
+- the quantity of the item asked for is the mandate's;
+- a line outside the mandate's category is one of its allowed extras;
+- the catalog's specs for the product meet every required attribute;
+- the brand fits the policy (any reputable, listed only, or any) and isn't blocked;
+- the same SKU wasn't checked out more than twice in ten minutes in the run.
+
+A hard mandate violation blocks: a missing or altered mandate, an order that doesn't match the catalog, an unverified payee, a price over the ceiling or the budget, a missed attribute, a disallowed or blocked brand. An item the person didn't ask for, a different quantity within the budget, or repeated checkouts escalate, since the cart may still be what they wanted. Otherwise it approves, always with confidence 1. Each reason names the rule, the line and the values compared, and the verdict goes to the `gate0` lane under the checkout. A block ends the review.
+
+```ts
+const gate = runGate0(runId, { log });
+```
+
 ## Gate 1, the quarantined extractor
 
 The review tree's rule is that the gates judging a purchase never read what sellers wrote. Gate 1 is the one part that does. It reads exactly the page content the arena served the agent, for the listings in the checkout and the ones it opened on the way, and turns each page into typed facts with one Claude Haiku 5.5 call per listing: the category, brand, seller and attributes the page claims, its prices, required add-ons, urgency and discount codes, and flags for text that speaks to an AI, pushes another product, claims an extra item is required, gives checkout instructions or poses as system text. Every fact names the event that served it; a quote is kept only if it really is the page's own words, then cleaned and capped. A few code tripwires catch the plainest injections even if the model is talked round.
@@ -99,7 +118,7 @@ The tests replay recorded extractions of scripted runs (an honest purchase, a po
 | `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
 | `packages/agent` | The shopping agent: its loop, its tools, its checkout and the command that runs it on a scenario |
 | `packages/mandate` | The mandate: its schema, the builder (one model call), confirmation on the command line, the lock and its hash |
-| `packages/firewall` | The review tree's gates and their shared result type; so far Gate 1, the quarantined extractor |
+| `packages/firewall` | The review tree's gates and their shared result type; so far Gate 0, deterministic policy, and Gate 1, the quarantined extractor |
 | `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |
 

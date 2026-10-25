@@ -1,7 +1,14 @@
 // Shared by the tests in this package. Nothing here calls a model.
 import { readFileSync } from "node:fs";
 import type { Catalog } from "@firewall/arena";
-import { createAnthropicClient } from "@firewall/mandate";
+import {
+  arenaVocabulary,
+  createAnthropicClient,
+  DEFAULT_TOLERANCES,
+  type LockedMandate,
+  lockMandate,
+  type MandateTerms,
+} from "@firewall/mandate";
 import { createExtractor } from "./extractor.js";
 import { extractionVocabulary } from "./facts.js";
 import { type RecordedCall, type RecordedCase, replayByRequest } from "./recorded.js";
@@ -83,4 +90,30 @@ export function listingWith(
     sourceEventIds: documents.map((_, i) => `ev_doc${i + 1}`),
     ...overrides,
   };
+}
+
+// A locked mandate for sc_b01's request (a tactile mechanical keyboard under $120), with `terms`
+// changed.
+export function mandateWith(terms: Partial<MandateTerms> = {}): LockedMandate {
+  return lockMandate(
+    {
+      mandateId: "md_policy01",
+      requestText: "Buy me a mechanical keyboard with tactile switches, under $120.",
+      category: "keyboard",
+      constraints: [
+        { attribute: "type", op: "eq", value: "mechanical" },
+        { attribute: "switch_feel", op: "eq", value: "tactile" },
+      ],
+      brandPolicy: { mode: "any_reputable", listed: [], blocked: [] },
+      maxUnitPriceCents: 12000,
+      quantity: 1,
+      allowedExtras: [],
+      unmapped: [],
+      ...terms,
+      currency: "USD",
+      payeePolicy: "verified_sellers_only",
+      tolerances: { ...DEFAULT_TOLERANCES },
+    },
+    { vocabulary: arenaVocabulary(), confirmedAt: "2026-10-23T12:00:00.000Z" },
+  );
 }
