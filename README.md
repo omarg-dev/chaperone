@@ -108,6 +108,23 @@ const gate = await runGate1(runId, arena.catalog, { log, extractor: createExtrac
 
 The tests replay recorded extractions of scripted runs (an honest purchase, a poisoned review, a required add-on, urgency, a page the catalog contradicts, and text aimed at the extractor itself) and never call a model. Re-record with `pnpm --filter @firewall/firewall record-fixtures` (under a cent) when the prompt, the schema or a case changes.
 
+## Gate 2, the intent auditor
+
+Gate 2 decides whether the cart is what the person meant. It reads the locked mandate (verified by its hash: a missing or altered one blocks), the checkout's numbers with each listing's facts taken from the catalog rather than the checkout's seller-written line titles, Gate 1's `factsForReviewers`, and comparable offers. Code works out, for each line, how it sits against the mandate, the like-for-like offers in the marketplace (the same specification, from verified sellers, of brands the mandate allows), the best one and how far above it the line's price is against the mandate's tolerance, and a real-market reference from Channel3's product search, asked by category and attributes only. One Claude Haiku 5.5 call then judges the cart into a schema of fixed reason codes (`matches_mandate`, `wrong_product`, `attribute_mismatch`, `brand_concern`, `unrequested_item`, `overpriced_vs_comparables`, `overpriced_vs_market`, `steered_by_seller_content`), each with its line and evidence refs, plus a short explanation. It sees catalog records, numbers and Gate 1's typed facts, never page text.
+
+Code decides the verdict. It blocks only when the auditor and the catalog agree a line is the wrong product or lacks a requirement. A price beyond tolerance (against the marketplace, or the market median when there is one) escalates whatever the auditor said, and never blocks on its own; so does a line whose page Gate 1 flagged as steering, a concern only the auditor raised, an auditor that contradicts the catalog, an unsure approval, or no judgement at all. Everything goes to the `gate2` lane: what it read and computed, the market lookups, the judgement with its tokens, cost (about $0.0005 a review) and latency, and the verdict.
+
+```ts
+const gate2 = await runGate2(runId, arena.catalog, {
+  log,
+  auditor: createIntentAuditor({ client }),
+  market: createChannel3Market(channel3ConfigFromEnv()),
+  gate1, // runGate1's result: its reviewer view and verdict event
+});
+```
+
+Channel3 needs `FIREWALL_CHANNEL3_API_KEY` (see `.env.example`) and its host allowed; until then every review records the market reference as unavailable and checks prices within the marketplace only. The tests replay recordings of both gates on scripted runs (an honest purchase, an overpriced twin listing, a steered page, an unrequested extra and a linear keyboard for a tactile mandate), made with the market reference unavailable, and never call a model or Channel3. Re-record with `pnpm --filter @firewall/firewall record-gate2-fixtures` (about a cent) when a prompt, a schema or a case changes; with a Channel3 key set, the same command records its answers alongside.
+
 ## Layout
 
 | Folder | What's in it |
@@ -118,7 +135,7 @@ The tests replay recorded extractions of scripted runs (an honest purchase, a po
 | `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
 | `packages/agent` | The shopping agent: its loop, its tools, its checkout and the command that runs it on a scenario |
 | `packages/mandate` | The mandate: its schema, the builder (one model call), confirmation on the command line, the lock and its hash |
-| `packages/firewall` | The review tree's gates and their shared result type; so far Gate 0, deterministic policy, and Gate 1, the quarantined extractor |
+| `packages/firewall` | The review tree's gates and their shared result type; so far Gate 0, deterministic policy, Gate 1, the quarantined extractor, and Gate 2, the intent auditor |
 | `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |
 

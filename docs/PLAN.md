@@ -22,7 +22,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Held-out attack set | Ported from published benchmarks (StakeBench and others), with attribution. Once we see how many fit a shopping arena, we decide whether custom ones are needed and how to write them without seeing the gate prompts. |
 | Sponsor tools | AG Grid (AG Studio) for the monitoring and eval dashboard; Bryntum Scheduler for the run timeline; APIMatic Context Plugin while building the payment integration; a public Postman collection for the API. |
 | Render | Render Workflows runs the eval matrix: one task per matrix cell, fanned out in parallel, results reported back to the app. The same task functions also run in a local runner, so the numbers never depend on Render. The hosted demo stays on the VPS. |
-| Channel3 | Undecided; we discuss it when the fair-price check comes up. |
+| Channel3 | Gate 2's real-market price reference, decided Oct 23. Gate 2 queries Channel3's product search by the cart line's category and attributes ("wireless tenkeyless mechanical keyboard, tactile switches"), never by an arena brand or product name, so the arena stays fictional; only the low, median and high prices come back into the review. A price beyond the mandate's tolerance above the market median escalates, and never blocks on its own. It qualifies for its sponsor prize by being called on every review. Until its key (`FIREWALL_CHANNEL3_API_KEY`) and host are set up, Gate 2 records the market reference as unavailable and checks prices only within the marketplace. |
 | Hosting | The VPS at omarg.dev, deployed the rulebook's way. The subdomain waits for the final name. |
 | Versions | One minor version per milestone, approved as an exception to the rulebook: MVP is 0.1.x, v1.1 is 0.2.0, v1.2 is 0.3.0, v1.3 is 0.4.0, with patch releases in between. |
 | Attacks in step 9 | A1 comes in two variants. In the unverified one, a poisoned review sends the agent to an unverified attacker store, which Gate 0 catches by rule. In the verified one, the review steers the agent to a verified store that is really an attacker, selling a product whose catalog record matches the request on paper (right category, the required attributes, a reputable brand, under the ceiling), so nothing a rule can see is wrong and only the steering (Gate 3) and judgement (Gate 2) can catch it; it succeeds when a line pays that store. A2 swaps where the money goes (with the platform as payee, that's the seller a line pays out to), A4 the "required" add-on. Omar reviews each attack's wording in its PR before it lands, since it may appear in the video. |
@@ -62,7 +62,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 10 | Mandate builder with confirmation (command line) | 👀 PR open |
 | 11 | Gate 0, deterministic policy | 👀 PR open |
 | 12 | Gate 1, quarantined extractor | 👀 PR open |
-| 13 | Gate 2, intent auditor | ⬜ |
+| 13 | Gate 2, intent auditor | 👀 PR open |
 | 14 | Review tree and enforcement: approve captures, block voids, escalate holds | ⬜ |
 | 15 | Attacks A3, A5, A6 and A7 | ⬜ |
 | 16 | SDK wrapper v1 | ⬜ |
@@ -176,6 +176,7 @@ How the $5 stretches:
 - [ ] Get a Gemini API key from a Google Cloud project with billing turned off.
 - [ ] Add OpenAI API credit (the ChatGPT subscription doesn't cover the API), or drop that column.
 - [ ] Claim the $50 Render credits.
+- [ ] Create a Channel3 developer account and apply the hackathon code; add the key as a network secret for `api.trychannel3.com` (header `x-api-key`), or as `FIREWALL_CHANNEL3_API_KEY`, and allow `api.trychannel3.com` in the network settings. Then record Gate 2's fixtures with real market prices (`pnpm --filter @firewall/firewall record-gate2-fixtures`).
 - [x] Install the APIMatic Context Plugin in Claude Code.
 - [ ] Ask AG Grid and Bryntum on the hackathon Discord for licenses that last until Dec 15, and don't start either 45-day trial before Oct 25.
 - [ ] Ask on the Discord whether any sponsor offers model API credits.
@@ -205,7 +206,7 @@ All the seller and attacker accounts start at a $0 balance, so a payout to an at
 | APIMatic | A free subscription for participants who use its Context Plugin | Now; the plugin is in use |
 | AG Grid | 45-day AG Studio trial | Not before Oct 25 (ask on Discord for a license lasting to Dec 15 first); needed from about Oct 30 |
 | Bryntum | 45-day trial | Same as AG Grid |
-| Channel3 | 20,000 free credits with the hackathon code on its sponsor page | Only if we decide to use it (around Oct 27) |
+| Channel3 | 20,000 free credits with the hackathon code on its sponsor page | Now; Gate 2's market price reference |
 | KERNEL, Elastic, Zapier, Postman, Astropods | Free tiers and support; no specific credits found | Not needed |
 | GitHub Student Developer Pack | GitHub Pro (branch rules and environments on a private repo) and other student offers | Now |
 

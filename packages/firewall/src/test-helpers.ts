@@ -9,15 +9,73 @@ import {
   lockMandate,
   type MandateTerms,
 } from "@firewall/mandate";
+import { createIntentAuditor } from "./auditor.js";
 import { createExtractor } from "./extractor.js";
 import { extractionVocabulary } from "./facts.js";
-import { type RecordedCall, type RecordedCase, replayByRequest } from "./recorded.js";
+import { createChannel3Market } from "./market.js";
+import {
+  type RecordedCall,
+  type RecordedCase,
+  type RecordedGate2Case,
+  replayByRequest,
+  replayMarket,
+} from "./recorded.js";
 import type { ListingInScope, PageDocument } from "./sources.js";
 
 export const TEST_CONFIG = { apiKey: "the-apps-own-key", baseUrl: "https://models.firewall.test" };
 
 export const loadRecording = (name: string): RecordedCase =>
   JSON.parse(readFileSync(new URL(`../fixtures/${name}.json`, import.meta.url), "utf8"));
+
+export const loadGate2Recording = (name: string): RecordedGate2Case =>
+  JSON.parse(readFileSync(new URL(`../fixtures/gate2/${name}.json`, import.meta.url), "utf8"));
+
+// Real extractor, auditor and market reference whose network calls are answered from a Gate 2
+// recording, by request hash. The market reference is configured exactly when it was recorded
+// with a key; the key here is a placeholder, since nothing leaves the process.
+export function gatesReplaying(catalog: Catalog, recording: RecordedGate2Case) {
+  const replay = replayByRequest(recording.calls);
+  const client = createAnthropicClient(TEST_CONFIG, { fetch: replay.fetch, maxRetries: 0 });
+  const marketReplay = replayMarket(recording.market.calls);
+  return {
+    extractor: createExtractor({ client, vocabulary: extractionVocabulary(catalog) }),
+    auditor: createIntentAuditor({ client }),
+    market: createChannel3Market({
+      apiKey: recording.market.configured ? "placeholder-market-key" : null,
+      fetch: marketReplay.fetch,
+    }),
+    replay,
+    marketReplay,
+  };
+}
+
+// A real auditor whose every call is answered with `response`.
+export function auditorAnswering(response: unknown) {
+  const sent: { url: string; headers: Headers; body: unknown }[] = [];
+  const fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+    sent.push({
+      url: String(url),
+      headers: new Headers(init?.headers),
+      body: init?.body ? JSON.parse(String(init.body)) : null,
+    });
+    return Response.json(response);
+  }) as typeof globalThis.fetch;
+  return {
+    auditor: createIntentAuditor({
+      client: createAnthropicClient(TEST_CONFIG, { fetch, maxRetries: 0 }),
+    }),
+    sent,
+  };
+}
+
+// For test_reviewers_never_see_raw_seller_content: every run of `n` words in a text, lowercased.
+export const words = (text: string) => text.toLowerCase().match(/[\p{L}\p{N}']+/gu) ?? [];
+export const wordRuns = (text: string, n = 4) => {
+  const w = words(text);
+  return w.length < n
+    ? []
+    : w.slice(0, w.length - n + 1).map((_, i) => w.slice(i, i + n).join(" "));
+};
 
 // A real extractor whose network calls are answered from recordings, by request hash.
 export function extractorReplaying(catalog: Catalog, calls: readonly RecordedCall[]) {

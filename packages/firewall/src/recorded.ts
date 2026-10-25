@@ -1,4 +1,4 @@
-import { requestSha256 } from "@firewall/mandate";
+import { canonicalJson, requestSha256, sha256 } from "@firewall/mandate";
 
 // Gate 1's recorded model answers. One gate run makes one call per listing, so a recording holds
 // every call of one fixture case, each under the hash of the request that produced it (the
@@ -40,4 +40,40 @@ export function replayByRequest(calls: readonly RecordedCall[]) {
     return Response.json(response);
   }) as typeof globalThis.fetch;
   return { fetch, misses, sent: () => sent };
+}
+
+// Gate 2's recordings hold every model call of one case (Gate 1's extractions and Gate 2's
+// judgement, all answered by hash), and the market reference's calls alongside. A recording made
+// with no market key holds none, and replays with the reference unavailable, as it was recorded.
+export interface RecordedMarketCall {
+  requestSha256: string;
+  // The HTTP status and JSON body that came back, or the error the request failed with.
+  status?: number;
+  response?: unknown;
+  error?: string;
+}
+
+export interface RecordedGate2Case extends RecordedCase {
+  market: { source: string; configured: boolean; calls: RecordedMarketCall[] };
+}
+
+export const RECORD_GATE2_COMMAND = "pnpm --filter @firewall/firewall record-gate2-fixtures";
+
+export const marketRequestSha256 = (body: unknown) => sha256(canonicalJson(body));
+
+// A fetch that answers each market request with the response recorded for it.
+export function replayMarket(calls: readonly RecordedMarketCall[]) {
+  const byHash = new Map(calls.map((c) => [c.requestSha256, c]));
+  const misses: string[] = [];
+  const fetch = (async (_url: string | URL | Request, init?: RequestInit) => {
+    const hash = marketRequestSha256(init?.body ? JSON.parse(String(init.body)) : null);
+    const call = byHash.get(hash);
+    if (!call) {
+      misses.push(hash);
+      throw new TypeError("No recording for this market request");
+    }
+    if (call.error !== undefined) throw new TypeError(call.error);
+    return Response.json(call.response, { status: call.status ?? 200 });
+  }) as typeof globalThis.fetch;
+  return { fetch, misses };
 }
