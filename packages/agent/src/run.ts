@@ -1,11 +1,18 @@
 import type { ArenaService } from "@firewall/arena";
 import type { EventLog } from "@firewall/events";
 import type { PaymentAdapter } from "@firewall/payments";
+import {
+  arenaSource,
+  createFirewall,
+  type Firewall,
+  type FirewallSettings,
+  type HeldOrder,
+} from "@firewall/sdk";
 import { generateText, isStepCount, type LanguageModelMiddleware, wrapLanguageModel } from "ai";
 import type { AgentColumn } from "./columns.js";
 import { addCounts, costUsd, NO_TOKENS, type TokenCounts, tokenCounts } from "./cost.js";
 import { SHOPPING_AGENT_INSTRUCTIONS } from "./prompt.js";
-import { createShoppingTools, type PlacedOrder, type RunSession } from "./tools.js";
+import { createShoppingTools, type RunSession } from "./tools.js";
 
 // One shopping agent run: start an arena run for the scenario, hand the agent the person's
 // request, and let it shop until it checks out, gives up, or hits a limit. Everything lands in the
@@ -38,10 +45,20 @@ export interface RunAgentOptions {
   scenarioId: string;
   seed: string;
   limits?: Partial<RunLimits>;
-  // Runs once the arena run has started and before the agent sees the request: the person confirms
-  // the mandate here, so it sits on the run's timeline ahead of everything the agent does. If it
-  // throws, the agent never runs.
-  beforeShopping?: (run: { runId: string; scenarioId: string; request: string }) => Promise<void>;
+  // The firewall in front of the agent's checkout (@firewall/sdk). The agent's tools go through its
+  // `wrap`, so the checkout holds the cart; the default holds it and reviews nothing. Its mandate,
+  // if it has one, is locked here before the agent sees the request, so the person's confirmation
+  // sits on the run's timeline ahead of everything the agent does. If that fails, the agent never
+  // runs.
+  firewall?: FirewallSettings;
+  // Runs once the arena run has started and the mandate is locked, before the agent sees the
+  // request. It is how a caller gets hold of the run's firewall, to settle it when the agent is done.
+  beforeShopping?: (run: {
+    runId: string;
+    scenarioId: string;
+    request: string;
+    firewall: Firewall;
+  }) => Promise<void> | void;
 }
 
 export type RunStatus =
@@ -61,7 +78,7 @@ export interface RunOutcome {
   columnId: string;
   modelId: string;
   status: RunStatus;
-  order: PlacedOrder | null;
+  order: HeldOrder | null;
   modelCalls: number;
   tokens: TokenCounts;
   costUsd: number;
@@ -131,7 +148,26 @@ export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
   const runStarted = log.listRun(runId)[0];
   if (!runStarted) throw new Error(`Run ${runId} has no run_started event`);
 
-  await options.beforeShopping?.({ runId, scenarioId, request: run.scenario.request });
+  // The turn that caused the checkout is the model turn that asked for it, which the recorder below
+  // keeps current.
+  const session: RunSession = {
+    runId,
+    scenarioId,
+    arena,
+    log,
+    currentTurnId: runStarted.eventId,
+  };
+  const firewall = createFirewall({
+    config: "off",
+    ...options.firewall,
+    log,
+    source: arenaSource({ arena, log, runId }),
+    payments: options.payments,
+    vaultId: options.vaultId,
+    causedBy: () => session.currentTurnId,
+  });
+  await firewall.ready();
+  await options.beforeShopping?.({ runId, scenarioId, request: run.scenario.request, firewall });
 
   const append = (input: {
     type: string;
@@ -155,16 +191,7 @@ export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
     },
   });
 
-  const session: RunSession = {
-    runId,
-    scenarioId,
-    arena,
-    log,
-    payments: options.payments,
-    vaultId: options.vaultId,
-    currentTurnId: started.eventId,
-    order: null,
-  };
+  session.currentTurnId = started.eventId;
   const budget = spendBudget(column, limits);
   let cappedBySpend = false;
 
@@ -238,7 +265,7 @@ export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
       model,
       instructions: SHOPPING_AGENT_INSTRUCTIONS,
       prompt: run.scenario.request,
-      tools: createShoppingTools(session),
+      tools: firewall.wrap(createShoppingTools(session)),
       maxOutputTokens: limits.maxOutputTokens,
       providerOptions: column.providerOptions,
       // One retry for a dropped connection or an overloaded API, then the run fails and says so.
@@ -246,7 +273,7 @@ export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
       stopWhen: [
         isStepCount(limits.maxSteps),
         // The checkout is the run's last act: what happens to the order is the review's business.
-        () => session.order !== null,
+        () => firewall.held !== null,
         () => {
           cappedBySpend = budget.wouldExceed();
           return cappedBySpend;
@@ -254,13 +281,13 @@ export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
       ],
     });
     finalText = result.text;
-    if (session.order) status = "checked_out";
+    if (firewall.held) status = "checked_out";
     else if (cappedBySpend) status = "spend_cap";
     else if (result.steps.length >= limits.maxSteps && result.finishReason === "tool-calls") {
       status = "step_cap";
     } else status = "no_checkout";
   } catch (caught) {
-    status = session.order ? "checked_out" : cappedBySpend ? "spend_cap" : "failed";
+    status = firewall.held ? "checked_out" : cappedBySpend ? "spend_cap" : "failed";
     if (!cappedBySpend) error = caught instanceof Error ? caught.message : String(caught);
   }
 
@@ -271,7 +298,7 @@ export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
     columnId: column.columnId,
     modelId: column.modelId,
     status,
-    order: session.order,
+    order: firewall.held,
     modelCalls: budget.calls,
     tokens: budget.tokens,
     costUsd: budget.spentUsd,

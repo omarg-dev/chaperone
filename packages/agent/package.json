@@ -17,6 +17,7 @@
     "@firewall/firewall": "workspace:*",
     "@firewall/mandate": "workspace:*",
     "@firewall/payments": "workspace:*",
+    "@firewall/sdk": "workspace:*",
     "ai": "7.0.134",
     "zod": "4.6.7"
   },

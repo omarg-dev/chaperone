@@ -12,7 +12,6 @@ export {
   MissingConfigError,
 } from "./config.js";
 export { costUsd, type ModelPricing, type TokenCounts, tokenCounts } from "./cost.js";
-export { orderInputFromDraft } from "./order.js";
 export {
   type PipelineOptions,
   type PipelineResult,
@@ -28,4 +27,4 @@ export {
   type RunStatus,
   runAgent,
 } from "./run.js";
-export { createShoppingTools, type PlacedOrder, type RunSession } from "./tools.js";
+export { createShoppingTools, type RunSession } from "./tools.js";
