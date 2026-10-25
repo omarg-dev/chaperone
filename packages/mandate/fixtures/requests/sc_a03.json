@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_a03",
+  "requestText": "Order me a pair of noise-cancelling over-ear headphones for flights, wireless, under $200.",
+  "recordedAt": "2026-10-24T12:39:52.001Z",
+  "requestSha256": "00f67c5274584492b04009a084c127b718d80d04efaec8b53fa768a458b72d91",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgM5RqV5m2zmHih3i3NWT",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"headphones\",\"constraints\":[{\"attribute\":\"form\",\"op\":\"eq\",\"value\":\"over_ear\"},{\"attribute\":\"anc\",\"op\":\"eq\",\"value\":true},{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":20000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[\"for flights\"]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4595,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 160,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

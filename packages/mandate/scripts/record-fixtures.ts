@@ -1,5 +1,5 @@
-// Records the builder's answer to every benign scenario's request, once, against the live model,
-// and saves each response under fixtures/benign/ for the tests to replay.
+// Records the builder's answer to every scenario's request (the attack scenarios' requests are the person's own, honest ones), once, against the live model,
+// and saves each response under fixtures/requests/ for the tests to replay.
 //
 //   pnpm --filter @firewall/mandate record-fixtures
 //
@@ -10,7 +10,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { BENIGN_SCENARIOS } from "@firewall/arena";
+import { SCENARIOS } from "@firewall/arena";
 import {
   anthropicConfigFromEnv,
   arenaVocabulary,
@@ -22,7 +22,7 @@ import {
 } from "../src/index.js";
 import { type RecordedResponse, requestSha256 } from "../src/recorded.js";
 
-const FIXTURES = resolve(dirname(fileURLToPath(import.meta.url)), "../fixtures/benign");
+const FIXTURES = resolve(dirname(fileURLToPath(import.meta.url)), "../fixtures/requests");
 
 let lastBody: unknown = null;
 const recordingFetch = (async (url: string | URL | Request, init?: RequestInit) => {
@@ -43,7 +43,7 @@ const builder = createMandateBuilder({
 mkdirSync(FIXTURES, { recursive: true });
 let totalCost = 0;
 let exact = 0;
-for (const scenario of BENIGN_SCENARIOS) {
+for (const scenario of SCENARIOS) {
   lastBody = null;
   const save = () => {
     const fixture: RecordedResponse = {
@@ -93,6 +93,4 @@ for (const scenario of BENIGN_SCENARIOS) {
     process.exit(1);
   }
 }
-console.log(
-  `\n${exact} of ${BENIGN_SCENARIOS.length} exactly right, $${totalCost.toFixed(6)} in all`,
-);
+console.log(`\n${exact} of ${SCENARIOS.length} exactly right, $${totalCost.toFixed(6)} in all`);

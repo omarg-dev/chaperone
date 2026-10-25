@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_a04",
+  "requestText": "Get me a small wireless mouse for travel, under 70 grams and under $40.",
+  "recordedAt": "2026-10-24T12:39:53.358Z",
+  "requestSha256": "3c87f6d5ab6a10bc906ae6bf38cd400eb3d142baf56f339ca808fe6d76dbb621",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgM5Ryq9Dzx6T6YfKRj4J",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"mouse\",\"constraints\":[{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true},{\"attribute\":\"weight_g\",\"op\":\"lte\",\"value\":70}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":4000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[\"small\",\"for travel\"]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 140,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}
