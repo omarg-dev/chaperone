@@ -54,14 +54,14 @@ Some scenarios are benign and some carry an attack, and the scenario list doesn'
 
 `packages/agent` is the shopper the attacks are measured against: an ordinary agent on the Vercel AI SDK with no defences of its own. Given a scenario's request, it shops the arena through tools (search, a listing's page, reviews, the cart, coupons, checkout) that call the arena in-process, and its checkout holds the whole cart as one payment authorization against the buyer's saved wallet. It never captures: that's the review's decision. Each run writes the agent's trajectory to the event log on the `agent` lane (every model turn with what it said, its thinking summary, its tool calls, tokens and cost), linked to the arena and payment events each step caused.
 
-To run it on one scenario, with a real model:
+To run it on one scenario, with a real model (the whole run, through the firewall, is below):
 
 ```sh
-pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1                    # fake payments
-pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --adapter sandbox  # the sandbox
+pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --firewall off                    # fake payments
+pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --adapter sandbox --firewall off  # the sandbox
 ```
 
-It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, the order and its hold, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; Claude Haiku 5.5 is the only column so far. The tests drive the loop with scripted model turns and never call a model.
+It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; Claude Haiku 5.5 is the only column so far. The tests drive the loop with scripted model turns and never call a model.
 
 ## Building a mandate
 
@@ -125,6 +125,31 @@ const gate2 = await runGate2(runId, arena.catalog, {
 
 Channel3 needs `FIREWALL_CHANNEL3_API_KEY` (see `.env.example`) and its host allowed; until then every review records the market reference as unavailable and checks prices within the marketplace only. The tests replay recordings of both gates on scripted runs (an honest purchase, an overpriced twin listing, a steered page, an unrequested extra and a linear keyboard for a tactile mandate), made with the market reference unavailable, and never call a model or Channel3. Re-record with `pnpm --filter @firewall/firewall record-gate2-fixtures` (about a cent) when a prompt, a schema or a case changes; with a Channel3 key set, the same command records its answers alongside.
 
+## The review tree and enforcement
+
+`runReview` (`packages/firewall/src/review.ts`) reviews a run whose agent has checked out. Gate 0 runs first, and a block there ends the review before any model is called. Otherwise Gate 1 reads the pages and Gate 2 audits the cart with its facts. The tree's verdict is the most severe of the gates' (any block blocks, any escalation escalates), and any block ends the review where it stands. A firewall configuration says how much of the tree runs, so the eval can ablate it on the same checkout: `off` (no review), `gate0` (the policy rules only) or `full` (every gate; Gate 3 joins it later). The review writes `review_started` and `review_finished` to the `review` lane: the verdict, each gate's verdict and event, the gates skipped and why, and the total cost.
+
+`enforceReview` (`enforce.ts`) then acts on the held payment through the payment adapter, every call recorded on the payments lane and pointing at the review's verdict:
+
+| Verdict | What happens to the money |
+|---|---|
+| approve | The hold is captured, then each seller is paid its share of what the platform received after its fee (`splitPayouts`) |
+| block | The hold is voided: nothing is captured and nobody is paid |
+| escalate | The hold stays; `escalated` records that a person must decide |
+| none (`off`) | Captured and paid out as it stands: that's what no firewall means |
+
+A person decides an escalated run with `decide-run <runId> approve|reject` (approve captures and pays out, reject voids), which writes their decision to the `human` lane with provenance `user` and then runs the same enforcement. A hold is honoured for three days; a person who takes longer than that has it reauthorized before it is captured, and one past its expiry can't be captured at all. Enforcement works from the event log, so running it twice never captures or pays twice, and running it after a failure halfway does only what is left.
+
+One command runs a whole scenario: it drafts the mandate from the scenario's request and confirms it as the builder wrote it, runs the agent, runs the review, enforces and prints what was bought, each gate's verdict, the final verdict, where the money went, the cost and, for an attack scenario, whether the agent was fooled and whether the attack succeeded (it needs the money to have been captured: a voided or held order paid nobody).
+
+```sh
+pnpm --filter @firewall/agent run-scenario sc_a01 --seed 1 --adapter sandbox --firewall off   # the heist
+pnpm --filter @firewall/agent run-scenario sc_a01 --seed 1 --adapter sandbox --firewall full  # the same run, reviewed
+pnpm --filter @firewall/agent decide-run <runId> approve                                      # an escalated run (sandbox)
+```
+
+It needs `FIREWALL_ANTHROPIC_API_KEY` for the agent, the mandate draft and the gates (about half a cent to a cent for a run), and for `--adapter sandbox` the sandbox variables and the buyer's saved wallet in `SANDBOX_BUYER_VAULT_ID` (`pnpm --filter @firewall/payments save-wallet` prints one). `--decide approve|reject` decides an escalation at once, which is the only way to decide a `--adapter fake` run, since the fake's state lives in that process. The tests use the fake adapter, a real event log, scripted agent turns and the gates' recordings, and never call a model.
+
 ## Layout
 
 | Folder | What's in it |
@@ -133,9 +158,9 @@ Channel3 needs `FIREWALL_CHANNEL3_API_KEY` (see `.env.example`) and its host all
 | `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
 | `packages/arena` | The simulated marketplace: a fictional catalog, seeded benign and attack scenarios, what each request means, and whether a checkout fell for an attack |
 | `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
-| `packages/agent` | The shopping agent: its loop, its tools, its checkout and the command that runs it on a scenario |
+| `packages/agent` | The shopping agent: its loop, its tools, its checkout, and the commands that run a scenario through the firewall and decide an escalation |
 | `packages/mandate` | The mandate: its schema, the builder (one model call), confirmation on the command line, the lock and its hash |
-| `packages/firewall` | The review tree's gates and their shared result type; so far Gate 0, deterministic policy, Gate 1, the quarantined extractor, and Gate 2, the intent auditor |
+| `packages/firewall` | The review tree: Gate 0, deterministic policy, Gate 1, the quarantined extractor, Gate 2, the intent auditor, their shared result type, and enforcement of the verdict |
 | `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
 | `docs/` | The plan |
 

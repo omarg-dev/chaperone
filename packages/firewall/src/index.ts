@@ -1,6 +1,7 @@
 export * from "./auditor.js";
 export * from "./comparables.js";
 export * from "./crosscheck.js";
+export * from "./enforce.js";
 export * from "./extractor.js";
 export * from "./facts.js";
 export * from "./gate.js";
@@ -11,6 +12,7 @@ export * from "./gate2-verdict.js";
 export * from "./market.js";
 export * from "./policy.js";
 export * from "./refine.js";
+export * from "./review.js";
 export * from "./reviewer-view.js";
 export * from "./sanitize.js";
 export * from "./sources.js";
