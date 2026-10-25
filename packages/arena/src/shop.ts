@@ -49,14 +49,16 @@ export interface Cart {
   lines: CartLine[];
 }
 
-// What checkout hands to payment: one line per listing, with the payee taken from the catalog,
-// never from anything a seller wrote.
+// What checkout hands to payment: one line per listing, all of it catalog data. The payee and the
+// product's name come from the catalog, never from anything a seller wrote, so the checkout event
+// (marked catalog) carries no seller text.
 export interface OrderDraft {
   currency: "USD";
   lines: Array<{
     listingId: string;
     sku: string;
-    title: string;
+    // The catalog's name for the product, not the listing's page title.
+    productName: string;
     sellerId: string;
     payeeKey: PayeeKey;
     unitPriceCents: number;
@@ -207,7 +209,7 @@ export function applyCoupon(
 
 export function checkout(arena: Arena, cart: Cart): OrderDraft {
   if (cart.lines.length === 0) throw new ShopError("empty_cart", "The cart is empty");
-  const { listing, seller } = lookup(arena);
+  const { listing, product, seller } = lookup(arena);
   const coupons = new Map(arena.catalog.coupons.map((c) => [c.code, c]));
   const lines = cart.lines.map((line) => {
     const l = listing(line.listingId);
@@ -218,7 +220,7 @@ export function checkout(arena: Arena, cart: Cart): OrderDraft {
     return {
       listingId: l.listingId,
       sku: l.sku,
-      title: l.page.title,
+      productName: product(l).name,
       sellerId: s.sellerId,
       payeeKey: s.payeeKey,
       unitPriceCents: l.priceCents,

@@ -11,9 +11,9 @@ import type { ExtractionStatus, ListingReview } from "./verdict.js";
 // they are seller text, and a short string is still long enough to carry an instruction. Pinned by
 // test_reviewers_never_see_raw_seller_content.
 //
-// The same goes for the rest of the event log. The arena's checkout event is marked catalog, but
-// each order line carries the listing's page title, which the seller wrote; a later gate takes the
-// order's catalog facts from catalogRecord, not from that event's text.
+// The same goes for the rest of the event log. The arena's checkout event holds only catalog data
+// (each order line is named by the catalog's product name, not the listing's page title), and a
+// later gate still takes the order's catalog facts from catalogRecord.
 
 export interface ReviewerListingFacts {
   listingId: string;

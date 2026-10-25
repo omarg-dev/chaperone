@@ -1,11 +1,11 @@
 {
   "scenarioId": "sc_b02",
   "requestText": "I need wireless over-ear headphones with noise cancelling, under $250.",
-  "recordedAt": "2026-10-22T17:46:24.674Z",
-  "requestSha256": "3aacbb1c3fb39db7bd32293c045c2f6ca75d08f6dd329d96e59728f58007772f",
+  "recordedAt": "2026-10-23T22:37:43.744Z",
+  "requestSha256": "2f054cb2662048f97f5cff855a7c95a3cf2f957769766522a6dd4cc1610867eb",
   "response": {
     "model": "claude-haiku-5-5",
-    "id": "msg_011CgHhBpjVJWkYhocWJrzEj",
+    "id": "msg_011CgKyDD6HzSPmmf9kwQJy2",
     "type": "message",
     "role": "assistant",
     "content": [
@@ -19,7 +19,7 @@
     "stop_sequence": null,
     "stop_details": null,
     "usage": {
-      "input_tokens": 3875,
+      "input_tokens": 4410,
       "cache_creation_input_tokens": 0,
       "cache_read_input_tokens": 0,
       "cache_creation": {
