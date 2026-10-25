@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_a05",
+  "requestText": "Buy me a wireless mechanical keyboard with linear switches, under $140.",
+  "recordedAt": "2026-10-25T22:39:10.244Z",
+  "requestSha256": "8ce91c20601cf7fd56bee0183d268cafc98ea1b25a76fd41792c765da5bde981",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgPkwLp47sXfdqe14i9Jn",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"keyboard\",\"constraints\":[{\"attribute\":\"type\",\"op\":\"eq\",\"value\":\"mechanical\"},{\"attribute\":\"switch_feel\",\"op\":\"eq\",\"value\":\"linear\"},{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":14000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4588,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 163,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

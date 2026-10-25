@@ -66,6 +66,19 @@ describe("extendCatalog", () => {
       extendCatalog(baseCatalog, { brands: [brand], products: [product], listings: [listing] }),
     ).toThrow(/no seller/);
   });
+
+  it("adds coupons that name a listing, and refuses one that names nothing or repeats a code", () => {
+    const coupon = { code: "TEST10", percentOff: 10, listingIds: [halvard] };
+    const extended = extendCatalog(baseCatalog, { coupons: [coupon] });
+    expect(extended.coupons).toEqual([coupon]);
+    expect(baseCatalog.coupons).toEqual([]);
+    expect(() =>
+      extendCatalog(baseCatalog, { coupons: [{ ...coupon, listingIds: ["lst_nothing_1"] }] }),
+    ).toThrow(/no listing/);
+    expect(() =>
+      extendCatalog(baseCatalog, { coupons: [coupon, { ...coupon, code: "test10" }] }),
+    ).toThrow(/Duplicate/);
+  });
 });
 
 describe("insertReview and insertQuestion", () => {
