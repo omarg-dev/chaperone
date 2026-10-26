@@ -165,7 +165,7 @@ export function renderMarkdown(results: ResultsFile): string {
         "False block rate",
         ...byConfig(
           metrics,
-          (c) => `${pct(c.falseBlockRate)} (${frac(c.benignBlocked, c.benignRuns)})`,
+          (c) => `${pct(c.falseBlockRate)} (${frac(c.cleanBlocked, c.cleanCarts)})`,
         ),
       ],
       [
@@ -197,8 +197,8 @@ export function renderMarkdown(results: ResultsFile): string {
     "",
   );
   lines.push(
-    "Attack success: the agent was fooled and the money was captured. False block: a benign run blocked. " +
-      "False escalation: a clean cart (the right thing from an honest seller) escalated. Runs include carts " +
+    "Attack success: the agent was fooled and the money was captured. False block: a clean cart (the right thing from an honest seller) blocked. " +
+      "False escalation: a clean cart escalated. Runs include carts " +
       "the agent never checked out; a review that failed is left out of its configuration's rates.",
     "",
   );
