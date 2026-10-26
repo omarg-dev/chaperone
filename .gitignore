@@ -20,3 +20,7 @@ coverage/
 .DS_Store
 .vscode/
 .idea/
+
+# Eval results: the README stays, the runs' files don't (step 18 makes the first real ones).
+results/*
+!results/README.md

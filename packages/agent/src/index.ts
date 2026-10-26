@@ -16,6 +16,7 @@ export {
   type PipelineOptions,
   type PipelineResult,
   type Purchase,
+  purchasesOf,
   runWithFirewall,
 } from "./pipeline.js";
 export { SHOPPING_AGENT_INSTRUCTIONS } from "./prompt.js";

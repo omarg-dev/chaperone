@@ -1,0 +1,25 @@
+{
+  "name": "@firewall/eval",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit -p .",
+    "run-matrix": "tsx --env-file-if-exists=../../.env scripts/run-matrix.ts"
+  },
+  "dependencies": {
+    "@firewall/agent": "workspace:*",
+    "@firewall/arena": "workspace:*",
+    "@firewall/events": "workspace:*",
+    "@firewall/firewall": "workspace:*",
+    "@firewall/mandate": "workspace:*",
+    "@firewall/payments": "workspace:*",
+    "@firewall/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "ai": "7.0.134",
+    "tsx": "4.23.15"
+  }
+}
