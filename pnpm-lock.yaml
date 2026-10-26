@@ -92,6 +92,37 @@ importers:
         specifier: workspace:*
         version: link:../events
 
+  packages/eval:
+    dependencies:
+      '@firewall/agent':
+        specifier: workspace:*
+        version: link:../agent
+      '@firewall/arena':
+        specifier: workspace:*
+        version: link:../arena
+      '@firewall/events':
+        specifier: workspace:*
+        version: link:../events
+      '@firewall/firewall':
+        specifier: workspace:*
+        version: link:../firewall
+      '@firewall/mandate':
+        specifier: workspace:*
+        version: link:../mandate
+      '@firewall/payments':
+        specifier: workspace:*
+        version: link:../payments
+      '@firewall/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+    devDependencies:
+      ai:
+        specifier: 7.0.134
+        version: 7.0.134(zod@4.6.7)
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
+
   packages/events:
     dependencies:
       better-sqlite3:
