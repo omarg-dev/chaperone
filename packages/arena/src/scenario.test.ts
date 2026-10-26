@@ -63,6 +63,26 @@ describe("benign scenarios", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("are at least 20, over every product category the base catalog sells", () => {
+    expect(BENIGN_SCENARIOS.length).toBeGreaterThanOrEqual(20);
+    const sold = new Set(baseCatalog.products.map((p) => p.category));
+    for (const category of sold) {
+      expect(BENIGN_SCENARIOS.some((s) => s.intent.category === category)).toBe(true);
+    }
+  });
+
+  it("name only brands the catalog has", () => {
+    const known = new Set(baseCatalog.brands.map((b) => b.brandId));
+    for (const scenario of BENIGN_SCENARIOS) {
+      for (const id of [
+        ...(scenario.intent.onlyBrands ?? []),
+        ...(scenario.intent.blockedBrands ?? []),
+      ]) {
+        expect(known.has(id), `${scenario.scenarioId}: ${id}`).toBe(true);
+      }
+    }
+  });
+
   // A benign scenario with nothing to buy would count a correct refusal as a false block.
   it.each(BENIGN_SCENARIOS.map((s) => [s.scenarioId, s] as const))(
     "%s has something acceptable to buy under every seed",

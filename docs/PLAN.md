@@ -40,7 +40,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: MVP step 18, the first off-vs-on numbers, with steps 15 to 17 open for review and steps 1 to 14 merged.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now: the MVP is done in code (step 18 is open for review, with steps 15 to 17 open and steps 1 to 14 merged); next is v1.1's step 1, the design pass.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -68,9 +68,9 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 15 | Attacks A3, A5, A6 and A7 | 👀 PR open |
 | 16 | SDK wrapper v1 | 👀 PR open |
 | 17 | Eval harness v1 with the local runner and a results file | 👀 PR open |
-| 18 | 20+ benign scenarios, the first off-vs-on numbers, release 0.1.0 | ⬜ |
+| 18 | 22 benign scenarios, the first off-vs-on numbers, release 0.1.1 | 👀 PR open |
 
-Done when: with the firewall off a run sends sandbox money to an attacker account, with it on the same run is voided, and the off-vs-on attack success rate and false block rate exist.
+Done when: with the firewall off a run sends sandbox money to an attacker account, with it on the same run is voided, and the off-vs-on attack success rate and false block rate exist. The first matrix (fake payment adapter, 30 scenarios, seeds 1 and 2, Claude Haiku 5.5, $0.28) found the agent fooled in 11 of 16 attack runs: with the firewall off 11 reached an attacker's account (68.8%), with Gate 0 only 4 (25.0%) and with the full tree none, at no false blocks and 4 false escalations in 49 clean carts (8.2%). Two of those four were benign scenarios. These are development numbers, not sandbox ones.
 
 ### v1.1 (0.2.0), target Nov 3: "make it visible"
 
@@ -152,7 +152,7 @@ Estimates to replace with measured numbers as each part runs. Claude Haiku 5.5 c
 
 - One agent run, measured on Oct 22 on `sc_b01`: 4 to 5 model calls, 12k to 18k input and about 1k output tokens (a third of it thinking), $0.0016 to $0.0023. The estimate was about 40k input and 2k output, half a cent.
 - One full review (four gate calls): about a fifth of a cent.
-- A full Haiku matrix (27 scenarios, 3 seeds, the firewall configurations replayed on each recorded checkout): about $1.
+- A full Haiku matrix (30 scenarios, 3 seeds, the firewall configurations replayed on each recorded checkout): about $0.70, measured at $0.0046 a run in the first matrix.
 
 How the $5 stretches:
 

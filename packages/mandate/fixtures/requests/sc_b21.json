@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b21",
+  "requestText": "A wireless mouse with a sensor of at least 20000 dpi, under $100.",
+  "recordedAt": "2026-10-26T00:11:43.191Z",
+  "requestSha256": "112f0aee91a4f9883b72f33029c4dc4696fd5277914a8e673e74208e86b104d0",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgPszmzY2E7huf752vstm",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"mouse\",\"constraints\":[{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true},{\"attribute\":\"dpi\",\"op\":\"gte\",\"value\":20000}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":10000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4589,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 134,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

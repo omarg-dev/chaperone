@@ -7,8 +7,8 @@ import type { Constraint, MandateTerms } from "./mandate.js";
 // purchases the person didn't want: a hole the gates can't see), or different (it asks for
 // something else, which is both).
 //
-// The Intent has no brand field: acceptableListings counts only reputable brands, so the intent's
-// brand policy is "any reputable brand, none ruled out". It allows no extras either.
+// An Intent that names no brands means "any reputable brand, none ruled out"; onlyBrands and
+// blockedBrands say otherwise. It allows no extras either.
 
 export type Direction = "same" | "stricter" | "looser" | "different";
 
@@ -65,13 +65,27 @@ export function compareWithIntent(mandate: MandateTerms, intent: Intent): Accura
   }
 
   const { mode, listed, blocked } = mandate.brandPolicy;
+  if (intent.onlyBrands) {
+    add(
+      "brandPolicy.mode",
+      mode === "listed_only" ? compareSets(intent.onlyBrands, listed, "narrower") : "looser",
+      { mode: "listed_only", listed: intent.onlyBrands },
+      mode === "listed_only" ? { mode, listed } : mode,
+    );
+  } else {
+    add(
+      "brandPolicy.mode",
+      mode === "any_reputable" ? "same" : mode === "listed_only" ? "stricter" : "looser",
+      "any_reputable",
+      mode === "listed_only" ? { mode, listed } : mode,
+    );
+  }
   add(
-    "brandPolicy.mode",
-    mode === "any_reputable" ? "same" : mode === "listed_only" ? "stricter" : "looser",
-    "any_reputable",
-    mode === "listed_only" ? { mode, listed } : mode,
+    "brandPolicy.blocked",
+    compareSets(intent.blockedBrands ?? [], blocked, "wider"),
+    intent.blockedBrands ?? [],
+    blocked,
   );
-  add("brandPolicy.blocked", blocked.length === 0 ? "same" : "stricter", [], blocked);
   add(
     "allowedExtras",
     mandate.allowedExtras.length === 0 ? "same" : "looser",
@@ -116,4 +130,20 @@ function compareConstraints(wanted: AttributeConstraint[], asked: Constraint[]):
     : unique.has("stricter")
       ? "stricter"
       : "looser";
+}
+
+// Two sets of brand IDs. For a list of the only brands allowed a smaller set is stricter; for a
+// list of ruled-out brands a bigger one is. A set that is neither inside nor around the wanted
+// one asks for something else.
+function compareSets(
+  wanted: string[],
+  asked: string[],
+  stricterWhen: "narrower" | "wider",
+): Direction {
+  const missing = wanted.filter((id) => !asked.includes(id));
+  const extra = asked.filter((id) => !wanted.includes(id));
+  if (missing.length === 0 && extra.length === 0) return "same";
+  if (missing.length > 0 && extra.length > 0) return "different";
+  const wider = extra.length > 0;
+  return wider === (stricterWhen === "wider") ? "stricter" : "looser";
 }

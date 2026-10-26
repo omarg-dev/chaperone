@@ -49,6 +49,15 @@ describe("productMatches", () => {
     expect(productMatches(light(60), mouse)).toBe(false);
   });
 
+  it("needs one of the brands the person named, and none they ruled out", () => {
+    const onlyA = { ...tactileUnder120, onlyBrands: ["brand_a"] };
+    expect(productMatches(onlyA, keyboard("k1", "tactile", "brand_a"))).toBe(true);
+    expect(productMatches(onlyA, keyboard("k1", "tactile", "brand_b"))).toBe(false);
+    const notB = { ...tactileUnder120, blockedBrands: ["brand_b"] };
+    expect(productMatches(notB, keyboard("k1", "tactile", "brand_a"))).toBe(true);
+    expect(productMatches(notB, keyboard("k1", "tactile", "brand_b"))).toBe(false);
+  });
+
   it("fails a constraint on an attribute the product doesn't have", () => {
     const intent: Intent = {
       ...tactileUnder120,
