@@ -150,6 +150,78 @@ pnpm --filter @firewall/agent decide-run <runId> approve                        
 
 It needs `FIREWALL_ANTHROPIC_API_KEY` for the agent, the mandate draft and the gates (about half a cent to a cent for a run), and for `--adapter sandbox` the sandbox variables and the buyer's saved wallet in `SANDBOX_BUYER_VAULT_ID` (`pnpm --filter @firewall/payments save-wallet` prints one). `--decide approve|reject` decides an escalation at once, which is the only way to decide a `--adapter fake` run, since the fake's state lives in that process. The tests use the fake adapter, a real event log, scripted agent turns and the gates' recordings, and never call a model.
 
+## Protect your agent
+
+`@firewall/sdk` (`packages/sdk`) puts the firewall in front of your own shopping agent: you give it your agent's tools, and the payment tool holds the cart instead of paying for it. It is a workspace package for now, not published. In this repo, with Node 22 and `pnpm install` done, this runs in about a minute (offline, with the in-memory payment fake and a scripted model standing in for yours) and is the same file as `packages/sdk/examples/protect-your-agent.ts`, which a test runs:
+
+```ts
+import { createArenaService } from "@firewall/arena";
+import { openEventLog } from "@firewall/events";
+import { createFakePaymentAdapter } from "@firewall/payments";
+import { arenaSource, createFirewall } from "@firewall/sdk";
+import { generateText, isStepCount, tool } from "ai";
+import { z } from "zod";
+import { attackerListing, buyingModel, confirmedMandate } from "./demo.js";
+
+const log = openEventLog({ path: "firewall-demo.db" });
+const arena = createArenaService({ log });
+const run = arena.start("sc_a01", "1"); // the marketplace your agent shops in
+
+const firewall = createFirewall({
+  log,
+  source: arenaSource({ arena, log, runId: run.runId }),
+  payments: createFakePaymentAdapter(),
+  vaultId: "FAKE-WALLET",
+  mandate: confirmedMandate("sc_a01"), // what the person confirmed before the agent started
+  config: "gate0", // the policy rules only; "full" adds the model gates
+});
+
+// Your agent's tools, as you already have them. `checkout` is the one that pays.
+const tools = firewall.wrap({
+  add_to_cart: tool({
+    description: "Add a listing to the cart.",
+    inputSchema: z.object({ listingId: z.string(), quantity: z.number().int().positive() }),
+    execute: ({ listingId, quantity }) => arena.addToCart(run.runId, listingId, quantity),
+  }),
+  checkout: tool({
+    description: "Check out and pay with the saved wallet.",
+    inputSchema: z.object({}),
+    execute: () => ({ status: "paid" }), // your pay-now code; the firewall never calls it
+  }),
+});
+
+// Your agent loop, as before. This model buys from an attacker's store, as a steered one would.
+await generateText({
+  model: buyingModel(attackerListing("sc_a01", "1")),
+  tools,
+  prompt: run.scenario.request,
+  stopWhen: [isStepCount(10), () => firewall.held !== null],
+});
+
+// Review the held cart and capture it, void it, or leave it for the person.
+const settled = await firewall.settle();
+console.log(`verdict: ${settled?.review.verdict}, money: ${settled?.enforcement.money}`);
+log.close();
+```
+
+```sh
+pnpm --filter @firewall/sdk example   # verdict: block, money: voided
+```
+
+What it does:
+
+- `createFirewall(options)` takes the event log, the catalog source (below), the payment adapter and the buyer's wallet, the mandate the person confirmed (or `{ builder, person }` to build it in the run), and `config`: `off`, `gate0` or `full` (`full` also needs `gates`, the model gates built from your own settings; the SDK never creates a model client from the environment).
+- `firewall.wrap(tools)` returns the same tools with each payment tool replaced by a guarded one. The guarded tool never captures and never calls the original `execute`: it creates the order and authorizes it against the wallet, and tells the agent the order is placed and pending review. The order held is the cart the catalog source reports, not the amounts in the agent's arguments, which are recorded with the call. Every other tool is passed through as it was.
+- `firewall.settle()` reviews the held cart and acts on the verdict: approve captures and pays each seller, block voids, escalate leaves the hold for a person (`firewall.decide("approve" | "reject")`). It returns `null` when nothing was held, and it reviews once however many times it is asked. `review()` and `enforce()` are its two halves.
+
+**When the review runs.** After the agent has finished, never inside the tool call. Gate 3 will audit the agent's whole trajectory, which isn't there to read until the agent stops; the tool answers the same whatever the cart is, so an agent steered by an attacker learns nothing about the gates by probing the checkout; and the model gates take seconds. The hold lasts days, so nothing is lost by waiting. Stop your agent loop at the checkout, as the example does, or let it run on: the review reads the event log either way.
+
+**Which tools are payment tools.** By default `checkout` (ours) and `create_order` and `pay_order` (the payment platform's agent toolkit, whose order tools capture at once and can't hold money). Name your own with `paymentTools: ["buy_now"]`; an explicit list replaces the defaults. **A payment tool that isn't in the list is not guarded, and it pays at once.** Check the names before you rely on it. The toolkit is not installed in this repo (it is heavy and built for AI SDK 4), so its tools are tested here with stand-in tools of the same names and input shapes, not with the real package.
+
+**Scope of v1.** The gates need two things the agent can't be trusted to report: the merchant's catalog (what each listing really is, costs and is sold by) and the page content the agent was shown. The arena provides both, and writes them to the event log as it serves them. So v1 protects agents shopping in the arena (`arenaSource`). Protecting an agent in a real marketplace needs the same two things from that merchant, behind the `CatalogSource` interface (`packages/sdk/src/source.ts`): that is future work, and the SDK doesn't pretend otherwise. The SDK also doesn't write the agent's own model turns and tool calls for the tools it passes through; `runAgent` in `packages/agent` does, and Gate 3 will need them.
+
+Our own shopping agent goes through the same two calls: `runAgent` wraps its tools with `firewall.wrap`, and the pipeline settles with `firewall.settle()`, so the SDK is not a second code path.
+
 ## Layout
 
 | Folder | What's in it |
@@ -161,7 +233,8 @@ It needs `FIREWALL_ANTHROPIC_API_KEY` for the agent, the mandate draft and the g
 | `packages/agent` | The shopping agent: its loop, its tools, its checkout, and the commands that run a scenario through the firewall and decide an escalation |
 | `packages/mandate` | The mandate: its schema, the builder (one model call), confirmation on the command line, the lock and its hash |
 | `packages/firewall` | The review tree: Gate 0, deterministic policy, Gate 1, the quarantined extractor, Gate 2, the intent auditor, their shared result type, and enforcement of the verdict |
-| `packages/` | Other libraries the apps share (the firewall, the SDK and so on), added as each step needs them |
+| `packages/sdk` | The SDK: `createFirewall` and `firewall.wrap` put the firewall in front of an agent's payment tools, with the arena as its catalog source |
+| `packages/` | Other libraries the apps share, added as each step needs them |
 | `docs/` | The plan |
 
 ## Branches

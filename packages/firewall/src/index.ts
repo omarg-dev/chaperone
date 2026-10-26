@@ -11,6 +11,7 @@ export * from "./gate2.js";
 export * from "./gate2-verdict.js";
 export * from "./market.js";
 export * from "./policy.js";
+export * from "./recorded.js";
 export * from "./refine.js";
 export * from "./review.js";
 export * from "./reviewer-view.js";

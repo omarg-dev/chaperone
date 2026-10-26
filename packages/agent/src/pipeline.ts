@@ -6,29 +6,19 @@ import {
   type Seller,
 } from "@firewall/arena";
 import type { EventLog } from "@firewall/events";
-import {
-  type Enforcement,
-  enforceReview,
-  type FirewallConfig,
-  type ReviewGates,
-  type ReviewRun,
-  runReview,
-} from "@firewall/firewall";
-import {
-  acceptsDraftAsIs,
-  arenaVocabulary,
-  buildMandate,
-  type LockedMandate,
-  type MandateBuilder,
-} from "@firewall/mandate";
+import type { Enforcement, FirewallConfig, ReviewGates, ReviewRun } from "@firewall/firewall";
+import { acceptsDraftAsIs, type LockedMandate, type MandateBuilder } from "@firewall/mandate";
 import type { PaymentAdapter } from "@firewall/payments";
+import type { Firewall } from "@firewall/sdk";
 import type { AgentColumn } from "./columns.js";
 import { type RunAgentOptions, type RunOutcome, runAgent } from "./run.js";
 
 // One whole run, in the order the product works: the person's request becomes a confirmed mandate,
 // the agent shops against it and checks out (the order is held, not captured), the review tree
 // reads the checkout under the chosen firewall configuration, and enforcement does what the verdict
-// says with the money. Every step lands in the same run's event log.
+// says with the money. Every step lands in the same run's event log. The firewall is the SDK's
+// (@firewall/sdk): the agent's tools go through its `wrap` and the run is settled with its `settle`,
+// the same two calls a developer's own agent makes.
 //
 // The person is simulated by `acceptsDraftAsIs`: the mandate is whatever the builder drafted from
 // the scenario's request, confirmed unchanged, which is what the eval's person does.
@@ -82,12 +72,11 @@ export interface PipelineResult {
 }
 
 export async function runWithFirewall(options: PipelineOptions): Promise<PipelineResult> {
-  const { arena, log } = options;
-  let mandate: LockedMandate | null = null;
-  let mandateUsd = 0;
+  const { arena } = options;
+  const started: { firewall?: Firewall } = {};
   const agent = await runAgent({
     arena,
-    log,
+    log: options.log,
     payments: options.payments,
     vaultId: options.vaultId,
     column: options.column,
@@ -95,20 +84,23 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
     scenarioId: options.scenarioId,
     seed: options.seed,
     ...(options.limits && { limits: options.limits }),
-    beforeShopping: async ({ runId, scenarioId, request }) => {
-      // The vocabulary is the base catalog's: a mandate is drafted from the request alone, before
-      // the agent shops, so it never depends on what a scenario injects.
-      const built = await buildMandate(
-        { log, runId, scenarioId, vocabulary: arenaVocabulary() },
-        { builder: options.builder, requestText: request, person: acceptsDraftAsIs },
-      );
-      mandateUsd = built.drafted.result.costUsd;
-      if (built.outcome !== "locked") {
-        throw new Error(`The mandate wasn't locked: ${built.reason ?? "the draft was rejected"}`);
-      }
-      mandate = built.mandate;
+    firewall: {
+      config: options.firewall,
+      ...(options.gates && { gates: options.gates }),
+      ...(options.now && { now: options.now }),
+      // The vocabulary is the base catalog's (the SDK's default for a built mandate): a mandate is
+      // drafted from the request alone, before the agent shops, so it never depends on what a
+      // scenario injects.
+      mandate: { builder: options.builder, person: acceptsDraftAsIs },
+    },
+    beforeShopping: ({ firewall }) => {
+      started.firewall = firewall;
     },
   });
+  const { firewall } = started;
+  if (!firewall) throw new Error("The agent run never started its firewall");
+  const mandate: LockedMandate | null = await firewall.ready();
+  const mandateUsd = firewall.mandateCostUsd;
 
   const run = arena.get(agent.runId);
   const catalog = run.arena.catalog;
@@ -127,22 +119,10 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
     };
   });
 
-  let review: ReviewRun | null = null;
-  let enforcement: Enforcement | null = null;
-  if (agent.status === "checked_out") {
-    review = await runReview(agent.runId, {
-      log,
-      config: options.firewall,
-      ...(options.firewall === "full" && {
-        gates: (options.gates ?? missingGates)(catalog),
-      }),
-    });
-    enforcement = await enforceReview(agent.runId, {
-      log,
-      payments: options.payments,
-      ...(options.now && { now: options.now }),
-    });
-  }
+  // Nothing to review when the agent never checked out.
+  const settled = agent.status === "checked_out" ? await firewall.settle() : null;
+  const review: ReviewRun | null = settled?.review ?? null;
+  const enforcement: Enforcement | null = settled?.enforcement ?? null;
 
   const attackerKeys = new Set<string>(
     catalog.sellers.filter((s) => s.role === "attacker").map((s) => s.payeeKey),
@@ -169,7 +149,3 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
     },
   };
 }
-
-const missingGates = (): ReviewGates => {
-  throw new Error('The "full" firewall needs its model gates (the `gates` option)');
-};

@@ -1,22 +1,12 @@
-import { type ArenaService, type OrderDraft, ShopError } from "@firewall/arena";
-import type { Event, EventLog, Provenance } from "@firewall/events";
-import { type PaymentAdapter, PaymentError, recordPayments } from "@firewall/payments";
+import { type ArenaService, ShopError } from "@firewall/arena";
+import type { EventLog, Provenance } from "@firewall/events";
 import { tool } from "ai";
 import { z } from "zod";
-import { orderInputFromDraft } from "./order.js";
 
 // The agent's view of the marketplace. Every tool calls the arena service in-process, so each call
 // lands in the event log with its lane and provenance, and each names the agent's own tool_call
 // event as its parent. What a tool returns is what the arena served, page content included and
 // left as it is: sanitising it is the firewall's job, not the shopper's.
-
-export interface PlacedOrder {
-  orderId: string;
-  authorizationId: string;
-  amountCents: number;
-  // The authorization's status as the platform reported it: CREATED is a hold.
-  status: string;
-}
 
 // One agent's run: what its tools need, and what they leave behind.
 export interface RunSession {
@@ -24,25 +14,15 @@ export interface RunSession {
   scenarioId: string;
   arena: ArenaService;
   log: EventLog;
-  // Wrapped in recordPayments by the checkout tool, so every call is on the payments lane.
-  payments: PaymentAdapter;
-  // The buyer's saved wallet, which the hold is authorized against.
-  vaultId: string;
   // The model turn that asked for the tool calls now running, set by the turn recorder.
   currentTurnId: string;
-  order: PlacedOrder | null;
 }
 
 // A refusal the agent is told about and can act on, as a real shop would show it.
-const isRefusal = (error: unknown): error is Error =>
-  error instanceof ShopError || error instanceof PaymentError;
+const isRefusal = (error: unknown): error is Error => error instanceof ShopError;
 
 export function createShoppingTools(session: RunSession) {
   const { log, arena, runId, scenarioId } = session;
-  // Set before the first await, so two checkouts asked for in one turn can't both go through. A
-  // checkout that fails leaves it free to try again.
-  let checkingOut = false;
-
   const append = (type: string, provenance: Provenance, parentId: string, payload: unknown) =>
     log.append({ runId, scenarioId, lane: "agent", type, provenance, parentId, payload });
 
@@ -71,49 +51,6 @@ export function createShoppingTools(session: RunSession) {
       if (!isRefusal(error)) throw error;
       return output;
     }
-  }
-
-  // Runs one synchronous arena call and hands back the event it wrote, which the payment calls
-  // that follow from it point at.
-  function withArenaEvent<T>(parentId: string, call: () => T): { result: T; event: Event } {
-    let event: Event | undefined;
-    const stop = log.subscribe((e) => {
-      if (e.lane === "arena" && e.parentId === parentId) event = e;
-    });
-    try {
-      const result = call();
-      if (!event) throw new Error("The arena call wrote no event");
-      return { result, event };
-    } finally {
-      stop();
-    }
-  }
-
-  // The arena's draft becomes one order, held against the buyer's wallet. Every payment call
-  // points at the arena's checkout event, which points at the agent's tool call.
-  async function placeOrder(
-    callEventId: string,
-  ): Promise<{ placed: PlacedOrder; draft: OrderDraft }> {
-    const { result: draft, event } = withArenaEvent(callEventId, () =>
-      arena.checkout(runId, { parentId: callEventId }),
-    );
-    const payments = recordPayments(session.payments, log, () => ({
-      runId,
-      scenarioId,
-      parentId: event.eventId,
-    }));
-    const order = await payments.createOrder(
-      orderInputFromDraft(draft, { runId, invoiceId: `inv_${event.eventId}` }),
-    );
-    // Holds the cart; capturing it, or not, is the review's decision.
-    const hold = await payments.authorizeOrder(order.orderId, { vaultId: session.vaultId });
-    const placed = {
-      orderId: order.orderId,
-      authorizationId: hold.authorizationId,
-      amountCents: hold.amountCents,
-      status: hold.status,
-    };
-    return { placed, draft };
   }
 
   const listingId = z.string().describe("The listing's ID, as search returns it");
@@ -189,37 +126,17 @@ export function createShoppingTools(session: RunSession) {
         ),
     }),
 
+    // The "pay now" tool of an agent that isn't protected. It is never run: `firewall.wrap`
+    // replaces its execute with one that holds the cart, and an agent given this tool unwrapped
+    // fails here instead of paying.
     checkout: tool({
       description:
         "Check out: places one order for everything in the cart and pays with the person's saved " +
         "wallet. Do this once, when the cart holds what they asked for.",
       inputSchema: z.object({}),
-      execute: (input, { toolCallId }) =>
-        run("checkout", toolCallId, input, "system", async (parentId) => {
-          if (session.order) {
-            throw new ShopError("invalid", "An order has already been placed in this run");
-          }
-          if (checkingOut) throw new ShopError("invalid", "A checkout is already under way");
-          checkingOut = true;
-          let draft: OrderDraft;
-          try {
-            ({ placed: session.order, draft } = await placeOrder(parentId));
-          } finally {
-            checkingOut = false;
-          }
-          return {
-            status: "pending_review",
-            message: "Your order is placed and pending review.",
-            orderId: session.order.orderId,
-            totalCents: draft.totalCents,
-            lines: draft.lines.map((l) => ({
-              listingId: l.listingId,
-              productName: l.productName,
-              quantity: l.quantity,
-              totalCents: l.totalCents,
-            })),
-          };
-        }),
+      execute: (): unknown => {
+        throw new Error("The checkout tool must be wrapped by the firewall (firewall.wrap)");
+      },
     }),
   };
 }

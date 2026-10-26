@@ -40,7 +40,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: MVP step 15, attacks A3, A5, A6 and A7, with steps 9 to 14 open for review and steps 7 and 8 merged.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now: MVP step 17, the eval harness, with steps 15 and 16 open for review and steps 1 to 14 merged.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -66,7 +66,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 13 | Gate 2, intent auditor | 👀 PR open |
 | 14 | Review tree and enforcement: approve captures, block voids, escalate holds | 👀 PR open |
 | 15 | Attacks A3, A5, A6 and A7 | 👀 PR open |
-| 16 | SDK wrapper v1 | ⬜ |
+| 16 | SDK wrapper v1 | 👀 PR open |
 | 17 | Eval harness v1 with the local runner and a results file | ⬜ |
 | 18 | 20+ benign scenarios, the first off-vs-on numbers, release 0.1.0 | ⬜ |
 
