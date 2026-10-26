@@ -1,6 +1,6 @@
 # Eval results
 
-`pnpm --filter @firewall/eval run-matrix` writes its files here. They aren't committed (only this README is); the numbers that go in the video or the write-up are copied from a run against the real sandbox.
+`pnpm --filter @firewall/eval run-matrix` writes its files here. They aren't committed, apart from this README and the MVP's first matrix below; the numbers that go in the video or the write-up are copied from a run against the real sandbox.
 
 Each run writes three files, named `<date>T<time>-<adapter>-<column>`, for example `2026-10-26T1015-fake-claude-haiku-5-5`:
 

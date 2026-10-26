@@ -152,7 +152,7 @@ Estimates to replace with measured numbers as each part runs. Claude Haiku 5.5 c
 
 - One agent run, measured on Oct 22 on `sc_b01`: 4 to 5 model calls, 12k to 18k input and about 1k output tokens (a third of it thinking), $0.0016 to $0.0023. The estimate was about 40k input and 2k output, half a cent.
 - One full review (four gate calls): about a fifth of a cent.
-- A full Haiku matrix (27 scenarios, 3 seeds, the firewall configurations replayed on each recorded checkout): about $1.
+- A full Haiku matrix (30 scenarios, 3 seeds, the firewall configurations replayed on each recorded checkout): about $0.70, measured at $0.0046 a run in the first matrix.
 
 How the $5 stretches:
 
