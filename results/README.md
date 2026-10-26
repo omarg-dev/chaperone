@@ -10,6 +10,10 @@ Each run writes three files, named `<date>T<time>-<adapter>-<column>`, for examp
 | `<name>.md` | A short summary table of the same numbers |
 | `<name>.events.db` | One event log with every run's events; each cell's `run.runId` points into it |
 
+## The MVP's first matrix
+
+`2026-10-26T0012-fake-claude-haiku-5-5.json` and `.md` are the MVP's first matrix: all 30 scenarios (22 benign, 8 attack), seeds 1 and 2, the Claude Haiku 5.5 column, on the **fake** payment adapter. They are committed (with `git add -f`) to record where the numbers started. They are not sandbox results and are not for the video or the write-up. Gate 2 ran without the market price reference (no Channel3 key), so it checked prices against the marketplace only.
+
 ## Which payment adapter
 
 Every file states the payment adapter that produced it, in its name, in `meta.paymentAdapter` and at the top of the summary. `fake` is the in-memory stand-in for the payment platform: it moves no sandbox money, so its numbers are for development only. `sandbox` means the checkouts were held on the platform's sandbox. A fake result must never be shown as a sandbox one.
