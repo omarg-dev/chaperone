@@ -71,6 +71,23 @@ export interface PipelineResult {
   cost: { agentUsd: number; mandateUsd: number; reviewUsd: number; totalUsd: number };
 }
 
+// What an order draft bought, with the seller's side of each line (ground truth for the eval).
+export function purchasesOf(catalog: Catalog, order: OrderDraft | null): Purchase[] {
+  const sellers = new Map(catalog.sellers.map((s) => [s.sellerId, s]));
+  return (order?.lines ?? []).map((line) => {
+    const seller = sellers.get(line.sellerId);
+    return {
+      listingId: line.listingId,
+      productName: line.productName,
+      quantity: line.quantity,
+      totalCents: line.totalCents,
+      seller: seller?.name ?? line.sellerId,
+      payeeKey: line.payeeKey,
+      sellerRole: seller?.role ?? "honest",
+    };
+  });
+}
+
 export async function runWithFirewall(options: PipelineOptions): Promise<PipelineResult> {
   const { arena } = options;
   const started: { firewall?: Firewall } = {};
@@ -104,20 +121,8 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
 
   const run = arena.get(agent.runId);
   const catalog = run.arena.catalog;
-  const sellers = new Map(catalog.sellers.map((s) => [s.sellerId, s]));
   const order: OrderDraft | null = run.order;
-  const bought: Purchase[] = (order?.lines ?? []).map((line) => {
-    const seller = sellers.get(line.sellerId);
-    return {
-      listingId: line.listingId,
-      productName: line.productName,
-      quantity: line.quantity,
-      totalCents: line.totalCents,
-      seller: seller?.name ?? line.sellerId,
-      payeeKey: line.payeeKey,
-      sellerRole: seller?.role ?? "honest",
-    };
-  });
+  const bought = purchasesOf(catalog, order);
 
   // Nothing to review when the agent never checked out.
   const settled = agent.status === "checked_out" ? await firewall.settle() : null;
