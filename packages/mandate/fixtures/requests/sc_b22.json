@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b22",
+  "requestText": "I'd like noise-cancelling wireless earbuds, up to $275.",
+  "recordedAt": "2026-10-26T00:11:44.764Z",
+  "requestSha256": "2b203a9f50e73177b0d94967a948e5600231b6fd808b1dda1be163842985ed62",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgPszs3P7VsFNNVSpxq4u",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"headphones\",\"constraints\":[{\"attribute\":\"form\",\"op\":\"eq\",\"value\":\"in_ear\"},{\"attribute\":\"anc\",\"op\":\"eq\",\"value\":true},{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":27500,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4586,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 156,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

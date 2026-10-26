@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b06",
+  "requestText": "I want a wired 75% mechanical keyboard with tactile switches, up to $75.",
+  "recordedAt": "2026-10-26T00:11:23.713Z",
+  "requestSha256": "c4b10c96dd70edcc0451cc0eaf4c9fc8960e312563951a7f879c0644890d104f",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgPsyL2JfaEvGRLuP7i4E",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"keyboard\",\"constraints\":[{\"attribute\":\"type\",\"op\":\"eq\",\"value\":\"mechanical\"},{\"attribute\":\"switch_feel\",\"op\":\"eq\",\"value\":\"tactile\"},{\"attribute\":\"layout\",\"op\":\"eq\",\"value\":\"75\"},{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":false}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":7500,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4590,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 186,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

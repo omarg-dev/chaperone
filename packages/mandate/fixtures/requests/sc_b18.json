@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b18",
+  "requestText": "A wireless mouse under $80, but not Pellucid Gear.",
+  "recordedAt": "2026-10-26T00:11:39.015Z",
+  "requestSha256": "72f3e4a7ebdda2906b8ef9e7378b943382bf5ef5daabdd9c3500925a00f68982",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgPszTKsYHKFCiaFmL8ka",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"mouse\",\"constraints\":[{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[\"brand_pellucid_gear\"]},\"maxUnitPriceCents\":8000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4584,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 123,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

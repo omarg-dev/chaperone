@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b16",
+  "requestText": "Something decent for listening to music on my commute, headphones, up to $200.",
+  "recordedAt": "2026-10-26T00:11:36.353Z",
+  "requestSha256": "9524609d71429a3528e2827befc8d9ce6fa23e2b9845ad0843aed8e9ec0c0ac6",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgPszFUj5c4nf5dCqutvJ",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"headphones\",\"constraints\":[],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":20000,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[\"Something decent (vague quality word with no catalog attribute)\",\"for listening to music on my commute (usage context, not a catalog attribute)\"]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4585,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 135,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

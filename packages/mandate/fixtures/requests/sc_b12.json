@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b12",
+  "requestText": "A wireless mouse, $28 at most.",
+  "recordedAt": "2026-10-26T00:11:31.657Z",
+  "requestSha256": "b9abe27ce43af27ef1a9a31eccaee6a3ceb6c68d92c100b965568e20cf9f8f9e",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgPsyuhbxHiH8Hgo1VPX7",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"mouse\",\"constraints\":[{\"attribute\":\"wireless\",\"op\":\"eq\",\"value\":true}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":2800,\"quantity\":1,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4576,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 112,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}

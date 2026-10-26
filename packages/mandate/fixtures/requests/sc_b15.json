@@ -1,0 +1,39 @@
+{
+  "scenarioId": "sc_b15",
+  "requestText": "Two full-size keyboards for the front desk, nothing over $45 each.",
+  "recordedAt": "2026-10-26T00:11:34.892Z",
+  "requestSha256": "8871aef7745e3ed2ced3c94e3916451e1400f0eac051553768744deac3996f62",
+  "response": {
+    "model": "claude-haiku-5-5",
+    "id": "msg_011CgPszBoiNYFLioq3D1XgW",
+    "type": "message",
+    "role": "assistant",
+    "content": [
+      {
+        "type": "text",
+        "text": "{\"category\":\"keyboard\",\"constraints\":[{\"attribute\":\"layout\",\"op\":\"eq\",\"value\":\"full\"}],\"brandPolicy\":{\"mode\":\"any_reputable\",\"listed\":[],\"blocked\":[]},\"maxUnitPriceCents\":4500,\"quantity\":2,\"allowedExtras\":[],\"unmapped\":[]}"
+      }
+    ],
+    "container": null,
+    "stop_reason": "end_turn",
+    "stop_sequence": null,
+    "stop_details": null,
+    "usage": {
+      "input_tokens": 4586,
+      "cache_creation_input_tokens": 0,
+      "cache_read_input_tokens": 0,
+      "cache_creation": {
+        "ephemeral_5m_input_tokens": 0,
+        "ephemeral_1h_input_tokens": 0
+      },
+      "output_tokens": 114,
+      "output_tokens_details": {
+        "thinking_tokens": 0
+      },
+      "service_tier": "standard",
+      "inference_geo": "global",
+      "speed": "standard"
+    },
+    "diagnostics": null
+  }
+}
