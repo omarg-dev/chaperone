@@ -124,4 +124,52 @@ describe("compareWithIntent", () => {
       ).verdict,
     ).toBe("mixed");
   });
+
+  describe("when the person named brands", () => {
+    const named: Intent = {
+      ...intent,
+      onlyBrands: ["brand_a", "brand_b"],
+      blockedBrands: ["brand_x"],
+    };
+    const exact: MandateTerms = {
+      ...terms,
+      brandPolicy: { mode: "listed_only", listed: ["brand_b", "brand_a"], blocked: ["brand_x"] },
+    };
+    const against = (brandPolicy: MandateTerms["brandPolicy"]) =>
+      Object.fromEntries(
+        compareWithIntent({ ...exact, brandPolicy }, named)
+          .fields.filter((f) => f.direction !== "same")
+          .map((f) => [f.field, f.direction]),
+      );
+
+    it("calls the same brands, in any order, exact", () => {
+      expect(compareWithIntent(exact, named).exact).toBe(true);
+    });
+
+    it("calls fewer brands allowed or more ruled out stricter, and the reverse looser", () => {
+      expect(
+        against({ mode: "listed_only", listed: ["brand_a"], blocked: ["brand_x", "brand_y"] }),
+      ).toEqual({
+        "brandPolicy.mode": "stricter",
+        "brandPolicy.blocked": "stricter",
+      });
+      expect(against({ mode: "any_reputable", listed: [], blocked: [] })).toEqual({
+        "brandPolicy.mode": "looser",
+        "brandPolicy.blocked": "looser",
+      });
+      expect(
+        against({
+          mode: "listed_only",
+          listed: ["brand_a", "brand_b", "brand_c"],
+          blocked: ["brand_x"],
+        }),
+      ).toEqual({ "brandPolicy.mode": "looser" });
+    });
+
+    it("calls other brands than the ones named different", () => {
+      expect(against({ mode: "listed_only", listed: ["brand_c"], blocked: ["brand_x"] })).toEqual({
+        "brandPolicy.mode": "different",
+      });
+    });
+  });
 });

@@ -13,10 +13,16 @@ export interface Intent {
   constraints: AttributeConstraint[];
   maxUnitPriceCents: number;
   quantity: number;
+  // Brand IDs. Set only when the person named the brands they want, or ruled some out; left
+  // out, any reputable brand will do.
+  onlyBrands?: string[];
+  blockedBrands?: string[];
 }
 
 export function productMatches(intent: Intent, product: Product): boolean {
   if (product.category !== intent.category) return false;
+  if (intent.onlyBrands && !intent.onlyBrands.includes(product.brandId)) return false;
+  if (intent.blockedBrands?.includes(product.brandId)) return false;
   const attributes = product.attributes as unknown as Record<string, AttributeValue>;
   return intent.constraints.every(({ attribute, op, value }) => {
     const actual = attributes[attribute];
