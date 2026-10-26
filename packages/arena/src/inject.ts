@@ -2,6 +2,7 @@ import type {
   Brand,
   Catalog,
   Category,
+  Coupon,
   Listing,
   Product,
   QuestionAnswer,
@@ -20,6 +21,7 @@ export interface CatalogAdditions {
   sellers?: Seller[];
   products?: Product[];
   listings?: Listing[];
+  coupons?: Coupon[];
 }
 
 export function extendCatalog(catalog: Catalog, additions: CatalogAdditions): Catalog {
@@ -29,11 +31,13 @@ export function extendCatalog(catalog: Catalog, additions: CatalogAdditions): Ca
     sellers: [...catalog.sellers, ...(additions.sellers ?? [])],
     products: [...catalog.products, ...(additions.products ?? [])],
     listings: [...catalog.listings, ...(additions.listings ?? [])],
+    coupons: [...catalog.coupons, ...(additions.coupons ?? [])],
   };
   unique("brand", next.brands, (b) => b.brandId);
   unique("seller", next.sellers, (s) => s.sellerId);
   unique("product", next.products, (p) => p.sku);
   unique("listing", next.listings, (l) => l.listingId);
+  unique("coupon", next.coupons, (c) => c.code.toLowerCase());
   const brandIds = new Set(next.brands.map((b) => b.brandId));
   const sellerIds = new Set(next.sellers.map((s) => s.sellerId));
   const skus = new Set(next.products.map((p) => p.sku));
@@ -44,6 +48,12 @@ export function extendCatalog(catalog: Catalog, additions: CatalogAdditions): Ca
     if (!skus.has(l.sku)) throw new Error(`Listing "${l.listingId}" has no product "${l.sku}"`);
     if (!sellerIds.has(l.sellerId)) {
       throw new Error(`Listing "${l.listingId}" has no seller "${l.sellerId}"`);
+    }
+  }
+  const listingIds = new Set(next.listings.map((l) => l.listingId));
+  for (const c of additions.coupons ?? []) {
+    for (const id of c.listingIds) {
+      if (!listingIds.has(id)) throw new Error(`Coupon "${c.code}" names no listing "${id}"`);
     }
   }
   return next;

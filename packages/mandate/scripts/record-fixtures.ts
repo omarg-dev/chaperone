@@ -1,7 +1,10 @@
 // Records the builder's answer to every scenario's request (the attack scenarios' requests are the person's own, honest ones), once, against the live model,
 // and saves each response under fixtures/requests/ for the tests to replay.
 //
-//   pnpm --filter @firewall/mandate record-fixtures
+//   pnpm --filter @firewall/mandate record-fixtures [scenario ID ...]
+//
+// With scenario IDs it records only those, leaving the other recordings as they are; a new
+// scenario needs no more than that.
 //
 // Costs money: one Claude Haiku 5.5 call per benign scenario (a fraction of a cent in all). Needs
 // FIREWALL_ANTHROPIC_API_KEY. Re-run it only when the prompt, the schema or the scenarios change;
@@ -43,7 +46,14 @@ const builder = createMandateBuilder({
 mkdirSync(FIXTURES, { recursive: true });
 let totalCost = 0;
 let exact = 0;
-for (const scenario of SCENARIOS) {
+const only = process.argv.slice(2);
+const unknown = only.filter((id) => !SCENARIOS.some((s) => s.scenarioId === id));
+if (unknown.length > 0) {
+  console.error(`No scenario ${unknown.join(", ")}`);
+  process.exit(1);
+}
+const recording = SCENARIOS.filter((s) => only.length === 0 || only.includes(s.scenarioId));
+for (const scenario of recording) {
   lastBody = null;
   const save = () => {
     const fixture: RecordedResponse = {
@@ -93,4 +103,4 @@ for (const scenario of SCENARIOS) {
     process.exit(1);
   }
 }
-console.log(`\n${exact} of ${SCENARIOS.length} exactly right, $${totalCost.toFixed(6)} in all`);
+console.log(`\n${exact} of ${recording.length} exactly right, $${totalCost.toFixed(6)} in all`);
