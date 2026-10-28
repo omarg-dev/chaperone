@@ -133,5 +133,19 @@ describe("event routes", () => {
     await post("/arena/runs", { scenarioId: "sc_b02" });
     const runs = (await (await app.request("/events/runs")).json()) as { runId: string }[];
     expect(runs.map((r) => r.runId)).toEqual(["run_http"]);
+    expect(runs[0]).toMatchObject({ scenarioId: "sc_b02", verdict: null, decidedBy: null });
+  });
+
+  it("lists a run's verdict once it has been reviewed", async () => {
+    await post("/arena/runs", { scenarioId: "sc_b02" });
+    log.append({
+      runId: "run_http",
+      lane: "review",
+      type: "review_finished",
+      provenance: "system",
+      payload: { config: "full", verdict: "escalate" },
+    });
+    const [run] = (await (await app.request("/events/runs")).json()) as Record<string, unknown>[];
+    expect(run).toMatchObject({ verdict: "escalate", decidedBy: "review", reviewFailed: false });
   });
 });

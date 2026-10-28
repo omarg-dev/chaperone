@@ -20,6 +20,8 @@ function open() {
   });
 }
 
+const noOutcome = { verdict: null, decidedBy: null, reviewFailed: false };
+
 const base: NewEvent = { runId: "run_a", lane: "agent", type: "tool_call", provenance: "system" };
 
 beforeEach(() => {
@@ -116,6 +118,7 @@ describe("reading", () => {
         lastEventAt: "2026-11-01T12:00:02.000Z",
         eventCount: 1,
         costUsd: 0,
+        ...noOutcome,
       },
       {
         runId: "run_a",
@@ -124,8 +127,53 @@ describe("reading", () => {
         lastEventAt: "2026-11-01T12:00:01.000Z",
         eventCount: 2,
         costUsd: 0.75,
+        ...noOutcome,
       },
     ]);
+  });
+
+  it("adds how each run ended, from its review and a person's decision", () => {
+    const review = (runId: string, type: string, payload: unknown) =>
+      log.append({ runId, lane: "review", type, provenance: "system", payload });
+    const decide = (runId: string, decision: string) =>
+      log.append({
+        runId,
+        lane: "human",
+        type: "human_decision",
+        provenance: "user",
+        payload: { decision },
+      });
+
+    log.append({ ...base, runId: "run_none" });
+    review("run_block", "review_finished", { verdict: "block" });
+    review("run_off", "review_finished", { verdict: null });
+    review("run_failed", "review_failed", { error: "model unavailable" });
+    review("run_open", "review_finished", { verdict: "escalate" });
+    review("run_yes", "review_finished", { verdict: "escalate" });
+    decide("run_yes", "approve");
+    review("run_no", "review_finished", { verdict: "escalate" });
+    decide("run_no", "reject");
+    // A decision only settles an escalation.
+    review("run_approved", "review_finished", { verdict: "approve" });
+    decide("run_approved", "reject");
+    // A later review replaces an earlier failure.
+    review("run_retried", "review_failed", {});
+    review("run_retried", "review_finished", { verdict: "approve" });
+
+    const outcomes = Object.fromEntries(
+      log.listRuns().map((r) => [r.runId, [r.verdict, r.decidedBy, r.reviewFailed]]),
+    );
+    expect(outcomes).toEqual({
+      run_none: [null, null, false],
+      run_block: ["block", "review", false],
+      run_off: [null, "no_review", false],
+      run_failed: [null, null, true],
+      run_open: ["escalate", "review", false],
+      run_yes: ["approve", "person", false],
+      run_no: ["block", "person", false],
+      run_approved: ["approve", "review", false],
+      run_retried: ["approve", "review", false],
+    });
   });
 
   it("keeps events when the log is closed and opened again", () => {
