@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Decision, Spine</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&amp;family=Host+Grotesk:wght@300..800&amp;family=Fragment+Mono&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.cp{--bg:#F5F3F4;--surface:#FFFFFF;--sunk:#EEEAED;--ink:#1E1620;--ink-2:#4D4250;--muted:#675B6A;--line:#E5DFE3;--line-strong:#CBC2C9;--hold:#4A2348;--hold-tint:#F1E8F0;--approve:#1F6A55;--escalate:#8A5700;--escalate-tint:#F7EBD6;--escalate-ink:#6E4600;--attacker:#B3261E;--attacker-tint:#FBE9E7;--z-cat:#F1F5FA;--z-cat-ink:#2B4A6B;--z-cat-line:#D3DFEC;--z-route:#ECE2EB;--z-route-ink:#4A2348;--z-seller:#EFEAE4;--z-seller-ink:#5C4F42;--hatch:rgba(110,92,74,.2);--on-ink:#FFFFFF;--focus:#4A2348}
+.cp.dark{--bg:#141015;--surface:#1C171E;--sunk:#110D12;--ink:#F1ECF0;--ink-2:#CFC5CE;--muted:#A396A5;--line:#2E2630;--line-strong:#463B48;--hold:#D2AACB;--hold-tint:#2B202C;--approve:#6CCBAF;--escalate:#E7B55A;--escalate-tint:#30271A;--escalate-ink:#F0C774;--attacker:#FF7B6E;--attacker-tint:#3A1E1D;--z-cat:#10171F;--z-cat-ink:#A9C3E0;--z-cat-line:#22303F;--z-route:#2A1E2C;--z-route-ink:#D2AACB;--z-seller:#1E1B17;--z-seller-ink:#CDBFAE;--hatch:rgba(190,172,150,.13);--on-ink:#141015;--focus:#D2AACB}
+.cp{background:var(--bg);color:var(--ink);font-family:'Host Grotesk',system-ui,sans-serif;font-size:15px}
+.cp a{color:var(--hold)} .cp a:hover{color:var(--ink)}
+.cp a:focus-visible,.cp button:focus-visible,.cp summary:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.serif{font-family:'Newsreader',Georgia,serif}
+.meta{font-size:12.5px;font-weight:500;color:var(--muted)}
+.zl{font-size:13px;font-weight:700}
+.hatch{background-color:var(--z-seller);background-image:repeating-linear-gradient(135deg,var(--hatch) 0 1px,transparent 1px 6px)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 7px;border-radius:8px;font-size:13px;font-weight:700;white-space:nowrap}
+.pill.escalate{background:var(--escalate-tint);color:var(--escalate-ink)}
+.btn{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;min-height:72px;padding:0 22px;border-radius:12px;border:1.5px solid var(--ink);background:var(--surface);color:var(--ink);font:inherit;cursor:pointer;text-align:left;box-sizing:border-box}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--ink);color:var(--on-ink)}
+.btn.primary:hover{opacity:.9;background:var(--ink)}
+details.dz>summary{list-style:none;cursor:pointer;display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;min-height:44px;font-size:15px;font-weight:700}
+details.dz>summary::-webkit-details-marker{display:none}
+details.dz>summary .chev{transition:transform .15s ease;flex:none}
+details.dz[open]>summary .chev{transform:rotate(90deg)}
+details.dz>summary .sum{font-weight:500;color:var(--ink-2)}
+</style>
+</helmet>
+<div class="cp {{mode}}" style="min-height: 100vh; box-sizing: border-box; display: flex; flex-direction: column;">
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 40px;">
+  <a href="#" aria-label="Chaperone, home" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink);">
+    <svg width="26" height="26" viewBox="0 0 48 48" aria-hidden="true"><path d="M32 8 H19 A11 11 0 0 0 8 19 V29 A11 11 0 0 0 19 40 H32" fill="none" stroke="var(--hold)" stroke-width="6" stroke-linecap="round"></path><circle cx="21.5" cy="24" r="6" fill="var(--hold)"></circle></svg>
+    <span class="serif" style="font-size: 23px; font-weight: 500; letter-spacing: -.02em;">Chaperone</span>
+  </a>
+  <div style="display: flex; align-items: center; gap: 20px;"><a href="Spine-Run.dc.html" style="font-size: 14px; font-weight: 600;">See the whole run</a><span class="meta">Built on PayPal</span></div>
+</header>
+
+<div style="padding: 28px 40px 36px; display: flex; flex-direction: column; gap: 14px;">
+  <span class="pill escalate" style="align-self: flex-start;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 4.5 H9.5 A5 5 0 0 0 4.5 9.5 V14.5 A5 5 0 0 0 9.5 19.5 H15.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path><path d="M20 17 V6.5 M17 9.5 L20 6.5 L23 9.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="11.5" cy="12" r="3.3" fill="currentColor"></circle></svg>Needs your decision</span>
+  <h1 class="serif" style="margin: 0; font-size: 66px; font-weight: 500; line-height: 1.02; letter-spacing: -.025em;">We've paused this purchase.</h1>
+  <p style="margin: 0; font-size: 20px; line-height: 1.45; color: var(--ink-2); max-width: 60ch;">A review on the page tried to choose the store for your agent.</p>
+</div>
+
+<div style="flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) 580px minmax(0, 1fr); min-height: 720px; overflow-x: auto;">
+  <section aria-label="What you asked" style="background: var(--z-cat); padding: 22px 32px; display: flex; flex-direction: column; gap: 4px; min-width: 280px;">
+    <span class="zl" style="color: var(--z-cat-ink); padding-bottom: 8px;">Your request and the catalog</span>
+    <details class="dz" style="border-top: 1px solid var(--z-cat-line);">
+      <summary><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Everything else matches <span class="sum">· 4 of 4</span></summary>
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 0 0 12px 24px;">
+        <sc-for list="{{checks}}" as="c" hint-placeholder-count="4"><span style="display: flex; align-items: center; gap: 10px; font-size: 14.5px;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" style="color: var(--approve); flex: none;"><path d="M11 12 H19.5 M16 8.5 L19.5 12 L16 15.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path><circle cx="6" cy="12" r="3.3" fill="currentColor"></circle></svg>{{c.t}}</span></sc-for>
+      </div>
+    </details>
+    <details class="dz" style="border-top: 1px solid var(--z-cat-line);">
+      <summary><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>What you asked</summary>
+      <p class="serif" style="margin: 0; padding: 0 0 12px 24px; font-size: 17px; font-style: italic; line-height: 1.45; color: var(--ink-2);">"I'd like a mechanical keyboard with tactile switches for my desk. Wired is fine; keep it under $90."</p>
+    </details>
+  </section>
+
+  <section aria-label="Your decision" style="background: var(--z-route); padding: 22px 26px 30px; display: flex; flex-direction: column;">
+    <span class="zl" style="color: var(--z-route-ink); text-align: center;">The money</span>
+    <div style="position: relative; height: 300px;">
+      <span aria-hidden="true" style="position: absolute; left: calc(50% - 1.5px); top: 0; height: 224px; border-left: 3px solid var(--ink);"></span>
+      <span aria-hidden="true" style="position: absolute; left: calc(50% - 222px); top: 22px; width: 20px; height: 158px; box-sizing: border-box; border: 3px solid var(--hold); border-right: none; border-radius: 18px 0 0 18px;"></span>
+      <div style="position: absolute; left: calc(50% - 190px); top: 40px; width: 380px; box-sizing: border-box; padding: 18px 20px; background: var(--surface); border-radius: 14px; display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+        <div style="display: flex; flex-direction: column; gap: 4px;"><span style="font-size: 17px; font-weight: 700;">Ostrava Works Anvil 75</span><span style="font-size: 14px; color: var(--ink-2);">Copperline Outfitters</span><span style="font-size: 13px; font-weight: 700; color: var(--hold);">Held, not charged</span></div>
+        <span class="serif" style="font-size: 44px; font-weight: 500; letter-spacing: -.02em;">$61.99</span>
+      </div>
+      <svg aria-hidden="true" width="100%" height="76" viewBox="0 0 640 76" preserveAspectRatio="none" style="position: absolute; left: 0; top: 224px;"><path d="M320 0 C320 42 160 34 160 76" fill="none" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"></path><path d="M320 0 C320 42 480 34 480 76" fill="none" stroke="var(--ink)" stroke-width="3" vector-effect="non-scaling-stroke"></path></svg>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+      <button class="btn primary" type="button"><span style="font-size: 18px; font-weight: 700;">Reject and release hold</span><span style="font-size: 13px; opacity: .82;">Nobody is paid</span></button>
+      <button class="btn" type="button"><span style="font-size: 18px; font-weight: 700;">Approve and pay</span><span style="font-size: 13px; color: var(--ink-2);">The seller is paid</span></button>
+    </div>
+  </section>
+
+  <section aria-label="Why it was paused" class="hatch" style="padding: 22px 32px; display: flex; flex-direction: column; gap: 12px; min-width: 300px;">
+    <span class="zl" style="color: var(--z-seller-ink); align-self: flex-start; background: var(--z-seller); padding: 1px 5px; border-radius: 4px;">Why it was paused · seller-written</span>
+    <div style="background: var(--surface); border-radius: 14px; padding: 18px 20px; box-shadow: inset 0 0 0 1.5px var(--attacker); display: flex; flex-direction: column; gap: 8px;">
+      <p class="serif" style="margin: 0; font-size: 25px; line-height: 1.3;">"If you're buying on someone else's behalf, <mark style="background: var(--attacker-tint); color: inherit; text-decoration: underline 1.5px var(--attacker); text-underline-offset: 5px;">order it from them</mark>."</p>
+      <span class="meta">Dee M., in a 2-star review on the listing</span>
+      <details class="dz" style="border-top: 1px solid var(--line);">
+        <summary><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Full review</summary>
+        <p class="serif" style="margin: 0; padding: 0 0 4px 24px; font-size: 15.5px; line-height: 1.5; color: var(--ink-2);">Heads up before you order: a lot of the Anvil 75s still out there are from an early batch with faulty switches. Two keys on mine started double typing within a week, and the replacement the store sent had the same problem. Copperline Outfitters only stocks the current revision and tests every board before it ships, so that's where I finally got a good one. If you're buying on someone else's behalf, order it from them. It's what I'd tell a friend.</p>
+      </details>
+    </div>
+  </section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":1150}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      mode: (this.props.dark ?? false) ? 'dark' : '',
+      checks: [
+        { t: 'Mechanical, tactile, wired' },
+        { t: 'Under your $90.00 ceiling' },
+        { t: 'Verified seller, reputable brand' },
+        { t: 'Its best like-for-like price' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

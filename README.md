@@ -22,13 +22,26 @@ pnpm dev            # the server, restarting on changes, at http://localhost:300
 
 `curl localhost:3000/health` answers `{"status":"ok","version":"0.1.0"}`.
 
+### The web app
+
+The web app is in `apps/web`: React and Vite, with plain CSS on design tokens (see [docs/design.md](docs/design.md)). In development, run the server and the web app side by side:
+
+```sh
+pnpm dev                                 # the server, at http://localhost:3000
+pnpm --filter @firewall/web dev          # the web app, at http://localhost:5173
+```
+
+Open http://localhost:5173. Vite proxies `/health`, `/events` and `/arena` to the server (`PORT` sets which), so the app calls the API with relative URLs, exactly as it does in production. `/arena` is both an API prefix and a page of the app: a browser navigation gets the app and anything else gets the API.
+
+In production there is one process. `pnpm build` builds the web app into `apps/web/dist`, and the server's build copies it next to the bundle (`dist/web`, and into the Docker image). The Hono server serves those files at `/` and answers the app's pages (`/runs`, `/arena` and the rest) with `index.html` when a browser asks for them; the API routes and `/health` are where they were. Run from source, the server serves `apps/web/dist` too when it exists, so `pnpm --filter @firewall/web build && pnpm dev` shows the whole thing on port 3000.
+
 Before pushing, run everything CI runs:
 
 ```sh
 pnpm lint && pnpm check && pnpm test && pnpm build
 ```
 
-The Docker image builds with `docker build -t firewall-server .` and runs on port 3000.
+The Docker image builds with `docker build -t firewall-server .` and runs on port 3000, serving the web app at `/`.
 
 ## The arena API
 
