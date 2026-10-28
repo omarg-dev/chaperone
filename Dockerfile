@@ -1,6 +1,7 @@
 # syntax=docker/dockerfile:1
 
-# Build: install the whole workspace and bundle the server into one file.
+# Build: install the whole workspace, build the web app, and bundle the server (with the web app's
+# files beside it) into one folder.
 FROM node:22-slim AS build
 WORKDIR /app
 RUN corepack enable
@@ -8,7 +9,8 @@ RUN corepack enable
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 RUN pnpm fetch
 COPY . .
-RUN pnpm install --offline --frozen-lockfile && pnpm --filter @firewall/server build
+# The trailing "..." builds the server's dependencies first, which includes the web app.
+RUN pnpm install --offline --frozen-lockfile && pnpm --filter "@firewall/server..." build
 # better-sqlite3 stays outside the bundle (it loads a native binary from its own folder). Keep its
 # JavaScript and its prebuilt Linux binaries; the C++ sources and other platforms aren't needed.
 RUN src="$(readlink -f apps/server/node_modules/better-sqlite3)" \
@@ -16,8 +18,8 @@ RUN src="$(readlink -f apps/server/node_modules/better-sqlite3)" \
   && cp -R "$src/package.json" "$src/lib" /out/node_modules/better-sqlite3/ \
   && cp "$src"/prebuilds/linux-*.node /out/node_modules/better-sqlite3/prebuilds/
 
-# Run: the bundle, its migrations and better-sqlite3, as the non-root node user (uid 1000, which
-# owns data/ on the server).
+# Run: the bundle, its migrations, the web app and better-sqlite3, as the non-root node user
+# (uid 1000, which owns data/ on the server).
 FROM node:22-slim
 ENV NODE_ENV=production PORT=3000 DATA_DIR=/data
 WORKDIR /app

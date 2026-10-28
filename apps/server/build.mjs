@@ -1,4 +1,4 @@
-import { cpSync, rmSync } from "node:fs";
+import { cpSync, existsSync, rmSync } from "node:fs";
 import { build } from "esbuild";
 
 rmSync("dist", { recursive: true, force: true });
@@ -24,3 +24,11 @@ await build({
 
 // The event log's migrations, which src/index.ts looks for next to the bundle.
 cpSync("../../packages/events/drizzle", "dist/drizzle", { recursive: true });
+
+// The built web app, which index.ts serves from next to the bundle. The web package builds first
+// (it's a dependency of this one, so `pnpm -r build` orders it so); a bundle without it would
+// answer / with a 404, so a missing build stops this one.
+if (!existsSync("../web/dist/index.html")) {
+  throw new Error("apps/web/dist is missing. Run `pnpm --filter @firewall/web build` first.");
+}
+cpSync("../web/dist", "dist/web", { recursive: true });
