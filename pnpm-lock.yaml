@@ -29,6 +29,12 @@ importers:
       '@firewall/events':
         specifier: workspace:*
         version: link:../../packages/events
+      '@firewall/firewall':
+        specifier: workspace:*
+        version: link:../../packages/firewall
+      '@firewall/payments':
+        specifier: workspace:*
+        version: link:../../packages/payments
       '@hono/node-server':
         specifier: 2.1.5
         version: 2.1.5(hono@4.13.13)

@@ -1,5 +1,6 @@
 import { type ArenaService, ShopError } from "@firewall/arena";
 import { type EventLog, InvalidEventError } from "@firewall/events";
+import type { PaymentAdapter } from "@firewall/payments";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { arenaRoutes } from "./routes/arena.js";
@@ -10,6 +11,10 @@ import { webHandler } from "./web.js";
 export interface AppDependencies {
   log: EventLog;
   arena: ArenaService;
+  // What a person's decision on an escalated run is carried out through (the sandbox adapter in
+  // production). Unset, the decision route answers 503 with `paymentsUnavailable`.
+  payments?: PaymentAdapter;
+  paymentsUnavailable?: string;
   // The built web app's folder. Unset (or missing), the server is the API alone.
   webDir?: string;
 }
@@ -22,13 +27,19 @@ const SHOP_STATUS: Record<ShopError["code"], ContentfulStatusCode> = {
 };
 
 // The HTTP app without a listening socket, so tests can call it directly.
-export function createApp({ log, arena, webDir }: AppDependencies) {
+export function createApp({ log, arena, payments, paymentsUnavailable, webDir }: AppDependencies) {
   const app = new Hono();
 
   // Polled by the Docker HEALTHCHECK and by the deploy workflow after a release.
   app.get("/health", (c) => c.json({ status: "ok", version }));
   app.route("/arena", arenaRoutes(arena));
-  app.route("/events", eventRoutes(log));
+  app.route(
+    "/events",
+    eventRoutes(log, {
+      ...(payments && { payments }),
+      ...(paymentsUnavailable && { paymentsUnavailable }),
+    }),
+  );
 
   if (webDir) app.notFound(webHandler(webDir));
 

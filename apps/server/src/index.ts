@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createArenaService } from "@firewall/arena";
 import { openEventLog } from "@firewall/events";
+import { createSandboxPaymentAdapter, sandboxConfigFromEnv } from "@firewall/payments";
 import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 import { readConfig } from "./config.js";
@@ -27,8 +28,29 @@ const bundledWeb = fileURLToPath(new URL("./web", import.meta.url));
 const builtWeb = fileURLToPath(new URL("../../web/dist", import.meta.url));
 const webDir = [bundledWeb, builtWeb].find((dir) => existsSync(join(dir, "index.html")));
 
+// A person's decision on an escalated run is carried out on the sandbox, so it needs the sandbox
+// variables (.env.example). Without them the server runs as before and the decision route says
+// what's missing; the rest of the app doesn't need them.
+let payments: ReturnType<typeof createSandboxPaymentAdapter> | undefined;
+let paymentsUnavailable: string | undefined;
+try {
+  payments = createSandboxPaymentAdapter(sandboxConfigFromEnv(process.env));
+} catch (error) {
+  paymentsUnavailable = `Deciding a held purchase from the web app is off. ${error instanceof Error ? error.message : error}`;
+  console.warn(paymentsUnavailable);
+}
+
 const server = serve(
-  { fetch: createApp({ log, arena, ...(webDir && { webDir }) }).fetch, port },
+  {
+    fetch: createApp({
+      log,
+      arena,
+      ...(payments && { payments }),
+      ...(paymentsUnavailable && { paymentsUnavailable }),
+      ...(webDir && { webDir }),
+    }).fetch,
+    port,
+  },
   (info) => {
     console.log(`Server ${version} listening on http://localhost:${info.port}`);
   },
