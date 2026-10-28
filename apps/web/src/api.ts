@@ -8,20 +8,19 @@ export interface RunSummary {
   lastEventAt: string;
   eventCount: number;
   costUsd: number;
+  // The final verdict: the review's, or a person's decision on an escalation (a reject reads as
+  // block). Null with no review yet, with the firewall off and when a gate broke.
+  verdict: "approve" | "escalate" | "block" | null;
+  // Who decided it: the review, a person, or nobody (the firewall was off).
+  decidedBy: "review" | "person" | "no_review" | null;
+  // A gate broke: nothing was enforced and the order stays held.
+  reviewFailed: boolean;
 }
 
 export interface ScenarioInfo {
   scenarioId: string;
   title: string;
   request: string;
-}
-
-// The parts of an event the web app reads. The server sends more.
-export interface RunEvent {
-  eventId: string;
-  type: string;
-  lane: string;
-  payload: unknown;
 }
 
 async function getJson<T>(path: string): Promise<T> {
@@ -32,5 +31,3 @@ async function getJson<T>(path: string): Promise<T> {
 
 export const fetchRuns = () => getJson<RunSummary[]>("/events/runs");
 export const fetchScenarios = () => getJson<ScenarioInfo[]>("/arena/scenarios");
-export const fetchRunEvents = (runId: string) =>
-  getJson<RunEvent[]>(`/events/runs/${encodeURIComponent(runId)}`);

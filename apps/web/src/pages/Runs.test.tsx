@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mockDevice, mockServer, renderApp, reviewFinished, run } from "../test-utils";
+import { mockDevice, mockServer, renderApp, run } from "../test-utils";
 
 beforeEach(() => mockDevice(false));
 afterEach(() => vi.unstubAllGlobals());
@@ -11,49 +11,61 @@ describe("the Runs page", () => {
     mockServer({
       // The server sends them newest first, and the page keeps that order.
       runs: [
-        run("run_new", "sc_a01", "2026-10-24T11:03:00Z"),
-        run("run_mid", "sc_b01", "2026-10-24T10:00:00Z"),
-        run("run_old", "sc_b02", "2026-10-23T09:30:00Z"),
+        run("run_new", "sc_a01", "2026-10-24T11:03:00Z", { verdict: "block", decidedBy: "review" }),
+        run("run_mid", "sc_b01", "2026-10-24T10:00:00Z", {
+          verdict: "approve",
+          decidedBy: "review",
+        }),
+        run("run_old", "sc_b02", "2026-10-23T09:30:00Z", { decidedBy: "no_review" }),
         run("run_bare", "sc_b03", "2026-10-22T09:30:00Z"),
+        run("run_person", "sc_b04", "2026-10-21T09:30:00Z", {
+          verdict: "approve",
+          decidedBy: "person",
+        }),
+        run("run_failed", "sc_b05", "2026-10-20T09:30:00Z", { reviewFailed: true }),
       ],
       scenarios: [
         { scenarioId: "sc_a01", title: "Mechanical keyboard, wired", request: "x" },
         { scenarioId: "sc_b01", title: "Tactile mechanical keyboard under $120", request: "x" },
         { scenarioId: "sc_b02", title: "Noise-cancelling headphones", request: "x" },
       ],
-      events: {
-        run_new: [reviewFinished("block")],
-        run_mid: [reviewFinished("approve")],
-        run_old: [reviewFinished(null)],
-        run_bare: [],
-      },
     });
     renderApp("/runs");
 
     const list = await screen.findByRole("list", { name: "Runs" });
-    const rows = within(list).getAllByRole("listitem");
     // The column header row is hidden from assistive technology; the runs are in the server's order.
+    const rows = within(list).getAllByRole("listitem");
     expect(rows.map((row) => row.textContent)).toEqual([
       expect.stringContaining("Mechanical keyboard, wired"),
       expect.stringContaining("Tactile mechanical keyboard under $120"),
       expect.stringContaining("Noise-cancelling headphones"),
       expect.stringContaining("sc_b03"),
+      expect.stringContaining("sc_b04"),
+      expect.stringContaining("sc_b05"),
     ]);
 
-    const first = rows[0] as HTMLElement;
-    expect(within(first).getByText("sc_a01 · run_new")).toBeInTheDocument();
-    // Riyadh time, day first.
-    expect(within(first).getByText("24 Oct 2026 14:03")).toBeInTheDocument();
-    expect(await within(first).findByRole("img", { name: "Verdict: Block" })).toBeInTheDocument();
+    const [first, second, third, fourth, fifth, sixth] = rows as HTMLElement[];
+    expect(within(first as HTMLElement).getByText("sc_a01 · run_new")).toBeInTheDocument();
+    // The viewer's own time zone (the tests run in Riyadh), day first, with the zone named.
+    expect(within(first as HTMLElement).getByText("24 Oct 2026, 14:03 GMT+3")).toBeInTheDocument();
     expect(
-      await within(rows[1] as HTMLElement).findByRole("img", { name: "Verdict: Approve" }),
+      within(first as HTMLElement).getByRole("img", { name: "Verdict: Block" }),
     ).toBeInTheDocument();
-    expect(await within(rows[2] as HTMLElement).findByText("Firewall off")).toBeInTheDocument();
-    expect(await within(rows[3] as HTMLElement).findByText("No review yet")).toBeInTheDocument();
-    expect(within(first).getByRole("link", { name: "Mechanical keyboard, wired" })).toHaveAttribute(
-      "href",
-      "/runs/run_new",
-    );
+    expect(
+      within(second as HTMLElement).getByRole("img", { name: "Verdict: Approve" }),
+    ).toBeInTheDocument();
+    expect(within(third as HTMLElement).getByText("Firewall off")).toBeInTheDocument();
+    expect(within(fourth as HTMLElement).getByText("No review yet")).toBeInTheDocument();
+    expect(
+      within(fifth as HTMLElement).getByRole("img", { name: "Verdict: Approve" }),
+    ).toBeInTheDocument();
+    expect(within(fifth as HTMLElement).getByText("You decided")).toBeInTheDocument();
+    expect(
+      within(sixth as HTMLElement).getByRole("img", { name: "Verdict: Held" }),
+    ).toBeInTheDocument();
+    expect(
+      within(first as HTMLElement).getByRole("link", { name: "Mechanical keyboard, wired" }),
+    ).toHaveAttribute("href", "/runs/run_new");
   });
 
   it("shows a designed empty state that says what will appear", async () => {
@@ -76,15 +88,13 @@ describe("the Runs page", () => {
     expect(fetchMock).toHaveBeenCalledWith("/events/runs", expect.anything());
   });
 
-  it("lists only the newest runs when there are very many", async () => {
+  it("lists every run, however many there are", async () => {
     const many = Array.from({ length: 130 }, (_, i) =>
       run(`run_${i}`, "sc_b01", "2026-10-24T10:00:00Z"),
     );
     mockServer({ runs: many });
     renderApp("/runs");
-    expect(await screen.findByText("Showing the newest 100 of 130 runs.")).toBeInTheDocument();
-    expect(within(screen.getByRole("list", { name: "Runs" })).getAllByRole("link")).toHaveLength(
-      100,
-    );
+    const list = await screen.findByRole("list", { name: "Runs" });
+    expect(within(list).getAllByRole("link")).toHaveLength(130);
   });
 });

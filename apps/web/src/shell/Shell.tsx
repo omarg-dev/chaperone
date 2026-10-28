@@ -26,7 +26,7 @@ const ICONS = {
 };
 
 export function Shell() {
-  const { openEscalations } = useRuns();
+  const { heldForPerson } = useRuns();
   return (
     <div className="shell">
       <header className="topbar">
@@ -42,11 +42,11 @@ export function Shell() {
             <NavIcon d={ICONS.escalations} />
             Escalations
             <span
-              className={`count${openEscalations > 0 ? " count-live" : ""}`}
+              className={`count${heldForPerson > 0 ? " count-live" : ""}`}
               role="status"
-              aria-label={`${openEscalations} waiting for you`}
+              aria-label={`${heldForPerson} waiting for you`}
             >
-              {openEscalations}
+              {heldForPerson}
             </span>
           </NavLink>
           <NavLink to="/dashboard" className="nav-link">

@@ -28,7 +28,7 @@ export function RunDetail() {
 }
 
 export function Escalations() {
-  const { openEscalations } = useRuns();
+  const { heldForPerson } = useRuns();
   return (
     <>
       <PageHeader
@@ -38,7 +38,7 @@ export function Escalations() {
       <EmptyState title="Nothing is waiting for you.">
         When a gate can't be sure a cart matches what you asked for, the purchase is held here with
         the cart and the reason. You approve it or block it.
-        {openEscalations > 0 && ` ${openEscalations} held right now, and the inbox is coming.`}
+        {heldForPerson > 0 && ` ${heldForPerson} held right now, and the inbox is coming.`}
       </EmptyState>
     </>
   );

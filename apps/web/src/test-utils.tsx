@@ -2,7 +2,7 @@ import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { vi } from "vitest";
 import { App } from "./App";
-import type { RunEvent, RunSummary, ScenarioInfo } from "./api";
+import type { RunSummary, ScenarioInfo } from "./api";
 import { ThemeProvider } from "./theme/ThemeProvider";
 
 // A stand-in for the device's colour preference, which jsdom doesn't have. Returns a function that
@@ -33,12 +33,11 @@ export function mockDevice(dark: boolean) {
 export interface FakeServer {
   runs?: RunSummary[];
   scenarios?: ScenarioInfo[];
-  events?: Record<string, RunEvent[]>;
   // Makes the run list fail.
   down?: boolean;
 }
 
-// Answers the three calls the app makes, from the given data.
+// Answers the two calls the app makes, from the given data.
 export function mockServer(server: FakeServer = {}) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const path = String(input);
@@ -46,8 +45,6 @@ export function mockServer(server: FakeServer = {}) {
     if (server.down) return new Response("down", { status: 503 });
     if (path === "/events/runs") return json(server.runs ?? []);
     if (path === "/arena/scenarios") return json(server.scenarios ?? []);
-    const run = /^\/events\/runs\/(.+)$/.exec(path);
-    if (run?.[1]) return json(server.events?.[decodeURIComponent(run[1])] ?? []);
     return new Response("not found", { status: 404 });
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -64,18 +61,20 @@ export function renderApp(path = "/runs") {
   );
 }
 
-export const run = (runId: string, scenarioId: string, startedAt: string): RunSummary => ({
+export const run = (
+  runId: string,
+  scenarioId: string,
+  startedAt: string,
+  outcome: Partial<Pick<RunSummary, "verdict" | "decidedBy" | "reviewFailed">> = {},
+): RunSummary => ({
   runId,
   scenarioId,
   startedAt,
   lastEventAt: startedAt,
   eventCount: 10,
   costUsd: 0,
-});
-
-export const reviewFinished = (verdict: string | null): RunEvent => ({
-  eventId: `evt_${verdict}`,
-  type: "review_finished",
-  lane: "review",
-  payload: { config: "full", verdict },
+  verdict: null,
+  decidedBy: null,
+  reviewFailed: false,
+  ...outcome,
 });

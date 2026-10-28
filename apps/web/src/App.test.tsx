@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mockDevice, mockServer, renderApp, reviewFinished, run } from "./test-utils";
+import { mockDevice, mockServer, renderApp, run } from "./test-utils";
 
 beforeEach(() => {
   mockDevice(false);
@@ -64,15 +64,22 @@ describe("navigation", () => {
     expect(await screen.findByText("There's nothing at this address.")).toBeInTheDocument();
   });
 
-  it("counts the escalations waiting for a person", async () => {
+  it("counts the escalations waiting for a person, and not the ones already decided", async () => {
     mockServer({
       runs: [
-        run("run_a", "sc_b01", "2026-10-24T10:00:00Z"),
-        run("run_b", "sc_b02", "2026-10-24T09:00:00Z"),
+        run("run_a", "sc_b01", "2026-10-24T10:00:00Z", {
+          verdict: "escalate",
+          decidedBy: "review",
+        }),
+        run("run_b", "sc_b02", "2026-10-24T09:00:00Z", { verdict: "approve", decidedBy: "review" }),
+        run("run_c", "sc_b03", "2026-10-24T08:00:00Z", { verdict: "approve", decidedBy: "person" }),
+        run("run_d", "sc_b04", "2026-10-24T07:00:00Z", {
+          verdict: "escalate",
+          decidedBy: "review",
+        }),
       ],
-      events: { run_a: [reviewFinished("escalate")], run_b: [reviewFinished("approve")] },
     });
     renderApp("/dashboard");
-    expect(await screen.findByRole("status", { name: "1 waiting for you" })).toHaveTextContent("1");
+    expect(await screen.findByRole("status", { name: "2 waiting for you" })).toHaveTextContent("2");
   });
 });
