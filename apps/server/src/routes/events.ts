@@ -16,16 +16,52 @@ const decision = z.object({
 // hold sellers' roles (the gates mustn't see them), so this rebuilds the run's catalog from its
 // scenario and seed, as Gate 0 does. An operator's view: the arena's agent-facing routes don't
 // offer it.
-function payeesOf(events: readonly Event[]) {
-  const started = events.find((e) => e.lane === "arena" && e.type === "run_started");
-  const seed = (started?.payload as { seed?: unknown } | undefined)?.seed;
-  const scenario = started?.scenarioId ? findScenario(started.scenarioId) : undefined;
+function payeesFor(scenarioId: string | null, seed: unknown) {
+  const scenario = scenarioId ? findScenario(scenarioId) : undefined;
   if (!scenario || typeof seed !== "string") return [];
   return buildArena(scenario, seed, baseCatalog).catalog.sellers.map((s) => ({
     payeeKey: s.payeeKey,
     sellerName: s.name,
     role: s.role,
   }));
+}
+
+function payeesOf(events: readonly Event[]) {
+  const started = events.find((e) => e.lane === "arena" && e.type === "run_started");
+  const seed = (started?.payload as { seed?: unknown } | undefined)?.seed;
+  return payeesFor(started?.scenarioId ?? null, seed);
+}
+
+// The run list, with the two things only the arena can say: whether the scenario is an attack, and
+// whether the money was paid to one of its attackers (never guessed: a run whose scenario or seed
+// is unknown has no known attackers). The log's own list says who was paid; the roles are rebuilt
+// from the scenario and seed once per pair, however many runs share them. An operator's view, like
+// the payees route: the arena's agent-facing routes don't offer it.
+export function runList(log: EventLog) {
+  const attackers = new Map<string, Set<string>>();
+  const attackersOf = (scenarioId: string | null, seed: string | null) => {
+    const key = `${scenarioId}:${seed}`;
+    let found = attackers.get(key);
+    if (!found) {
+      found = new Set(
+        payeesFor(scenarioId, seed)
+          .filter((p) => p.role === "attacker")
+          .map((p) => p.payeeKey),
+      );
+      attackers.set(key, found);
+    }
+    return found;
+  };
+  return log.listRuns().map(({ paidPayees, ...run }) => {
+    const scenario = run.scenarioId ? findScenario(run.scenarioId) : undefined;
+    const known = attackersOf(run.scenarioId, run.seed);
+    return {
+      ...run,
+      // Null for a scenario the arena doesn't know.
+      kind: scenario?.kind ?? null,
+      attackerPaid: paidPayees.some((key) => known.has(key)),
+    };
+  });
 }
 
 export interface EventRoutesOptions {
@@ -37,12 +73,12 @@ export interface EventRoutesOptions {
   paymentsUnavailable?: string;
 }
 
-// The event log over HTTP: the run list, one run's events in replay order, who a run's payees
+// The event log over HTTP: the run list (with each run's kind and whether an attacker was paid), one run's events in replay order, who a run's payees
 // are, and a person's decision on an escalated run (written to the log, then carried out by the
 // same enforcement code as `decide-run`, so a second call changes nothing).
 export function eventRoutes(log: EventLog, options: EventRoutesOptions = {}) {
   return new Hono()
-    .get("/runs", (c) => c.json(log.listRuns()))
+    .get("/runs", (c) => c.json(runList(log)))
     .get("/runs/:runId", (c) => c.json(log.listRun(c.req.param("runId"))))
     .get("/runs/:runId/payees", (c) => c.json(payeesOf(log.listRun(c.req.param("runId")))))
     .post("/runs/:runId/decision", zValidator("json", decision), async (c) => {

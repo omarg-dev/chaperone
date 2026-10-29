@@ -81,7 +81,19 @@ export interface RunOutcome {
   reviewFailed: boolean;
 }
 
-export interface RunSummary extends RunOutcome {
+// What a run list shows beyond the outcome: see `facetsOf`.
+export interface RunFacets {
+  // The seed the run's scenario was built with.
+  seed: string | null;
+  // The firewall configuration of each review the run went through, in order. An eval run reviews
+  // one checkout under off, gate0 and full; the last is the one the outcome comes from.
+  reviews: string[];
+  // The payee keys the money was paid out to, once it was captured. Which of them is an attacker
+  // is the arena's to say, so the server answers that.
+  paidPayees: string[];
+}
+
+export interface RunSummary extends RunOutcome, RunFacets {
   runId: string;
   scenarioId: string | null;
   startedAt: string;

@@ -46,3 +46,39 @@ export function outcomeOf(events: readonly OutcomeEvent[]): RunOutcome {
   }
   return outcome;
 }
+
+// More of what a run list shows, read from the same few events: the seed, the firewall
+// configuration of each review the run went through (an eval run reviews one checkout under
+// several), and who the money was paid out to. Pure, like `outcomeOf`.
+//
+//  - run_started (lane arena): the seed the scenario was built with;
+//  - review_started (lane review): `config`, in the order the reviews ran, so the last is the one
+//    the run's outcome comes from;
+//  - enforced (lane review): `payouts`, the sellers the capture was shared out to. The last
+//    `enforced` event is the run's: only payees that were paid an amount count.
+export interface RunFacets {
+  seed: string | null;
+  reviews: string[];
+  paidPayees: string[];
+}
+
+export function facetsOf(events: readonly OutcomeEvent[]): RunFacets {
+  let seed: string | null = null;
+  const reviews: string[] = [];
+  let paidPayees: string[] = [];
+  for (const event of events) {
+    const body = record(event.payload);
+    if (event.lane === "arena" && event.type === "run_started") {
+      if (typeof body.seed === "string") seed = body.seed;
+    } else if (event.lane === "review" && event.type === "review_started") {
+      reviews.push(typeof body.config === "string" ? body.config : "full");
+    } else if (event.lane === "review" && event.type === "enforced") {
+      const payouts = Array.isArray(body.payouts) ? body.payouts : [];
+      paidPayees = payouts
+        .map(record)
+        .filter((p) => typeof p.payeeKey === "string" && Number(p.amountCents) > 0)
+        .map((p) => p.payeeKey as string);
+    }
+  }
+  return { seed, reviews, paidPayees };
+}
