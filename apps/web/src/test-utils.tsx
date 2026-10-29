@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, useLocation } from "react-router";
 import { vi } from "vitest";
 import { App } from "./App";
 import type { RunSummary, ScenarioInfo } from "./api";
@@ -73,10 +73,17 @@ export function mockServer(server: FakeServer = {}) {
   return fetchMock;
 }
 
+// Shows where the router is, so a test can check what a page wrote into the URL.
+function LocationProbe() {
+  const { pathname, search } = useLocation();
+  return <output data-testid="location">{`${pathname}${search}`}</output>;
+}
+
 export function renderApp(path = "/runs") {
   return render(
     <ThemeProvider>
       <MemoryRouter initialEntries={[path]}>
+        <LocationProbe />
         <App />
       </MemoryRouter>
     </ThemeProvider>,
@@ -85,9 +92,14 @@ export function renderApp(path = "/runs") {
 
 export const run = (
   runId: string,
-  scenarioId: string,
+  scenarioId: string | null,
   startedAt: string,
-  outcome: Partial<Pick<RunSummary, "verdict" | "decidedBy" | "reviewFailed">> = {},
+  outcome: Partial<
+    Pick<
+      RunSummary,
+      "verdict" | "decidedBy" | "reviewFailed" | "reviews" | "kind" | "attackerPaid" | "seed"
+    >
+  > = {},
 ): RunSummary => ({
   runId,
   scenarioId,
@@ -98,5 +110,9 @@ export const run = (
   verdict: null,
   decidedBy: null,
   reviewFailed: false,
+  seed: "1",
+  reviews: [],
+  kind: null,
+  attackerPaid: false,
   ...outcome,
 });
