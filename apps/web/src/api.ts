@@ -1,6 +1,8 @@
 // The server's own API, called with relative URLs: the Hono server serves this app and the API from
 // one origin, and in development Vite proxies them (vite.config.ts).
 
+import type { Payee, RunEvent } from "./run/events";
+
 export interface RunSummary {
   runId: string;
   scenarioId: string | null;
@@ -23,6 +25,19 @@ export interface ScenarioInfo {
   request: string;
 }
 
+// What a call to the server answered when it wasn't ok: the status, the server's own error code and
+// its message, which is written for a person ("This server can't carry out a decision: ...").
+export class ApiError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string | null,
+    message: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
+
 async function getJson<T>(path: string): Promise<T> {
   const response = await fetch(path, { headers: { accept: "application/json" } });
   if (!response.ok) throw new Error(`${path} answered ${response.status}`);
@@ -31,3 +46,41 @@ async function getJson<T>(path: string): Promise<T> {
 
 export const fetchRuns = () => getJson<RunSummary[]>("/events/runs");
 export const fetchScenarios = () => getJson<ScenarioInfo[]>("/arena/scenarios");
+
+// A run's events in replay order. An unknown run is an empty list, not an error.
+export const fetchRunEvents = (runId: string) =>
+  getJson<RunEvent[]>(`/events/runs/${encodeURIComponent(runId)}`);
+export const fetchPayees = (runId: string) =>
+  getJson<Payee[]>(`/events/runs/${encodeURIComponent(runId)}/payees`);
+
+export interface DecisionResult {
+  status: "enforced" | "already_enforced" | "awaiting_person";
+  money: "captured" | "voided" | "held";
+  decidedBy: "review" | "person" | "no_review";
+}
+
+// A person's decision on an escalated run. The server carries it out (capture and pay, or void)
+// and answers once the money has moved; a repeat answers "already_enforced".
+export async function postDecision(
+  runId: string,
+  decision: "approve" | "reject",
+): Promise<DecisionResult> {
+  const path = `/events/runs/${encodeURIComponent(runId)}/decision`;
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify({ decision }),
+  });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as {
+      error?: string;
+      message?: string;
+    } | null;
+    throw new ApiError(
+      response.status,
+      body?.error ?? null,
+      body?.message ?? `${path} answered ${response.status}`,
+    );
+  }
+  return (await response.json()) as DecisionResult;
+}

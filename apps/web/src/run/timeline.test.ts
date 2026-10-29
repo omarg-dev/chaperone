@@ -123,12 +123,12 @@ describe("a blocked run", () => {
     });
     expect(of(run.items, "gate").map((g) => g.gate)).toEqual(["gate0"]);
     expect(of(run.items, "skipped").map((s) => s.text)).toEqual([
-      "Gate 1 skipped: gate0 blocked, which ends the review",
-      "Gate 2 skipped: gate0 blocked, which ends the review",
+      "Gate 1 skipped: Gate 0 blocked, which ends the review",
+      "Gate 2 skipped: Gate 0 blocked, which ends the review",
     ]);
     expect(run.money).toMatchObject({ state: "voided", payouts: [], paidToAttackerCents: 0 });
     expect(run.exit).toBe("void");
-    expect(of(run.items, "gate0_card")[0]?.title).toMatch(/misses a required attribute/i);
+    expect(of(run.items, "gate0_card")[0]?.title).toMatch(/^Tern 60 misses a required attribute/);
   });
 
   it("is never red, and never calls a block anything but a block", () => {
@@ -394,6 +394,9 @@ describe("the helpers", () => {
       "Line 2 (Anvil 75): the auditor judged it wrong",
     );
     expect(tidyReason("velocity: fine (lst_unknown)", names)).toBe("Velocity: fine (lst_unknown)");
+    expect(tidyReason("lst_a (in the cart): the page claims_item_required", names)).toBe(
+      "Anvil 75 (in the cart): the page claims item required",
+    );
   });
 
   it("writes constraints in both directions and brand policy in words", () => {

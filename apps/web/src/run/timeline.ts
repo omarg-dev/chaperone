@@ -272,6 +272,8 @@ function capitalise(text: string): string {
   return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
+const gateName = (gate: string) => gate.replace(/^gate/, "Gate ");
+
 const words = (id: string) => id.replace(/^brand_/, "").replace(/_/g, " ");
 
 const dollars = (cents: number) =>
@@ -280,11 +282,17 @@ const dollars = (cents: number) =>
 // A gate's reason as a sentence for the screen: the listing's id becomes its product's name and
 // the trailing [code] a gate adds for its own bookkeeping goes.
 export function tidyReason(reason: string, names: ReadonlyMap<string, string>): string {
-  const named = reason.replace(/\(([a-z0-9_]+)\)/g, (whole, id: string) => {
-    const name = names.get(id);
-    return name ? `(${name})` : whole;
-  });
-  return capitalise(named.replace(/\s*\[[a-z_]+\]$/, "").trim());
+  const named = reason
+    .replace(/\s*\[[a-z_]+\]$/, "")
+    // A listing's id, bare or in parentheses, becomes its product's name.
+    .replace(/\b(?:lst|sku)_[a-z0-9_]+\b/g, (id) => names.get(id) ?? id)
+    // The flag and finding codes a gate quotes become words.
+    .replace(/\b[a-z]+(?:_[a-z]+)+\b/g, (code) =>
+      code in FLAG_LABELS || code in FINDING_LABELS ? code.replace(/_/g, " ") : code,
+    );
+  const text = named.trim();
+  // A sentence that opens with an id (brand_x, seller_y) is left as the id is written.
+  return /^\S*_/.test(text) ? text : capitalise(text);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -406,8 +414,11 @@ export function buildRun(
 
   // ---- The listings the run met, by id: the catalog's own record of each (never the page).
   const listings = new Map<string, Listing>();
+  const skus = new Map<string, string>();
   const remember = (listingId: string, catalog: Obj) => {
     const known = listings.get(listingId);
+    const sku = str(catalog.sku);
+    if (sku && str(catalog.productName)) skus.set(sku, str(catalog.productName) as string);
     listings.set(listingId, {
       listingId,
       productName: str(catalog.productName) ?? known?.productName ?? listingId,
@@ -430,6 +441,7 @@ export function buildRun(
   }
   const productName = (listingId: string) => listings.get(listingId)?.productName ?? listingId;
   const names = new Map([...listings.values()].map((l) => [l.listingId, l.productName]));
+  for (const [sku, name] of skus) names.set(sku, name);
 
   // ---- The review: the last one in the log is the run's (it is the one the run list reads too).
   const reviewStarts = events.filter((e) => e.lane === "review" && e.type === "review_started");
@@ -1019,7 +1031,7 @@ export function buildRun(
         zone: "route",
         group: "skipped",
         kind: "skipped",
-        text: `${String(skip.gate).replace("gate", "Gate ")} skipped: ${String(skip.reason ?? "the review ended")}`,
+        text: `${gateName(String(skip.gate))} skipped: ${String(skip.reason ?? "the review ended").replace(/gate(\d)/g, "Gate $1")}`,
       });
     }
     items.push({
@@ -1214,7 +1226,6 @@ export function headlineFor(s: Standing): Headline {
       "held",
       "Held, review failed",
       "A gate broke, so nothing was enforced.",
-      "The purchase stays held. Nothing has been charged.",
     );
   }
   if (s.noCheckout) {
@@ -1231,13 +1242,7 @@ export function headlineFor(s: Standing): Headline {
     return pilled("approved_by_person", "approve", "You approved", "You approved this purchase.");
   }
   if (s.decision === "reject") {
-    return pilled(
-      "rejected_by_person",
-      "block",
-      "You rejected it",
-      "You rejected this purchase.",
-      "The hold was released and nobody was paid.",
-    );
+    return pilled("rejected_by_person", "block", "You rejected it", "You rejected this purchase.");
   }
   if (s.awaitingPerson) {
     return pilled(
@@ -1245,7 +1250,7 @@ export function headlineFor(s: Standing): Headline {
       "escalate",
       "Waiting on you",
       "We've paused this purchase.",
-      "Nothing has been charged. Approve it or reject it below.",
+      "Approve it or reject it below.",
     );
   }
   if (s.reviewed && s.verdict === null) {
@@ -1257,13 +1262,7 @@ export function headlineFor(s: Standing): Headline {
     );
   }
   if (s.verdict === "block") {
-    return pilled(
-      "blocked",
-      "block",
-      "Blocked",
-      "Chaperone stopped this purchase.",
-      "The hold was released and nobody was paid.",
-    );
+    return pilled("blocked", "block", "Blocked", "Chaperone stopped this purchase.");
   }
   if (s.verdict === "approve") {
     return pilled("approved", "approve", "Approved", "The cart matches what you asked for.");
