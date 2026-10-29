@@ -386,11 +386,15 @@ describe("the keyboard", () => {
 
   it("plays and pauses on space from anywhere on the page", async () => {
     await open(log, "?at=10");
+    // Let the bar settle (it moves the focus to Play) before taking the focus away, or the key
+    // can land before the page listens for it.
+    await waitFor(() => expect(within(bar()).getByRole("button", { name: "Play" })).toHaveFocus());
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime, delay: null });
     (document.activeElement as HTMLElement).blur();
     await user.keyboard(" ");
-    await wait(400);
+    // Longer than the longest gap the replay waits (1.5 s), so a loaded machine can't miss it.
+    await wait(1600);
     expect(currentPosition()).toBeGreaterThanOrEqual(11);
     expect(within(bar()).getByRole("button", { name: "Pause" })).toBeInTheDocument();
   });
