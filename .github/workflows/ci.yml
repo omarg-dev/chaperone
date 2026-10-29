@@ -74,3 +74,8 @@ jobs:
           docker logs app
           echo "::error::The container never reported healthy."
           exit 1
+      # The image serves the web app at /, not only the API: the build bundles apps/web/dist.
+      - name: Container serves the web app
+        run: |
+          docker exec app node -e "fetch('http://127.0.0.1:3000/').then((r) => r.text()).then((t) => process.exit(t.includes('id=\"root\"') ? 0 : 1), () => process.exit(1))" \
+            || { docker logs app; echo "::error::GET / did not return the web app."; exit 1; }

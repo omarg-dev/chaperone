@@ -1,9 +1,10 @@
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import { asc, count, eq, max, min, sql, sum } from "drizzle-orm";
+import { and, asc, count, eq, inArray, max, min, sql, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { newEventId } from "./ids.js";
+import { NO_OUTCOME, type OutcomeEvent, outcomeOf } from "./outcome.js";
 import { events } from "./schema.js";
 import type { Event, NewEvent, RunSummary } from "./types.js";
 import { validateNewEvent } from "./validate.js";
@@ -101,7 +102,7 @@ export function openEventLog(options: EventLogOptions): EventLog {
     },
 
     listRuns() {
-      return db
+      const runs = db
         .select({
           runId: events.runId,
           // A run's scenario is set on its events or not at all; max() picks it out of the nulls.
@@ -115,6 +116,35 @@ export function openEventLog(options: EventLogOptions): EventLog {
         .groupBy(events.runId)
         .orderBy(sql`${min(events.seq)} desc`)
         .all();
+
+      // The events that say how a run ended, for every run in one read.
+      const decisive = new Map<string, OutcomeEvent[]>();
+      const rows = db
+        .select({
+          runId: events.runId,
+          lane: events.lane,
+          type: events.type,
+          payload: events.payload,
+        })
+        .from(events)
+        .where(
+          and(
+            inArray(events.lane, ["review", "human"]),
+            inArray(events.type, ["review_finished", "review_failed", "human_decision"]),
+          ),
+        )
+        .orderBy(asc(events.seq))
+        .all();
+      for (const row of rows) {
+        const list = decisive.get(row.runId);
+        if (list) list.push(row);
+        else decisive.set(row.runId, [row]);
+      }
+
+      return runs.map((run) => ({
+        ...run,
+        ...(decisive.has(run.runId) ? outcomeOf(decisive.get(run.runId) ?? []) : NO_OUTCOME),
+      }));
     },
 
     subscribe(listener) {

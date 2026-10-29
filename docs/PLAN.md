@@ -37,12 +37,13 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Who holds the money | The firewall runs on the buyer's side, because the sellers are the ones attacking: anything that needs a seller's cooperation (its own API keys, so the firewall can void its hold) fails against an attacker, and no honest seller hands a third party its secret. So the firewall platform is the payee on every order. It holds the whole cart in one authorization, voids it on a block, and on approval captures it and pays each seller its share with a payout. In production this is the platform's multiparty setup with delayed disbursement, where a platform takes the payment for its sellers and releases it later; this sandbox app isn't approved for that partner onboarding, so the arena uses the simpler version where the platform is the merchant of record. The control point is the same, and the write-up says so. Taking the payment also makes the platform the one that handles refunds and disputes. |
 | Fees | A seller is paid its share of what the platform actually received, not its gross line: each seller's payout is the capture's net amount (after the platform's processing fee) times its lines' part of the cart, in cents, with the rounding remainder going to the seller of the largest line, so the payouts add up exactly to the net. That's how marketplaces pass processing fees on to their sellers, and it keeps the platform's sandbox balance from draining by the fee on every approved cart. The split is `splitPayouts` in `@firewall/payments`, which the review tree's enforcement (step 14) calls; the fake charges what the sandbox did (3.49% plus $0.49). |
 | Naming PayPal | Code, docs and commits name PayPal freely. A ban on naming it (in place until Oct 23) did more harm than good: the SDK's own field names needed exceptions, and judges expect to read what we integrate with. The product's name, logo and graphics still stay clear of PayPal's brand, as the official rules require. |
+| Design | Spine (docs/design/spine/, rules and tokens in [docs/design.md](design.md)). The mark is the Hold: a rounded bracket holding a dot, "the pause before money moves". The run view is one vertical timeline whose spine is the money's route, with the gates as stations on it. Three zones: the catalog (plain), the route (tinted) and seller text, which always sits behind a hatch. Red means one thing, money reaching an attacker, and a block is neutral. Each fact is said once on a screen. |
 | Credentials | Never in chat or the repo. Where each kind lives is in `CLAUDE.md`. |
 | Working sessions | One conversation, which hands each step to a subagent and reviews its work before opening the PR. It replaced a split into a discussion session and a build session, where every question bounced between the two. A decision goes into this file or `CLAUDE.md` the same day, because subagents only see the repo. |
 
 ## Progress
 
-**Now: the MVP is done in code (step 18 is open for review, with steps 15 to 17 open and steps 1 to 14 merged); next is v1.1's step 1, the design pass.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now: the MVP is done in code (step 18 is open for review, with steps 15 to 17 open and steps 1 to 14 merged); the design pass (v1.1 step 1) is approved and the web app shell (step 2) is open for review; next is step 3, the live run view.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -78,10 +79,10 @@ Done when: with the firewall off a run sends sandbox money to an attacker accoun
 
 | # | Step | Status |
 |---|---|---|
-| 1 | Design pass with the design skills: tokens, layout and mockups of every screen, reviewed by Omar before any UI code | ⬜ |
-| 2 | Web app shell: theme tokens, light and dark, navigation, empty states | ⬜ |
-| 3 | Live run view on Bryntum Scheduler, with causal arrows | ⬜ |
-| 4 | Review tree per checkout | ⬜ |
+| 1 | Design pass with the design skills: tokens, layout and mockups of every screen, reviewed by Omar before any UI code | ✅ Spine, approved by Omar Oct 28 |
+| 2 | Web app shell: theme tokens, light and dark, navigation, empty states | 👀 PR open |
+| 3 | Live run view: the vertical timeline with the review tree on its spine, on Bryntum Scheduler's vertical mode, with causal arrows (steps 3 and 4 in one: the approved design makes them one screen) | ⬜ |
+| 4 | Review tree per checkout | Merged into step 3 |
 | 5 | History and replay | ⬜ |
 | 6 | Escalation inbox | ⬜ |
 | 7 | AG Studio dashboard with custom widgets and theming | ⬜ |

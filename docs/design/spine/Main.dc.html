@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Chaperone brand board, Spine</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,300..700;1,6..72,300..700&amp;family=Host+Grotesk:wght@300..800&amp;family=Fragment+Mono&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.cp{--bg:#F5F3F4;--surface:#FFFFFF;--sunk:#EEEAED;--ink:#1E1620;--ink-2:#4D4250;--muted:#675B6A;--line:#E5DFE3;--line-strong:#CBC2C9;--hold:#4A2348;--hold-tint:#F1E8F0;--approve:#1F6A55;--escalate:#8A5700;--escalate-tint:#F6ECDB;--block:#2F2A31;--attacker:#B3261E;--seller:#EFEAE4;--hatch:rgba(110,92,74,.2);--on-ink:#FFFFFF;--on-attacker:#FFFFFF;--focus:#4A2348;--approve-tint:#E2F0E9;--approve-ink:#185443;--escalate-ink:#6E4600;--block-tint:#E9E6EA;--z-cat:#F1F5FA;--z-cat-ink:#2B4A6B;--z-cat-line:#D3DFEC;--z-route:#ECE2EB;--z-route-ink:#4A2348;--z-seller:#EFEAE4;--z-seller-ink:#5C4F42}
+.cp.dark{--bg:#141015;--surface:#1C171E;--sunk:#110D12;--ink:#F1ECF0;--ink-2:#CFC5CE;--muted:#A396A5;--line:#2E2630;--line-strong:#463B48;--hold:#D2AACB;--hold-tint:#2B202C;--approve:#6CCBAF;--escalate:#E7B55A;--escalate-tint:#30271A;--block:#E2DCE3;--attacker:#FF7B6E;--seller:#1E1B17;--hatch:rgba(190,172,150,.13);--on-ink:#141015;--on-attacker:#141015;--focus:#D2AACB;--approve-tint:#16271F;--approve-ink:#8ADBC2;--escalate-ink:#F0C774;--block-tint:#2A242C;--z-cat:#10171F;--z-cat-ink:#A9C3E0;--z-cat-line:#22303F;--z-route:#2A1E2C;--z-route-ink:#D2AACB;--z-seller:#1E1B17;--z-seller-ink:#CDBFAE}
+.cp{background:var(--bg);color:var(--ink);font-family:'Host Grotesk',system-ui,sans-serif}
+.cp a{color:var(--hold)} .cp a:hover{color:var(--ink)}
+.cp a:focus-visible,.cp button:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.serif{font-family:'Newsreader',Georgia,serif}
+.mono{font-family:'Fragment Mono',ui-monospace,monospace}
+.eyebrow{font-size:12.5px;font-weight:600;color:var(--muted)}
+.hatch{background-color:var(--z-seller);background-image:repeating-linear-gradient(135deg,var(--hatch) 0 1px,transparent 1px 6px)}
+.chip{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px 0 7px;border-radius:8px;border:1px solid var(--line-strong);background:var(--surface);font-size:13px;font-weight:600;color:var(--ink);white-space:nowrap}
+.chip.attacker{background:var(--attacker);border-color:var(--attacker);color:var(--on-attacker)}
+.pill{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px 0 7px;border-radius:8px;font-size:13px;font-weight:700;white-space:nowrap}
+.pill.approve{background:var(--approve-tint);color:var(--approve-ink)}
+.pill.escalate{background:var(--escalate-tint);color:var(--escalate-ink)}
+.pill.held{background:var(--hold-tint);color:var(--hold);box-shadow:inset 0 0 0 1px var(--hold)}
+.pill.blocked{background:var(--block-tint);color:var(--block)}
+.pill.attacker{background:var(--attacker);color:var(--on-attacker)}
+.rd{height:22px;box-sizing:border-box;padding:0 7px;border-radius:6px;font-size:11.5px;font-weight:700;display:inline-flex;align-items:center}
+.rd.cat{background:var(--z-cat);color:var(--z-cat-ink);box-shadow:inset 0 0 0 1px var(--z-cat-ink)}
+.rd.sel{color:var(--z-seller-ink);box-shadow:inset 0 0 0 1px var(--z-seller-ink)}
+.rd.fct{background:var(--hold-tint);color:var(--hold);box-shadow:inset 0 0 0 1px var(--hold)}
+.rd.out{background:var(--surface);color:var(--hold);box-shadow:inset 0 0 0 1.5px var(--hold)}
+.rd.no{color:var(--muted);text-decoration:line-through;box-shadow:inset 0 0 0 1px var(--line-strong)}
+details.dz>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;min-height:40px;font-size:14.5px;font-weight:700}
+details.dz>summary::-webkit-details-marker{display:none}
+details.dz>summary .chev{transition:transform .15s ease;flex:none}
+details.dz[open]>summary .chev{transform:rotate(90deg)}
+details.dz>summary .sum{font-weight:500;color:var(--ink-2)}
+.cp summary:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.h2{margin:0;font-family:'Newsreader',Georgia,serif;font-size:36px;font-weight:500;letter-spacing:-.015em}
+</style>
+</helmet>
+<div class="cp {{mode}}" style="min-height: 100vh; box-sizing: border-box;">
+<div style="max-width: 1440px; margin: 0 auto; padding: 44px 64px 80px; box-sizing: border-box; display: flex; flex-direction: column; gap: 80px;">
+
+<div style="display: flex; justify-content: space-between; align-items: baseline; gap: 24px; border-bottom: 1px solid var(--line); padding-bottom: 16px;">
+  <span class="eyebrow">Chaperone · final design, version 1</span>
+  <span class="serif" style="font-size: 20px; font-style: italic;">Spine</span>
+</div>
+
+<section aria-label="Logo" style="display: flex; flex-wrap: wrap; gap: 48px 64px; align-items: stretch;">
+  <div style="flex: 1.5 1 640px; min-width: 0; display: flex; flex-direction: column; justify-content: space-between; gap: 40px;">
+    <div style="display: flex; align-items: center; gap: 30px;">
+      <svg width="148" height="148" viewBox="0 0 48 48" role="img" aria-label="Chaperone mark"><path d="M32 8 H19 A11 11 0 0 0 8 19 V29 A11 11 0 0 0 19 40 H32" fill="none" stroke="var(--hold)" stroke-width="5.5" stroke-linecap="round"></path><circle cx="21.5" cy="24" r="5.5" fill="var(--hold)"></circle></svg>
+      <span class="serif" style="font-size: 132px; font-weight: 500; line-height: .9; letter-spacing: -.03em;">Chaperone</span>
+    </div>
+    <p class="serif" style="margin: 0; font-size: 34px; line-height: 1.25; max-width: 24ch; text-wrap: balance;">The pause before money moves. <span style="font-style: italic; color: var(--ink-2);">What it holds, it holds in plain sight.</span></p>
+  </div>
+  <div style="flex: 1 1 400px; min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+    <div style="grid-column: 1 / -1; position: relative; padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; gap: 22px; align-items: center;">
+      <div style="position: relative; width: 168px; height: 168px; flex: none; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 21px 21px; border: 1px solid var(--line);">
+        <svg width="168" height="168" viewBox="0 0 48 48" aria-hidden="true" style="position: absolute; inset: 0;"><path d="M32 8 H19 A11 11 0 0 0 8 19 V29 A11 11 0 0 0 19 40 H32" fill="none" stroke="var(--hold)" stroke-width="5.5" stroke-linecap="round" opacity=".9"></path><circle cx="21.5" cy="24" r="5.5" fill="var(--hold)" opacity=".9"></circle><circle cx="19" cy="19" r="11" fill="none" stroke="var(--escalate)" stroke-width=".35" stroke-dasharray="1 1"></circle><path d="M21.5 13 V35" stroke="var(--escalate)" stroke-width=".35" stroke-dasharray="1 1"></path></svg>
+      </div>
+      <ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px; line-height: 1.45; color: var(--ink-2);">
+        <li>The corner radius equals the dot's width.</li>
+        <li>The stroke is half the dot.</li>
+        <li>The dot sits a little toward the opening: held, not trapped.</li>
+        <li>Clear space is one dot on every side.</li>
+      </ul>
+    </div>
+    <div style="padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px;">
+      <sc-for list="{{sizes}}" as="s" hint-placeholder-count="3">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+          <svg width="{{s.px}}" height="{{s.px}}" viewBox="0 0 48 48" aria-hidden="true"><path d="M32 8 H19 A11 11 0 0 0 8 19 V29 A11 11 0 0 0 19 40 H32" fill="none" stroke="var(--ink)" stroke-width="5.5" stroke-linecap="round"></path><circle cx="21.5" cy="24" r="5.5" fill="var(--ink)"></circle></svg>
+          <span class="mono" style="font-size: 11px; color: var(--muted);">{{s.px}}</span>
+        </div>
+      </sc-for>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M11.5 2.2 H6.6 A4.4 4.4 0 0 0 2.2 6.6 V9.4 A4.4 4.4 0 0 0 6.6 13.8 H11.5" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"></path><circle cx="7.6" cy="8" r="2.3" fill="var(--ink)"></circle></svg>
+        <span class="mono" style="font-size: 11px; color: var(--muted);">16 cut</span>
+      </div>
+    </div>
+    <div style="padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; display: flex; align-items: flex-end; justify-content: space-around; gap: 12px;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div style="width: 76px; height: 76px; border-radius: 18px; background: #4A2348; display: flex; align-items: center; justify-content: center;"><svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true"><path d="M32 8 H19 A11 11 0 0 0 8 19 V29 A11 11 0 0 0 19 40 H32" fill="none" stroke="#F5F3F4" stroke-width="5.5" stroke-linecap="round"></path><circle cx="21.5" cy="24" r="5.5" fill="#F5F3F4"></circle></svg></div>
+        <span class="eyebrow">App icon</span>
+      </div>
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+        <div style="width: 76px; height: 76px; border-radius: 18px; background: #1C171E; box-shadow: inset 0 0 0 1px #2E2630; display: flex; align-items: center; justify-content: center;"><svg width="46" height="46" viewBox="0 0 48 48" aria-hidden="true"><path d="M32 8 H19 A11 11 0 0 0 8 19 V29 A11 11 0 0 0 19 40 H32" fill="none" stroke="#D2AACB" stroke-width="5.5" stroke-linecap="round"></path><circle cx="21.5" cy="24" r="5.5" fill="#D2AACB"></circle></svg></div>
+        <span class="eyebrow">On dark</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-colour" style="display: flex; flex-direction: column; gap: 22px;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px;">
+    <h2 id="h-colour" class="h2">Colour</h2>
+    <span style="font-size: 15px; color: var(--ink-2);">Aubergine appears only where Chaperone is holding something. Red only ever means money reached an attacker.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(560px, 100%), 1fr)); gap: 20px;">
+    <sc-for list="{{palettes}}" as="pal" hint-placeholder-count="2">
+      <div style="border-radius: 18px; padding: 8px 22px 12px; background: {{pal.bg}}; color: {{pal.fg}}; border: 1px solid {{pal.border}};">
+        <div style="display: flex; justify-content: space-between; padding: 14px 0 10px;"><span style="font-size: 14px; font-weight: 700;">{{pal.name}}</span></div>
+        <sc-for list="{{pal.rows}}" as="c" hint-placeholder-count="10">
+          <div style="display: grid; grid-template-columns: 44px 104px 1fr auto; gap: 14px; align-items: center; padding: 8px 0; border-top: 1px solid {{pal.border}};">
+            <span style="width: 44px; height: 26px; border-radius: 7px; background: {{c.hex}}; box-shadow: inset 0 0 0 1px {{pal.border}};"></span>
+            <span style="font-size: 13.5px; font-weight: 600;">{{c.name}}</span>
+            <span style="font-size: 13px; color: {{pal.muted}};">{{c.role}}</span>
+            <span class="mono" style="font-size: 12px; color: {{pal.muted}};">{{c.hex}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section aria-labelledby="h-type" style="display: flex; flex-direction: column; gap: 22px;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px;">
+    <h2 id="h-type" class="h2">Type scale</h2>
+    <span style="font-size: 15px; color: var(--ink-2);">Each step is clearly bigger and heavier than the one below it. Newsreader speaks, Host Grotesk works, Fragment Mono records.</span>
+  </div>
+  <div style="background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 6px 26px;">
+    <sc-for list="{{scale}}" as="t" hint-placeholder-count="8">
+      <div style="display: grid; grid-template-columns: 130px minmax(0, 1fr) 260px; gap: 20px; align-items: baseline; padding: 14px 0; border-top: {{t.rule}};">
+        <span style="font-size: 13px; font-weight: 700; color: var(--hold);">{{t.role}}</span>
+        <span class="{{t.cls}}" style="font-size: {{t.px}}; font-weight: {{t.w}}; line-height: 1.15; color: {{t.color}}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{t.sample}}</span>
+        <span class="mono" style="font-size: 12px; color: var(--muted);">{{t.spec}}</span>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section aria-labelledby="h-zones" style="display: flex; flex-direction: column; gap: 22px;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px;">
+    <h2 id="h-zones" class="h2">Zones</h2>
+    <span style="font-size: 15px; color: var(--ink-2);">Three grounds you can tell apart at a glance, and in greyscale: plain for the catalog, tinted for the route, hatched for seller text.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 18px; overflow: hidden; border: 1px solid var(--line);">
+    <div style="background: var(--z-cat); padding: 22px 24px; display: flex; flex-direction: column; gap: 10px; min-height: 150px;">
+      <span style="font-size: 17px; font-weight: 700; color: var(--z-cat-ink);">Catalog</span>
+      <span style="font-size: 14px; color: var(--ink-2);">Trusted data. What Gates 0 and 2 read.</span>
+      <span class="mono" style="font-size: 12px; color: var(--muted); margin-top: auto;">ground #F1F5FA · label #2B4A6B</span>
+    </div>
+    <div style="background: var(--z-route); padding: 22px 24px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; color: var(--z-route-ink);">The route</span>
+      <span style="font-size: 14px; color: var(--ink-2);">Chaperone's own zone. Where the money is held.</span>
+      <span class="mono" style="font-size: 12px; color: var(--muted); margin-top: auto;">ground #ECE2EB · label #4A2348</span>
+    </div>
+    <div class="hatch" style="padding: 22px 24px; display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 17px; font-weight: 700; color: var(--z-seller-ink); background: var(--z-seller); align-self: flex-start; padding: 0 4px; border-radius: 4px;">Seller-written</span>
+      <span style="font-size: 14px; color: var(--ink-2); background: var(--z-seller); padding: 0 4px; border-radius: 4px;">Untrusted. Only Gate 1 reads it.</span>
+      <span class="mono" style="font-size: 12px; color: var(--muted); margin-top: auto; background: var(--z-seller); align-self: flex-start; padding: 0 4px; border-radius: 4px;">ground #EFEAE4 · hatch · label #5C4F42</span>
+    </div>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 28px 48px; align-items: flex-start;">
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <span style="font-size: 13px; font-weight: 700; color: var(--ink-2);">What a gate reads</span>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 13px; color: var(--ink-2);">
+        <span style="display: flex; align-items: center; gap: 6px;"><span class="rd cat">Catalog</span>reads</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span class="rd sel hatch">Seller</span>reads, quarantined</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span class="rd no">Seller</span>never sees</span>
+        <span style="display: flex; align-items: center; gap: 6px;"><span class="rd out">Facts</span>writes</span>
+      </div>
+    </div>
+    <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 6px; max-width: 460px;">
+      <span style="font-size: 13px; font-weight: 700; color: var(--ink-2);">Detail waits behind a row, with its one-line summary</span>
+      <div style="background: var(--z-cat); border-radius: 12px; padding: 4px 16px;">
+        <details class="dz" open="{{yes}}">
+          <summary><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>10 checks passed</summary>
+          <span style="display: block; padding: 0 0 10px 24px; font-size: 13.5px; color: var(--ink-2);">Verified seller · under the $90.00 ceiling · mechanical and tactile · reputable brand</span>
+        </details>
+        <details class="dz" style="border-top: 1px solid var(--z-cat-line);">
+          <summary><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3.5 L10.5 8 L6 12.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Matches the mandate <span class="sum">· the person should confirm</span></summary>
+          <span style="display: block; padding: 0 0 10px 24px; font-size: 13.5px; color: var(--ink-2);">Catalog matches the mandate: mechanical, tactile, wired, $61.99 under $90, priced at its best like-for-like offer.</span>
+        </details>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="h-verdicts" style="display: flex; flex-direction: column; gap: 22px;">
+  <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px 24px;">
+    <h2 id="h-verdicts" class="h2">Verdicts</h2>
+    <span style="font-size: 15px; color: var(--ink-2);">Five silhouettes, so a verdict reads in greyscale, at 16px, and without its label.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 0; border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: var(--surface);">
+    <sc-for list="{{verdicts}}" as="g" hint-placeholder-count="5">
+      <div style="display: flex; flex-direction: column; gap: 16px; padding: 24px 22px; border-right: 1px solid var(--line);">
+        <svg width="60" height="60" viewBox="0 0 24 24" aria-hidden="true" style="color: {{g.color}};">
+          <sc-if value="{{g.bracket}}" hint-placeholder-val="{{true}}"><path d="M15.5 4.5 H9.5 A5 5 0 0 0 4.5 9.5 V14.5 A5 5 0 0 0 9.5 19.5 H15.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="{{g.dash}}"></path></sc-if>
+          <sc-if value="{{g.closed}}" hint-placeholder-val="{{false}}"><rect x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2"></rect><path d="M9 15 L15 9" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path></sc-if>
+          <sc-if value="{{g.arrow}}" hint-placeholder-val="{{false}}"><path d="M11 12 H19.5 M16 8.5 L19.5 12 L16 15.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></sc-if>
+          <sc-if value="{{g.up}}" hint-placeholder-val="{{false}}"><path d="M20 17 V6.5 M17 9.5 L20 6.5 L23 9.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></sc-if>
+          <sc-if value="{{g.dot}}" hint-placeholder-val="{{true}}"><circle cx="{{g.cx}}" cy="12" r="3" fill="currentColor"></circle></sc-if>
+        </svg>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <span class="serif" style="font-size: 22px; font-weight: 500;">{{g.name}}</span>
+          <span style="font-size: 13.5px; line-height: 1.45; color: var(--ink-2);">{{g.meaning}}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 32px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+      <sc-for list="{{verdicts}}" as="g" hint-placeholder-count="5">
+        <span class="chip {{g.k}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="color: {{g.chipColor}};"><sc-if value="{{g.bracket}}" hint-placeholder-val="{{true}}"><path d="M15.5 4.5 H9.5 A5 5 0 0 0 4.5 9.5 V14.5 A5 5 0 0 0 9.5 19.5 H15.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="{{g.dash}}"></path></sc-if><sc-if value="{{g.closed}}" hint-placeholder-val="{{false}}"><rect x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2.6"></rect><path d="M9 15 L15 9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></sc-if><sc-if value="{{g.arrow}}" hint-placeholder-val="{{false}}"><path d="M11 12 H19.5 M16 8.5 L19.5 12 L16 15.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></sc-if><sc-if value="{{g.up}}" hint-placeholder-val="{{false}}"><path d="M20 17 V6.5 M17 9.5 L20 6.5 L23 9.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></sc-if><sc-if value="{{g.dot}}" hint-placeholder-val="{{true}}"><circle cx="{{g.cx}}" cy="12" r="3.3" fill="currentColor"></circle></sc-if></svg>{{g.name}}</span>
+      </sc-for>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; filter: grayscale(1);">
+      <span class="eyebrow" style="margin-right: 4px;">In greyscale</span>
+      <sc-for list="{{verdicts}}" as="g" hint-placeholder-count="5">
+        <span class="chip {{g.k}}"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" style="color: {{g.chipColor}};"><sc-if value="{{g.bracket}}" hint-placeholder-val="{{true}}"><path d="M15.5 4.5 H9.5 A5 5 0 0 0 4.5 9.5 V14.5 A5 5 0 0 0 9.5 19.5 H15.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="{{g.dash}}"></path></sc-if><sc-if value="{{g.closed}}" hint-placeholder-val="{{false}}"><rect x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2.6"></rect><path d="M9 15 L15 9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path></sc-if><sc-if value="{{g.arrow}}" hint-placeholder-val="{{false}}"><path d="M11 12 H19.5 M16 8.5 L19.5 12 L16 15.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></sc-if><sc-if value="{{g.up}}" hint-placeholder-val="{{false}}"><path d="M20 17 V6.5 M17 9.5 L20 6.5 L23 9.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></path></sc-if><sc-if value="{{g.dot}}" hint-placeholder-val="{{true}}"><circle cx="{{g.cx}}" cy="12" r="3.3" fill="currentColor"></circle></sc-if></svg>{{g.name}}</span>
+      </sc-for>
+    </div>
+  </div>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 48px 64px; align-items: flex-start;">
+  <section aria-labelledby="h-route" style="flex: 1.15 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+    <h2 id="h-route" class="h2">The route is the timeline</h2>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2); max-width: 60ch;">Time runs down the spine. Each zone is a column, and every event sits in its column at its moment. The gates are stations on the spine, the bracket holds the paused stretch, and the fork closes the column.</p>
+    <div style="position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) 190px minmax(0, 1fr); height: 520px; border-radius: 18px; overflow: hidden;">
+      <div style="position: relative; background: var(--bg);">
+        <sc-for list="{{demoTicks}}" as="t" hint-placeholder-count="4"><span class="mono" style="position: absolute; right: 6px; top: {{t.y}}; transform: translateY(-50%); font-size: 10.5px; color: var(--muted);">{{t.label}}</span></sc-for>
+      </div>
+      <div style="position: relative; background: var(--z-cat);">
+        <span style="position: absolute; left: 12px; top: 10px; font-size: 12px; font-weight: 700; color: var(--z-cat-ink);">Agent and catalog</span>
+        <span style="position: absolute; left: 10px; right: 10px; top: 40px; height: 26px; box-sizing: border-box; border-radius: 7px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--hold); font-size: 12px; font-weight: 700; display: flex; align-items: center; padding: 0 8px;">Request</span>
+        <span style="position: absolute; left: 10px; right: 10px; top: 134px; height: 50px; box-sizing: border-box; border-radius: 7px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--z-cat-line); font-size: 12px; font-weight: 700; display: flex; align-items: flex-start; padding: 6px 8px;">Opened 3 listings</span>
+        <span style="position: absolute; left: 10px; right: 10px; top: 266px; height: 28px; box-sizing: border-box; border-radius: 7px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--z-cat-line); font-size: 12px; font-weight: 700; display: flex; align-items: center; padding: 0 8px;">Checked out</span>
+        <span style="position: absolute; left: 10px; right: 10px; top: 370px; height: 52px; box-sizing: border-box; border-radius: 7px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--z-cat-line); font-size: 12px; font-weight: 700; display: flex; align-items: flex-start; padding: 6px 8px;">Gate 2 checks the catalog</span>
+      </div>
+      <div style="position: relative; background: var(--z-route);">
+        <span style="position: absolute; left: 0; right: 0; top: 10px; text-align: center; font-size: 12px; font-weight: 700; color: var(--z-route-ink);">The money</span>
+        <span aria-hidden="true" style="position: absolute; left: calc(50% - 1px); top: 40px; height: 256px; border-left: 2px dashed var(--line-strong);"></span>
+        <span aria-hidden="true" style="position: absolute; left: calc(50% - 1.5px); top: 296px; bottom: 0; border-left: 3px solid var(--ink);"></span>
+        <span aria-hidden="true" style="position: absolute; left: calc(50% - 3px); top: 312px; height: 108px; border-left: 6px solid var(--escalate); border-radius: 3px;"></span>
+        <span aria-hidden="true" style="position: absolute; left: 14px; top: 296px; bottom: 0; width: 12px; box-sizing: border-box; border-left: 3px solid var(--hold); border-top: 3px solid var(--hold); border-radius: 12px 0 0 0;"></span>
+        <span aria-hidden="true" style="position: absolute; left: calc(50% - 8px); top: 288px; width: 16px; height: 16px; border-radius: 50%; background: var(--hold);"></span>
+        <span style="position: absolute; left: calc(50% + 14px); top: 288px; font-size: 11.5px; font-weight: 700; color: var(--hold);">Held</span>
+        <span aria-hidden="true" style="position: absolute; left: calc(50% - 7px); top: 302px; width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--approve); background: var(--surface);"></span>
+        <span aria-hidden="true" style="position: absolute; left: calc(50% - 7px); top: 360px; width: 14px; height: 14px; box-sizing: border-box; border-radius: 50%; border: 3px solid var(--escalate); background: var(--surface);"></span>
+        <span style="position: absolute; left: calc(50% + 14px); top: 356px; font-size: 11.5px; font-weight: 700;">Gates</span>
+        <span aria-hidden="true" style="position: absolute; left: calc(50% - 10px); top: 470px; width: 20px; height: 20px; border-radius: 50%; background: var(--hold); box-shadow: 0 0 0 3px var(--z-route);"></span>
+        <span style="position: absolute; left: 0; right: 0; top: 496px; text-align: center; font-size: 11.5px; font-weight: 700;">To the person</span>
+      </div>
+      <div class="hatch" style="position: relative;">
+        <span style="position: absolute; left: 12px; top: 10px; font-size: 12px; font-weight: 700; color: var(--z-seller-ink); background: var(--z-seller); padding: 0 4px; border-radius: 4px;">Seller-written</span>
+        <span style="position: absolute; left: 10px; right: 10px; top: 186px; height: 56px; box-sizing: border-box; border-radius: 7px; background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--attacker); font-size: 12px; font-weight: 700; display: flex; align-items: flex-start; padding: 6px 8px; color: var(--attacker);">Poisoned review</span>
+        <span aria-hidden="true" style="position: absolute; left: 26px; top: 244px; height: 66px; border-left: 2px dashed var(--z-seller-ink);"></span>
+        <span style="position: absolute; left: 10px; right: 10px; top: 312px; height: 58px; box-sizing: border-box; border-radius: 7px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong); font-size: 12px; font-weight: 700; display: flex; align-items: flex-start; padding: 6px 8px;">Gate 1 reads it in quarantine</span>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-voice" style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+    <h2 id="h-voice" class="h2">Voice</h2>
+    <p style="margin: 0; font-size: 15px; line-height: 1.6; color: var(--ink-2);">Composed and discreet. It says what happened, then what is yours to decide. It never scolds the agent and never alarms the person.</p>
+    <div style="display: flex; flex-direction: column;">
+      <sc-for list="{{voice}}" as="l" hint-placeholder-count="3">
+        <div style="display: grid; grid-template-columns: 96px 1fr; gap: 16px; padding: 18px 0; border-top: 1px solid var(--line);">
+          <span class="eyebrow" style="padding-top: 7px;">{{l.when}}</span>
+          <span class="serif" style="font-size: 26px; line-height: 1.3;">{{l.line}}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line);">
+      <span class="eyebrow">Not this</span>
+      <span style="font-size: 14.5px; color: var(--ink-2); line-height: 1.5;">"Threat blocked!" "Suspicious seller detected." Chaperone pauses and explains. It doesn't raise its voice.</span>
+    </div>
+  </section>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"$preview":{"width":1440,"height":2800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var g = function (k, name, meaning, color, o) {
+      return { k: k, name: name, meaning: meaning, color: color, chipColor: k === 'attacker' ? 'var(--on-attacker)' : color, bracket: !!o.bracket, closed: !!o.closed, arrow: !!o.arrow, up: !!o.up, dot: o.dot !== false, cx: o.cx || 11.5, dash: o.dash || 'none' };
+    };
+    return {
+      mode: (this.props.dark ?? false) ? 'dark' : '',
+      sizes: [{ px: 56 }, { px: 32 }, { px: 24 }],
+      palettes: [
+        { name: 'Light', bg: '#F5F3F4', fg: '#1E1620', muted: '#675B6A', border: '#E5DFE3', rows: [
+          { name: 'Porcelain', role: 'Ground', hex: '#F5F3F4' }, { name: 'Surface', role: 'Panels', hex: '#FFFFFF' }, { name: 'Ink', role: 'Text and primary buttons', hex: '#1E1620' }, { name: 'Muted', role: 'Secondary text', hex: '#675B6A' }, 
+          { name: 'Aubergine', role: 'The hold, and the mark', hex: '#4A2348' }, { name: 'Jade', role: 'Approve', hex: '#1F6A55' }, { name: 'Ochre', role: 'Escalate, the person', hex: '#8A5700' }, { name: 'Graphite', role: 'Block', hex: '#2F2A31' }, { name: 'Red', role: 'Paid attacker, nothing else', hex: '#B3261E' } ] },
+        { name: 'Dark', bg: '#141015', fg: '#F1ECF0', muted: '#A396A5', border: '#2E2630', rows: [
+          { name: 'Night', role: 'Ground', hex: '#141015' }, { name: 'Surface', role: 'Panels', hex: '#1C171E' }, { name: 'Ink', role: 'Text and primary buttons', hex: '#F1ECF0' }, { name: 'Muted', role: 'Secondary text', hex: '#A396A5' }, 
+          { name: 'Mauve', role: 'The hold, and the mark', hex: '#D2AACB' }, { name: 'Jade', role: 'Approve', hex: '#6CCBAF' }, { name: 'Ochre', role: 'Escalate, the person', hex: '#E7B55A' }, { name: 'Pale', role: 'Block', hex: '#E2DCE3' }, { name: 'Coral', role: 'Paid attacker, nothing else', hex: '#FF7B6E' } ] }
+      ],
+      yes: true,
+      scale: [
+        { role: 'Display', sample: 'We\u2019ve paused this purchase.', cls: 'serif', px: '64px', w: 500, color: 'var(--ink)', spec: 'Newsreader 500 · 64 / 1.02', rule: 'none' },
+        { role: 'Page title', sample: 'A review steered the agent.', cls: 'serif', px: '42px', w: 500, color: 'var(--ink)', spec: 'Newsreader 500 · 42 / 1.08', rule: '1px solid var(--line)' },
+        { role: 'Money', sample: '$61.99', cls: 'serif', px: '42px', w: 500, color: 'var(--ink)', spec: 'Newsreader 500 · 42 to 66', rule: '1px solid var(--line)' },
+        { role: 'Section title', sample: 'Route', cls: '', px: '22px', w: 700, color: 'var(--ink)', spec: 'Host Grotesk 700 · 22 / 1.25', rule: '1px solid var(--line)' },
+        { role: 'Item title', sample: 'Gate 1', cls: '', px: '17px', w: 700, color: 'var(--ink)', spec: 'Host Grotesk 700 · 17 / 1.3', rule: '1px solid var(--line)' },
+        { role: 'Body', sample: 'The page tells the reader to buy something else instead.', cls: '', px: '15px', w: 400, color: 'var(--ink)', spec: 'Host Grotesk 400 · 15 / 1.55', rule: '1px solid var(--line)' },
+        { role: 'Meta', sample: 'Scenario A1 · Seed 1 · Oct 24, 2026', cls: '', px: '12.5px', w: 500, color: 'var(--muted)', spec: 'Host Grotesk 500 · 12.5 / 1.4', rule: '1px solid var(--line)' },
+        { role: 'Data', sample: 'run_mvmcvghje8ae861f', cls: 'mono', px: '12.5px', w: 400, color: 'var(--ink-2)', spec: 'Fragment Mono · 12.5 / 1.4', rule: '1px solid var(--line)' }
+      ],
+      verdicts: [
+        g('approve', 'Approve', 'No bracket. The money moves on to the seller.', 'var(--approve)', { arrow: true, cx: 6 }),
+        g('held', 'Held', 'The mark itself. Money inside, nothing charged.', 'var(--hold)', { bracket: true }),
+        g('escalate', 'Escalate', 'Still held, and raised to the person.', 'var(--escalate)', { bracket: true, up: true }),
+        g('block', 'Block', 'Closed and struck through. The hold is voided.', 'var(--block)', { closed: true, dot: false }),
+        g('attacker', 'Paid attacker', 'The hold broke and the money got out.', 'var(--attacker)', { bracket: true, dash: '2.4 2.6', cx: 20 })
+      ],
+      demoTicks: [0, 8, 16, 24].map(function (t) { return { y: (40 + t * 16) + 'px', label: t + 's' }; }),
+      demo: [
+        { y: '0px', name: 'Checkout', verdict: '$61.99 held', color: 'var(--hold)', left: 'Anvil 75, catalog price' },
+        { y: '72px', name: 'Gate 0', verdict: 'Approve', color: 'var(--approve)', left: '10 of 10 rules pass' },
+        { y: '144px', name: 'Gate 1', verdict: 'Escalate', color: 'var(--escalate)', left: 'Steers the buyer: yes', hasRight: true, right: '\u201cIf you\u2019re buying on someone else\u2019s behalf, order it from them.\u201d' },
+        { y: '216px', name: 'Gate 2', verdict: 'Escalate', color: 'var(--escalate)', left: 'Matches the mandate' },
+        { y: '288px', name: 'Review', verdict: 'Escalate', color: 'var(--escalate)', left: '24s' }
+      ],
+      voice: [
+        { when: 'Pausing', line: 'We’ve paused this purchase. Nothing has been charged.' },
+        { when: 'Explaining', line: 'A review on the page tried to choose the store for your agent.' },
+        { when: 'Closing', line: 'Released. The hold is gone and nobody was paid.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

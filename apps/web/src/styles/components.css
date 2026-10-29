@@ -1,0 +1,301 @@
+/* Buttons: the one filled button is the primary action on a screen. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--on-ink);
+  font-size: 15.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  opacity: 0.9;
+  color: var(--on-ink);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line-strong);
+}
+
+.btn-secondary:hover {
+  background: var(--sunk);
+  color: var(--ink);
+  opacity: 1;
+}
+
+.btn-small {
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  font-size: 14px;
+}
+
+/* Gate state pill. Five silhouettes, so a state reads in greyscale and without its label. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px 0 6px;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pill-approve {
+  background: var(--approve-tint);
+  color: var(--approve-ink);
+}
+
+.pill-escalate {
+  background: var(--escalate-tint);
+  color: var(--escalate-ink);
+}
+
+.pill-held {
+  background: var(--hold-tint);
+  color: var(--hold);
+  box-shadow: inset 0 0 0 1px var(--hold);
+}
+
+.pill-block {
+  background: var(--block-tint);
+  color: var(--block);
+}
+
+.pill-attacker {
+  background: var(--attacker);
+  color: var(--on-attacker);
+}
+
+/* Zones: the catalog is plain, the route is tinted, seller text sits behind a hatch. */
+.zone {
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+}
+
+.zone-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.zone-catalog {
+  background: var(--z-cat);
+  box-shadow: inset 0 0 0 1px var(--z-cat-line);
+}
+
+.zone-catalog .zone-label {
+  color: var(--z-cat-ink);
+}
+
+.zone-route {
+  background: var(--z-route);
+}
+
+.zone-route .zone-label {
+  color: var(--z-route-ink);
+}
+
+.zone-seller {
+  background-color: var(--z-seller);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--hatch) 0 1px,
+    transparent 1px 6px
+  );
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+/* Text on the hatch gets its own ground, so it stays readable. */
+.zone-seller .zone-label,
+.zone-seller .zone-text {
+  display: inline-block;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--z-seller);
+  color: var(--z-seller-ink);
+}
+
+/* What a gate reads. */
+.read {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: var(--radius-xs);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.read-catalog {
+  background: var(--z-cat);
+  color: var(--z-cat-ink);
+  box-shadow: inset 0 0 0 1px var(--z-cat-ink);
+}
+
+.read-seller {
+  background-color: var(--z-seller);
+  background-image: repeating-linear-gradient(
+    135deg,
+    var(--hatch) 0 1px,
+    transparent 1px 6px
+  );
+  color: var(--z-seller-ink);
+  box-shadow: inset 0 0 0 1px var(--z-seller-ink);
+}
+
+.read-never {
+  color: var(--muted);
+  text-decoration: line-through;
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.read-facts {
+  background: var(--surface);
+  color: var(--hold);
+  box-shadow: inset 0 0 0 1.5px var(--hold);
+}
+
+/* Disclosure row: detail waits behind a row with its one-line summary. */
+.disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 14.5px;
+  font-weight: 700;
+}
+
+.disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.disclosure-chevron {
+  flex: none;
+  transition: transform 0.15s ease;
+}
+
+.disclosure[open] > summary .disclosure-chevron {
+  transform: rotate(90deg);
+}
+
+.disclosure-summary {
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+.disclosure-body {
+  padding: 0 0 var(--space-3) 24px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+/* Money is Newsreader, wherever it appears. */
+.money {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-variant-numeric: lining-nums tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.money-sm {
+  font-size: 1.0625rem;
+}
+
+.money-md {
+  font-size: 1.625rem;
+}
+
+.money-lg {
+  font-size: var(--text-money);
+}
+
+.money-xl {
+  font-size: 4.125rem;
+  line-height: 1;
+}
+
+/* Empty state: says what will appear here, and when. */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  max-width: 56ch;
+  padding: var(--space-7) 0;
+}
+
+.empty-title {
+  font-family: var(--font-serif);
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.empty-body {
+  color: var(--ink-2);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: var(--sunk);
+  color: var(--ink-2);
+}
+
+.count-live {
+  background: var(--escalate-tint);
+  color: var(--escalate-ink);
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+}
+
+.wordmark-name {
+  font-family: var(--font-serif);
+  font-size: 23px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}

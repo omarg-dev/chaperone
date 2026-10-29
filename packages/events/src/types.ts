@@ -69,7 +69,19 @@ export interface NewEvent {
   latencyMs?: number;
 }
 
-export interface RunSummary {
+// What the review and the person made of a run, read from its review and human events.
+export interface RunOutcome {
+  // The final verdict: the review's, or the person's decision on an escalation (approve, or block
+  // for a reject). Null when there is none: no review yet, the firewall was off, or a gate broke.
+  verdict: "approve" | "escalate" | "block" | null;
+  // Who decided it: the review, a person, or nobody (the firewall was off). Null with no verdict
+  // and no review yet.
+  decidedBy: "review" | "person" | "no_review" | null;
+  // A gate broke: nothing was enforced and the order stays held.
+  reviewFailed: boolean;
+}
+
+export interface RunSummary extends RunOutcome {
   runId: string;
   scenarioId: string | null;
   startedAt: string;

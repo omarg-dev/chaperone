@@ -20,9 +20,19 @@ const log = openEventLog({
 });
 const arena = createArenaService({ log });
 
-const server = serve({ fetch: createApp({ log, arena }).fetch, port }, (info) => {
-  console.log(`Server ${version} listening on http://localhost:${info.port}`);
-});
+// The web app: the bundled build ships it next to itself (see build.mjs). Run from source, the
+// folder the web app builds into is used when it exists, so `pnpm --filter @firewall/web build`
+// followed by `pnpm dev` serves the whole thing from one port.
+const bundledWeb = fileURLToPath(new URL("./web", import.meta.url));
+const builtWeb = fileURLToPath(new URL("../../web/dist", import.meta.url));
+const webDir = [bundledWeb, builtWeb].find((dir) => existsSync(join(dir, "index.html")));
+
+const server = serve(
+  { fetch: createApp({ log, arena, ...(webDir && { webDir }) }).fetch, port },
+  (info) => {
+    console.log(`Server ${version} listening on http://localhost:${info.port}`);
+  },
+);
 
 // `docker compose up -d` stops the old container with SIGTERM; close cleanly instead of being killed.
 for (const signal of ["SIGTERM", "SIGINT"] as const) {

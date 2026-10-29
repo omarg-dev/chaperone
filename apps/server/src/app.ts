@@ -5,10 +5,13 @@ import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { arenaRoutes } from "./routes/arena.js";
 import { eventRoutes } from "./routes/events.js";
 import { version } from "./version.js";
+import { webHandler } from "./web.js";
 
 export interface AppDependencies {
   log: EventLog;
   arena: ArenaService;
+  // The built web app's folder. Unset (or missing), the server is the API alone.
+  webDir?: string;
 }
 
 const SHOP_STATUS: Record<ShopError["code"], ContentfulStatusCode> = {
@@ -19,13 +22,15 @@ const SHOP_STATUS: Record<ShopError["code"], ContentfulStatusCode> = {
 };
 
 // The HTTP app without a listening socket, so tests can call it directly.
-export function createApp({ log, arena }: AppDependencies) {
+export function createApp({ log, arena, webDir }: AppDependencies) {
   const app = new Hono();
 
   // Polled by the Docker HEALTHCHECK and by the deploy workflow after a release.
   app.get("/health", (c) => c.json({ status: "ok", version }));
   app.route("/arena", arenaRoutes(arena));
   app.route("/events", eventRoutes(log));
+
+  if (webDir) app.notFound(webHandler(webDir));
 
   app.onError((error, c) => {
     if (error instanceof ShopError) {

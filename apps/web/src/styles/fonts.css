@@ -1,0 +1,5 @@
+/* Self-hosted from npm packages, so the hosted demo needs no request to a font service. */
+@import "@fontsource-variable/newsreader/opsz.css";
+@import "@fontsource-variable/newsreader/opsz-italic.css";
+@import "@fontsource-variable/host-grotesk/index.css";
+@import "@fontsource/fragment-mono/latin-400.css";
