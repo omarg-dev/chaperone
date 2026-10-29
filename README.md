@@ -58,6 +58,8 @@ The server runs the marketplace a shopping agent is tested in. A run is one agen
 | `POST /arena/runs/:runId/coupons` `{"code"}` | Applies a coupon |
 | `POST /arena/runs/:runId/checkout` | Turns the cart into an order draft, with each line's payee taken from the catalog |
 | `GET /events/runs`, `GET /events/runs/:runId` | The run list (each run with its `verdict`, `decidedBy` and `reviewFailed`, read from its review and a person's decision), and one run's events in replay order |
+| `GET /events/runs/:runId/payees` | The run's sellers by payee key, with each one's role (honest or attacker), rebuilt from its scenario and seed: the run view uses it to say who was paid and whether that was an attacker. An operator's view, not part of what an agent shops with |
+| `POST /events/runs/:runId/decision` | A person's decision on an escalated run, `{ "decision": "approve" \| "reject", "note"?: string }`, carried out by the same code as `decide-run` (so a repeat changes nothing). 503 when the server has no sandbox variables, 409 when the run isn't waiting for a person or was decided the other way, 502 when the platform refuses |
 
 Every arena call is written to the event log. Send `X-Parent-Event-Id` with the ID of the event that made the call, and the arena's event links to it.
 

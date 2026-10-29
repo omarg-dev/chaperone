@@ -1,31 +1,7 @@
-import { Link, useParams } from "react-router";
+import { Link } from "react-router";
 import { buttonClass, EmptyState } from "../design";
 import { useRuns } from "../runs/RunsProvider";
 import { PageHeader } from "./Page";
-
-export function RunDetail() {
-  const { runId } = useParams();
-  return (
-    <>
-      <PageHeader
-        title="Run"
-        lede="The run's timeline, with the money's route and the gates on it."
-      />
-      <EmptyState
-        title="The live run view is on its way."
-        action={
-          <Link to="/runs" className={buttonClass("secondary", true)}>
-            Back to runs
-          </Link>
-        }
-      >
-        Soon this page shows one vertical timeline: what the agent did, where the money was held,
-        and what each gate decided.
-        {runId && <span className="t-data empty-id"> {runId}</span>}
-      </EmptyState>
-    </>
-  );
-}
 
 export function Escalations() {
   const { heldForPerson } = useRuns();

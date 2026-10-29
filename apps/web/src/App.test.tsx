@@ -59,7 +59,7 @@ describe("navigation", () => {
 
   it("has a page for a run, and one for an address that isn't a page", async () => {
     renderApp("/runs/run_abc");
-    expect(await screen.findByText("The live run view is on its way.")).toBeInTheDocument();
+    expect(await screen.findByText("There's no run with this ID.")).toBeInTheDocument();
     renderApp("/nowhere");
     expect(await screen.findByText("There's nothing at this address.")).toBeInTheDocument();
   });

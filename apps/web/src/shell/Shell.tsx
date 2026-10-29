@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from "react-router";
+import { NavLink, Outlet, useMatch } from "react-router";
 import { Wordmark } from "../design";
 import { useRuns } from "../runs/RunsProvider";
 import { ThemeSwitch } from "../theme/ThemeSwitch";
@@ -27,6 +27,8 @@ const ICONS = {
 
 export function Shell() {
   const { heldForPerson } = useRuns();
+  // A run is drawn across three columns, so its page is wider than the lists.
+  const onRun = useMatch("/runs/:runId") !== null;
   return (
     <div className="shell">
       <header className="topbar">
@@ -63,7 +65,7 @@ export function Shell() {
           <ThemeSwitch />
         </div>
       </header>
-      <main className="page">
+      <main className={onRun ? "page page-wide" : "page"}>
         <Outlet />
       </main>
     </div>

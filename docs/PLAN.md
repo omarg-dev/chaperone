@@ -43,7 +43,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: the MVP is done in code (step 18 is open for review, with steps 15 to 17 open and steps 1 to 14 merged); the design pass (v1.1 step 1) is approved and the web app shell (step 2) is open for review; next is step 3, the live run view.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now: the MVP is done in code (step 18 is open for review, with steps 15 to 17 open and steps 1 to 14 merged); the design pass (v1.1 step 1) is approved and the web app shell (step 2) and the live run view (step 3, which also covers step 4) are open for review; next is step 5, history and replay.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -81,8 +81,8 @@ Done when: with the firewall off a run sends sandbox money to an attacker accoun
 |---|---|---|
 | 1 | Design pass with the design skills: tokens, layout and mockups of every screen, reviewed by Omar before any UI code | ✅ Spine, approved by Omar Oct 28 |
 | 2 | Web app shell: theme tokens, light and dark, navigation, empty states | 👀 PR open |
-| 3 | Live run view: the vertical timeline with the review tree on its spine, on Bryntum Scheduler's vertical mode, with causal arrows (steps 3 and 4 in one: the approved design makes them one screen) | ⬜ |
-| 4 | Review tree per checkout | Merged into step 3 |
+| 3 | Live run view: the vertical timeline with the review tree on its spine, with causal arrows (steps 3 and 4 in one: the approved design makes them one screen). Built as our own timeline component behind a small interface, since there is no Bryntum access; the causal arrows are left out for now, except the one where Gate 1's fact crosses from seller text to the spine | 👀 PR open |
+| 4 | Review tree per checkout | Merged into step 3 (👀) |
 | 5 | History and replay | ⬜ |
 | 6 | Escalation inbox | ⬜ |
 | 7 | AG Studio dashboard with custom widgets and theming | ⬜ |

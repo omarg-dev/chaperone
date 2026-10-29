@@ -1,0 +1,443 @@
+/* The run view: the header, the brief, the decision, and the contents of the timeline's cards. */
+
+.page-wide {
+  max-width: 1440px;
+}
+
+.run {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.run-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.run-crumbs a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.run-crumbs a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.run-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-7);
+}
+
+.run-headline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+  max-width: 680px;
+}
+
+.run-badge {
+  height: 26px;
+}
+
+.run-lede {
+  max-width: 60ch;
+  font-size: 1.125rem;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+/* The money, said once: how much, and where it is. */
+.run-money {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.run-money-glyph {
+  color: var(--hold);
+}
+
+.run-money-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.run-money-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+
+.run-money-held .run-money-label {
+  color: var(--hold);
+}
+
+.run-money-voided .money,
+.run-money-voided .run-money-label {
+  color: var(--block);
+}
+
+.run-money-voided .money {
+  text-decoration: line-through;
+  text-decoration-thickness: 3px;
+}
+
+/* Red: the one state it is for, money that reached an attacker. */
+.run-money-attacker .money,
+.run-money-attacker .run-money-label {
+  color: var(--attacker);
+}
+
+/* What was asked, and what was locked. */
+.run-brief {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4) var(--space-6);
+}
+
+.run-request {
+  flex: 1 1 340px;
+  max-width: 52ch;
+  font-family: var(--font-serif);
+  font-size: 1.1875rem;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+.run-terms {
+  flex: 2 1 480px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.run-terms > div {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--z-cat-line);
+}
+
+.run-terms dt {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--z-cat-ink);
+}
+
+.run-terms dd {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.run-live {
+  text-align: center;
+}
+
+/* The decision: the held cart and the two ways out. */
+.decision {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4) var(--space-5);
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--z-route);
+}
+
+.decision-cart {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.decision-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.decision-lines li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.decision-lines li > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.decision-seller {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.decision-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.decision-actions .btn {
+  min-height: 72px;
+}
+
+.decision-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.decision-choice-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.decision-choice-note {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+.decision-problem {
+  grid-column: 1 / -1;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  font-weight: 600;
+}
+
+/* Cards in the timeline. A card's tag takes its verdict's ink; a block stays graphite. */
+.tl-tone-approve > .tl-tag {
+  color: var(--approve-ink);
+}
+
+.tl-tone-escalate > .tl-tag {
+  color: var(--escalate-ink);
+}
+
+.tl-tone-block > .tl-tag {
+  color: var(--block);
+}
+
+.tl-event-line {
+  display: block;
+}
+
+.tl-own-words {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 14.5px;
+  color: var(--ink-2);
+}
+
+.tl-facts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 var(--space-2);
+}
+
+.tl-facts > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.tl-facts dt {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.tl-facts dd {
+  margin: 0;
+  color: var(--ink);
+}
+
+.tl-spend {
+  margin: 0;
+}
+
+.tl-checks {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  list-style: none;
+}
+
+.tl-checks li {
+  display: flex;
+  flex-direction: column;
+}
+
+.tl-checks strong {
+  font-size: 12px;
+  color: var(--approve-ink);
+}
+
+.tl-checks .tl-check-fail strong {
+  color: var(--escalate-ink);
+}
+
+.tl-explanation {
+  margin: 0 0 var(--space-2);
+  color: var(--ink);
+}
+
+.tl-line-facts {
+  margin-bottom: var(--space-2);
+}
+
+.tl-line-name {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tl-notes {
+  margin: 0 0 var(--space-2);
+  padding-inline-start: 18px;
+}
+
+/* Seller-written text. It sits on its own ground inside the hatched column. */
+.tl-served {
+  display: flex;
+  flex-direction: column;
+}
+
+.tl-passages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.tl-passage {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.tl-passage-label {
+  display: block;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--z-seller-ink);
+}
+
+.tl-passage mark {
+  padding: 0 2px;
+  border-radius: 3px;
+  background: var(--z-seller);
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--z-seller-ink);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+}
+
+.tl-crosses {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  margin: 2px 0;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--z-route);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--hold);
+}
+
+.tl-quote {
+  margin: 4px 0 0;
+}
+
+.tl-quote blockquote {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.tl-quote blockquote::before {
+  content: "\201C";
+}
+
+.tl-quote blockquote::after {
+  content: "\201D";
+}
+
+.tl-quote figcaption {
+  margin-top: 2px;
+  font-size: var(--text-meta);
+  color: var(--muted);
+}
+
+.tl-exit-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.tl-exit-line {
+  font-size: var(--text-meta);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+@media (max-width: 760px) {
+  .decision {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

@@ -1,0 +1,377 @@
+/*
+ * The vertical timeline (src/timeline/): time, then three columns. The catalog is plain, the route
+ * is the money's spine, seller-written text sits behind the hatch. Colours come from the tokens.
+ */
+
+.hatch {
+  background-color: var(--z-seller);
+  background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 6px);
+}
+
+.tl-scroll {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.tl-grid {
+  min-width: 1080px;
+  --tl-cols: 60px minmax(0, 1fr) 400px minmax(0, 1fr);
+}
+
+.tl-head,
+.tl-row,
+.tl-foot {
+  display: grid;
+  grid-template-columns: var(--tl-cols);
+}
+
+.tl-head {
+  height: 44px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.tl-head > * {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+}
+
+.tl-head-time {
+  padding: 0 12px;
+  font-weight: 500;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  border-right: 1px solid var(--line);
+}
+
+.tl-head-catalog {
+  background: var(--z-cat);
+  color: var(--z-cat-ink);
+}
+
+.tl-head-route {
+  justify-content: center;
+  background: var(--z-route);
+  color: var(--z-route-ink);
+}
+
+.tl-head-seller {
+  color: var(--z-seller-ink);
+}
+
+.tl-head-seller-label,
+.tl-seller-label {
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--z-seller);
+}
+
+.tl-head-seller {
+  background-color: var(--z-seller);
+  background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 6px);
+}
+
+.tl-rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tl-time {
+  display: block;
+  padding: var(--space-3) 10px 0 0;
+  border-right: 1px solid var(--line);
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.tl-cell {
+  overflow-wrap: anywhere;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-2) 14px;
+}
+
+.tl-cell-catalog {
+  background: var(--z-cat);
+}
+
+.tl-cell-route {
+  background: var(--z-route);
+}
+
+.tl-cell-seller {
+  background-color: var(--z-seller);
+  background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 6px);
+}
+
+/* The spine: dashed while no money is held, solid ink once it is, with the hold's bracket beside it. */
+.tl-cell-route::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  border-left: 2px dashed var(--line-strong);
+}
+
+.tl-row[data-spine="money"] .tl-cell-route::before {
+  left: calc(50% - 1.5px);
+  border-left: 3px solid var(--ink);
+}
+
+.tl-row[data-spine="money"] .tl-cell-route::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 10px;
+  width: 16px;
+  border-left: 3px solid var(--hold);
+}
+
+.tl-row[data-first-money] .tl-cell-route::before {
+  top: 24px;
+}
+
+.tl-row[data-first-money] .tl-cell-route::after {
+  top: 24px;
+  border-top: 3px solid var(--hold);
+  border-radius: 16px 0 0 0;
+}
+
+/* Cards in the catalog and seller columns. */
+.tl-event {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--z-cat-line);
+}
+
+.tl-cell-seller .tl-event {
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+.tl-event.tl-tone-hold {
+  box-shadow: inset 0 0 0 1px var(--hold);
+}
+
+.tl-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.tl-event-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.tl-event-title {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.tl-event-line {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+/* Stations on the spine. */
+.tl-station {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-inline-start: calc(50% - 14px + 22px);
+  padding-top: 2px;
+}
+
+.tl-station-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.tl-station-title {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.tl-node {
+  position: absolute;
+  top: 4px;
+  left: calc(-22px - 10px);
+  width: 20px;
+  height: 20px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 4px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.tl-tone-hold .tl-node {
+  border-color: var(--hold);
+  background: var(--hold);
+}
+
+.tl-tone-approve .tl-node {
+  border-color: var(--approve);
+}
+
+.tl-tone-escalate .tl-node {
+  border-color: var(--escalate);
+}
+
+.tl-tone-block .tl-node {
+  border-color: var(--block);
+}
+
+.tl-tone-attacker .tl-node {
+  border-color: var(--attacker);
+}
+
+.tl-reads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.tl-skip {
+  font-size: var(--text-meta);
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* Disclosure rows inside cards run a little smaller than elsewhere. */
+.tl-event .disclosure > summary,
+.tl-station .disclosure > summary {
+  min-height: 30px;
+  font-size: 13.5px;
+}
+
+.tl-event .disclosure-body,
+.tl-station .disclosure-body {
+  padding-inline-start: 22px;
+}
+
+.tl-station .disclosure {
+  max-width: 100%;
+}
+
+/* The foot: where the money can leave the route. */
+.tl-foot {
+  min-height: 210px;
+}
+
+.tl-foot > .tl-time {
+  border-right: 1px solid var(--line);
+}
+
+.tl-exit {
+  position: relative;
+  min-height: 210px;
+  --exit-line: var(--line-strong);
+  --exit-style: dashed;
+  --exit-width: 3px;
+}
+
+.tl-exit-taken {
+  --exit-line: var(--exit-tone, var(--ink));
+  --exit-style: solid;
+}
+
+.tl-exit-label {
+  position: absolute;
+  top: 100px;
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0 var(--space-3);
+  text-align: center;
+  color: var(--muted);
+}
+
+.tl-exit-taken .tl-exit-label {
+  color: var(--ink);
+}
+
+.tl-exit-catalog::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  right: 0;
+  top: 40px;
+  height: 48px;
+  border-top: var(--exit-width) var(--exit-style) var(--exit-line);
+  border-left: var(--exit-width) var(--exit-style) var(--exit-line);
+  border-radius: 16px 0 0 0;
+}
+
+.tl-exit-seller::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 50%;
+  top: 40px;
+  height: 48px;
+  border-top: var(--exit-width) var(--exit-style) var(--exit-line);
+  border-right: var(--exit-width) var(--exit-style) var(--exit-line);
+  border-radius: 0 16px 0 0;
+}
+
+.tl-exit-route::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 40px;
+  border-top: var(--exit-width) var(--exit-style) var(--exit-line);
+}
+
+.tl-exit-route::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 1.5px);
+  top: 0;
+  height: 88px;
+  border-left: 3px solid var(--ink);
+}
+
+.tl-exit-route .tl-exit-label {
+  top: 108px;
+}
+
+.tl-exit-dot {
+  display: block;
+  margin: -30px 0 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--hold);
+  box-shadow: 0 0 0 4px var(--bg);
+}

@@ -94,3 +94,15 @@ The product's name, logo and graphics never use PayPal's name or logo. "Built on
 | `Button` | The primary action is the one filled button on a screen; everything else is secondary. `buttonClass` styles a link as a button. |
 | `EmptyState` | A page with nothing on it yet. It names what will appear there. |
 | `Mark`, `Wordmark` | The brand, as above. |
+
+## The run view
+
+`/runs/:runId` (`src/run/`) draws one run as the Spine-Run mockup does. `timeline.ts` is the pure mapping from the run's events to a model (the outcome, the money, the items), tested over real logs; `RunTimeline.tsx` draws the model with the generic timeline in `src/timeline/`, whose items are only a time, a zone, a kind, a title and a body, so a different vertical timeline could replace it.
+
+- **Where a finding goes is the zone it read.** Gate 0's rule results are a card in the catalog column beside its station, Gate 1's reading is a card in the seller column (with the passages it copied), and Gate 2's judgement is a card in the catalog column. The station on the spine holds only the verdict and what the gate reads.
+- **The seller column is the only place seller words appear**, including the passages Gate 1 copied and the page text they are marked in. Titles, reasons and the header never quote them; the cells carry `data-zone`, and a test checks it.
+- **Rows are moments, not a time scale.** Each row is an event or a group that shares one (what the agent opened and what it was served), labelled with the seconds into the run. The mockup scales rows by time; real runs have long quiet gaps that would stretch the page.
+- **Red is given by the payee, not the config.** A run turns red when a payout went to a seller the server says is an attacker (`GET /events/runs/:runId/payees`), whatever the firewall setting was. The mockup also outlines a poisoned review in red while the money is only held; the app doesn't, since nothing has reached an attacker yet, and the page can't tell which review is poisoned anyway.
+- **The route ends in three exits**: capture and pay the seller, to the person, void the hold. The one taken is solid, the others dashed.
+- **An escalated run shows the held cart and the two options** from the Spine-Decision screen, with Reject as the filled button. They post to `POST /events/runs/:runId/decision`.
+- **A run in progress is read again every 1.5 seconds** until its money is settled, a gate broke, or a person has to decide.

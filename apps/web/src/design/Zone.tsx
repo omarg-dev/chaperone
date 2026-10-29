@@ -28,13 +28,14 @@ export function Zone({
   );
 }
 
-export type ReadKind = "catalog" | "seller" | "never" | "facts";
+export type ReadKind = "catalog" | "seller" | "never" | "facts" | "facts-in";
 
 const READ_LABELS: Record<ReadKind, string> = {
   catalog: "reads the catalog",
   seller: "reads seller text, in quarantine",
   never: "never sees seller text",
   facts: "writes typed facts",
+  "facts-in": "reads the typed facts, never the text they came from",
 };
 
 // A small chip saying what a gate reads.
