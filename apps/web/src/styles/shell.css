@@ -202,7 +202,11 @@
 }
 
 .filter-search {
-  flex: 1 1 220px;
+  flex: 1 1 160px;
+}
+
+.filter select.filter-control {
+  max-width: 230px;
 }
 
 .filter-label {

@@ -54,6 +54,10 @@ function Marked({ segments }: { segments: Segment[] }) {
 }
 
 // Everything a seller wrote, as the arena served it. It is only ever drawn in the seller column.
+// A page Gate 1 copied a passage from is open, so the passage marked as steering is seen where it
+// was written, the moment Gate 1 flags it.
+const hasFlagged = (page: ServedPage) => page.blocks.some((b) => b.segments.some((s) => s.marked));
+
 function ServedPages({ pages }: { pages: ServedPage[] }) {
   return (
     <div className="tl-served">
@@ -62,6 +66,7 @@ function ServedPages({ pages }: { pages: ServedPage[] }) {
           key={`${page.listingId}-${page.blocks.length}`}
           title={page.productName}
           summary={`${page.blocks.length} ${page.blocks.length === 1 ? "passage" : "passages"}`}
+          open={hasFlagged(page)}
         >
           <div className="tl-passages">
             {page.blocks.map((block, index) => (

@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
 import { Button, buttonClass, EmptyState, formatMoney, Pill, StateGlyph, Zone } from "../design";
 import { formatCost, formatTime } from "../format";
 import { useRuns } from "../runs/RunsProvider";
 import { DecisionPanel } from "./DecisionPanel";
+import { ReplayBar } from "./ReplayBar";
 import { RunTimeline } from "./RunTimeline";
-import type { RunModel } from "./timeline";
+import { buildRun, type RunModel } from "./timeline";
+import { prefersReducedMotion, useReplay } from "./useReplay";
 import { useRun } from "./useRun";
 
 const MONEY_LABELS = {
@@ -76,8 +78,34 @@ function MoneyBlock({ model }: { model: RunModel }) {
 
 export function RunView() {
   const { runId = "" } = useParams();
-  const { status, model, reload } = useRun(runId);
+  // One page per run: its replay starts over when another run is opened.
+  return <RunPage key={runId} runId={runId} />;
+}
+
+function RunPage({ runId }: { runId: string }) {
+  const { status, model: whole, events, payees, reload } = useRun(runId);
   const runs = useRuns();
+
+  // Replay is offered once the run is done; a run in progress is followed live.
+  const replay = useReplay(events, status === "ready" && !whole.live && events.length > 1);
+  // The run as it was at the playhead: the same mapping as the live view, over a prefix of the log,
+  // so what a replay draws can't drift from what the run view draws.
+  const model = useMemo(
+    () => (replay.open ? buildRun(events.slice(0, replay.position), payees) : whole),
+    [replay.open, replay.position, events, payees, whole],
+  );
+  const replaying = replay.open && replay.position < events.length;
+
+  // Keeps the newest row in view as the playhead moves, and scrolls without animation when asked to.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the position is what makes it run.
+  useEffect(() => {
+    if (!replay.open) return;
+    const rows = document.querySelectorAll(".tl-rows > li");
+    rows[rows.length - 1]?.scrollIntoView?.({
+      block: "nearest",
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+    });
+  }, [replay.open, replay.position]);
 
   if (status === "loading") {
     return (
@@ -138,6 +166,11 @@ export function RunView() {
             <span>{meta.join(" · ")}</span>
           </>
         )}
+        {replaying && (
+          <span className="badge run-replaying">
+            Replay, event {replay.position} of {events.length}
+          </span>
+        )}
       </nav>
 
       <header className="run-top">
@@ -172,7 +205,7 @@ export function RunView() {
         </Zone>
       )}
 
-      {model.awaitingPerson && (
+      {model.awaitingPerson && !replaying && (
         <DecisionPanel
           runId={runId}
           cart={model.cart}
@@ -191,13 +224,24 @@ export function RunView() {
         </p>
       )}
 
+      {!replay.open && !whole.live && events.length > 1 && (
+        <div className="run-replay-entry">
+          <Button variant="secondary" small onClick={replay.start}>
+            Replay this run
+          </Button>
+          <span className="t-meta">Watch it build up, one event at a time.</span>
+        </div>
+      )}
+
       <RunTimeline model={model} />
 
-      {model.live && (
+      {model.live && !replay.open && (
         <p className="t-meta run-live" role="status">
           Following this run as it happens.
         </p>
       )}
+
+      {replay.open && <ReplayBar events={events} replay={replay} />}
     </div>
   );
 }
