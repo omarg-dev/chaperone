@@ -25,7 +25,11 @@ describe("an approved run", () => {
       { label: "Quantity", value: "1 item" },
       { label: "Brands", value: "Reputable brands" },
       { label: "Paying", value: "Verified sellers only" },
-      { label: "Not captured", value: "mid-range" },
+      {
+        label: "Not enforced",
+        value: "mid-range",
+        hint: "In your request, but not made a rule",
+      },
     ]);
     expect(run.mandateHash).toMatch(/^sha256:/);
   });

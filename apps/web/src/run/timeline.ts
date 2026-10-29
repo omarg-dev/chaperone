@@ -170,6 +170,8 @@ export type TimelineKind = RunItem["kind"];
 export interface MandateTerm {
   label: string;
   value: string;
+  // A line saying what the term means, for the one that needs it.
+  hint?: string;
 }
 
 export interface CartLine {
@@ -376,7 +378,13 @@ export function mandateTerms(mandate: Obj): MandateTerm[] {
   const extras = list(mandate.allowedExtras).map(String);
   if (extras.length > 0) terms.push({ label: "Extras allowed", value: extras.join(", ") });
   const unmapped = list(mandate.unmapped).map(String);
-  if (unmapped.length > 0) terms.push({ label: "Not captured", value: unmapped.join(", ") });
+  if (unmapped.length > 0) {
+    terms.push({
+      label: "Not enforced",
+      value: unmapped.join(", "),
+      hint: "In your request, but not made a rule",
+    });
+  }
   return terms;
 }
 

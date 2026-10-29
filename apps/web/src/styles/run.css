@@ -163,6 +163,12 @@
   font-weight: 600;
 }
 
+.run-terms .run-term-hint {
+  font-size: var(--text-meta);
+  font-weight: 400;
+  color: var(--muted);
+}
+
 .run-live {
   text-align: center;
 }

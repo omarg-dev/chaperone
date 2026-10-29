@@ -69,6 +69,15 @@ describe("the run view", () => {
     expect(document.querySelector(".tl-passage mark")).toBeNull();
   });
 
+  it("says which words of the request were not made a rule", async () => {
+    await open(fixtures.approved);
+    const mandate = screen.getByLabelText("The locked mandate");
+    expect(within(mandate).getByText("Not enforced")).toBeInTheDocument();
+    expect(within(mandate).getByText("mid-range")).toBeInTheDocument();
+    expect(within(mandate).getByText("In your request, but not made a rule")).toBeInTheDocument();
+    expect(within(mandate).queryByText("Not captured")).toBeNull();
+  });
+
   it("keeps a block neutral", async () => {
     await open(fixtures.blocked);
     expect(screen.getByRole("img", { name: "Verdict: Blocked" })).toHaveClass("pill-block");
