@@ -110,7 +110,8 @@
   text-decoration-thickness: 3px;
 }
 
-/* Red: the one state it is for, money that reached an attacker. */
+/* Red is the attacker's: filled where money reached one (this, the pill), outlined on the seller
+   text Gate 1 flagged (the passages, the chip and the card, below). */
 .run-money-attacker .money,
 .run-money-attacker .run-money-label {
   color: var(--attacker);
@@ -374,16 +375,15 @@
   color: var(--z-seller-ink);
 }
 
+/* A passage Gate 1 copied as steering: outlined in the attacker's red, never filled. */
 .tl-passage mark {
   padding: 0 2px;
   border-radius: 3px;
   background: var(--z-seller);
   color: var(--ink);
   font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: var(--z-seller-ink);
-  text-decoration-thickness: 1.5px;
-  text-underline-offset: 3px;
+  outline: 1.5px solid var(--attacker);
+  outline-offset: 1px;
 }
 
 .tl-crosses {
@@ -398,6 +398,10 @@
   font-size: 12.5px;
   font-weight: 700;
   color: var(--hold);
+}
+
+.tl-crosses-flagged {
+  box-shadow: inset 0 0 0 1.5px var(--attacker);
 }
 
 .tl-quote {

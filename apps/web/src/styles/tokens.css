@@ -37,7 +37,7 @@
   --block: #2f2a31;
   --block-tint: #e9e6ea;
 
-  /* Red only ever means money reached an attacker */
+  /* Red means an attacker: filled where money reached one, outlined on the seller text flagged as working for one */
   --attacker: #b3261e;
   --attacker-tint: #fbe9e7;
   --on-attacker: #ffffff;

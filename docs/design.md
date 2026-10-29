@@ -10,7 +10,7 @@ Chaperone is the pause before money moves. The run view is one vertical timeline
 
 ## Rules
 
-- **Red only means money reached an attacker.** `--attacker` is for the paid-attacker state and nothing else. Not errors, not warnings, not a blocked cart.
+- **Red means an attacker.** `--attacker` is filled where money reached one: the amount, the payout path and the "Paid attacker" pill. It is outlined, never filled, on the seller text Gate 1 flagged as steering the purchase: the passages it copied, the "Fact crosses" chip and its card in the seller column. That outline is what points to the cause: "you would've lost your money here, but we caught it for you". Not errors, not warnings, not a blocked cart. Omar's decision, Oct 29, replacing "red only means money reached an attacker".
 - **A block is neutral.** A block is the firewall working, so it is graphite (`--block`), not red. A blocked run is a good outcome.
 - **Seller text always sits behind the hatch.** Anything a seller wrote goes in a `seller` zone, which draws the hatch and gives the text its own ground. Only Gate 1 reads it, and nothing else on a screen quotes it outside that zone.
 - **Each fact is said once.** A screen doesn't repeat a verdict, an amount or a reason in a second place. A summary row can open to detail, but the detail doesn't restate the summary.
@@ -44,8 +44,8 @@ Defined once in `tokens.css`, light and dark. Components use these names and nev
 | `--escalate-ink` | #6E4600 | #F0C774 | Escalate text |
 | `--block` | #2F2A31 | #E2DCE3 | Block |
 | `--block-tint` | #E9E6EA | #2A242C | Block ground |
-| `--attacker` | #B3261E | #FF7B6E | Paid attacker, nothing else |
-| `--attacker-tint` | #FBE9E7 | #3A1E1D | Paid attacker ground |
+| `--attacker` | #B3261E | #FF7B6E | An attacker: filled for paid money, outlined on flagged seller text. Never an error, a warning or a block |
+| `--attacker-tint` | #FBE9E7 | #3A1E1D | Paid attacker ground (the flagged outline needs no tint) |
 | `--on-attacker` | #FFFFFF | #141015 | Text on `--attacker` |
 | `--z-cat` | #F1F5FA | #10171F | Catalog zone ground |
 | `--z-cat-ink` | #2B4A6B | #A9C3E0 | Catalog label |
@@ -102,7 +102,8 @@ The product's name, logo and graphics never use PayPal's name or logo. "Built on
 - **Where a finding goes is the zone it read.** Gate 0's rule results are a card in the catalog column beside its station, Gate 1's reading is a card in the seller column (with the passages it copied), and Gate 2's judgement is a card in the catalog column. The station on the spine holds only the verdict and what the gate reads.
 - **The seller column is the only place seller words appear**, including the passages Gate 1 copied and the page text they are marked in. Titles, reasons and the header never quote them; the cells carry `data-zone`, and a test checks it.
 - **Rows are moments, not a time scale.** Each row is an event or a group that shares one (what the agent opened and what it was served), labelled with the seconds into the run. The mockup scales rows by time; real runs have long quiet gaps that would stretch the page.
-- **Red is given by the payee, not the config.** A run turns red when a payout went to a seller the server says is an attacker (`GET /events/runs/:runId/payees`), whatever the firewall setting was. The mockup also outlines a poisoned review in red while the money is only held; the app doesn't, since nothing has reached an attacker yet, and the page can't tell which review is poisoned anyway.
+- **Filled red is given by the payee, not the config.** A run turns red when a payout went to a seller the server says is an attacker (`GET /events/runs/:runId/payees`), whatever the firewall setting was.
+- **Outlined red is given by Gate 1.** The passages it copied as steering (the `marked` segments), the "Fact crosses" chip and its card get a 1.5px `--attacker` outline, as the mockup draws the poisoned review. It shows on any run where Gate 1 flagged something, whatever the verdict, since it says where an attacker's money would have come from; the page doesn't have to know whose review is poisoned, only what the extractor flagged. The outline sits on the seller text and its card, so it never reaches the header or the route. It is at least 5:1 against the seller ground in light and dark, so it needs no tint.
 - **The route ends in three exits**: capture and pay the seller, to the person, void the hold. The one taken is solid, the others dashed.
 - **An escalated run shows the held cart and the two options** from the Spine-Decision screen, with Reject as the filled button. They post to `POST /events/runs/:runId/decision`.
 - **A run in progress is read again every 1.5 seconds** until its money is settled, a gate broke, or a person has to decide.

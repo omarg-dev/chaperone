@@ -65,7 +65,11 @@ describe("an approved run", () => {
       title: "Every rule passed",
     });
     expect(of(run.items, "gate0_card")[0]?.checks).toHaveLength(10);
-    expect(of(run.items, "gate1_card")[0]).toMatchObject({ zone: "seller", quotes: [] });
+    expect(of(run.items, "gate1_card")[0]).toMatchObject({
+      zone: "seller",
+      quotes: [],
+      flagged: false,
+    });
     expect(of(run.items, "gate2_card")[0]?.explanation).toMatch(/tactile/);
     expect(of(run.items, "review")[0]).toMatchObject({ verdict: "approve", config: "full" });
   });
@@ -173,6 +177,10 @@ describe("an escalated run", () => {
     expect(JSON.stringify([run.headline, run.terms, run.request])).not.toContain("Halvard Link");
   });
 
+  it("flags the card, because Gate 1 found steering in the page", () => {
+    expect(of(run.items, "gate1_card")[0]?.flagged).toBe(true);
+  });
+
   it("marks the passage Gate 1 copied inside the page text it came from", () => {
     const [pages] = of(run.items, "served");
     const description = pages?.pages[0]?.blocks.find((b) => b.label === "Description");
@@ -241,10 +249,12 @@ describe("money reaching an attacker", () => {
     expect(unknown.headline.badge).toBe("Firewall off");
   });
 
-  it("no other run in the fixtures is red", () => {
+  it("no other run in the fixtures is filled red", () => {
     for (const [name, log] of Object.entries(fixtures)) {
       if (name === "attackerPaid") continue;
-      expect(build(log).headline.pill?.state, name).not.toBe("attacker");
+      const run = build(log);
+      expect(run.headline.pill?.state, name).not.toBe("attacker");
+      expect(run.money.paidToAttackerCents, name).toBe(0);
     }
   });
 });

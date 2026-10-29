@@ -15,7 +15,9 @@
 // Two rules the screen depends on, kept here so they can be tested:
 //  - Seller-written text (a page, a review, and the quotes Gate 1 copied from them) only ever
 //    appears in items of the "seller" zone, never in a title, a line or a gate's reason.
-//  - Red (the "attacker" state) is only given to a run whose money reached an attacker.
+//  - Red is the attacker's. It is filled (the "attacker" state, the amount) only on a run whose
+//    money reached an attacker, and outlined only on the seller text Gate 1 flagged as steering
+//    the purchase (`flagged` on its card, `marked` on a passage). Omar's decision, Oct 29.
 
 import type { GateState, ZoneKind } from "../design";
 import { list, num, type Obj, obj, type Payee, type RunEvent, str } from "./events";
@@ -149,6 +151,9 @@ export type RunItem = ItemBase &
         verdict: Verdict;
         title: string;
         crosses: string;
+        // Gate 1 flagged something here as steering the purchase: the card, the chip and the
+        // passages it copied are outlined in the attacker's red.
+        flagged: boolean;
         quotes: Gate1Quote[];
         discountCodes: string[];
       }
@@ -910,6 +915,7 @@ export function buildRun(
       kind: "gate1_card",
       verdict,
       title: reasons[0] ?? "Read the pages",
+      flagged: flagKinds.length > 0 || quotes.length > 0,
       crosses:
         flagKinds.length > 0
           ? `Fact crosses: ${flagLabel(flagKinds[0] ?? "").toLowerCase()}`
