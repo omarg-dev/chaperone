@@ -209,6 +209,7 @@ function RunPage({ runId }: { runId: string }) {
         <DecisionPanel
           runId={runId}
           cart={model.cart}
+          unfinished={model.unfinished}
           onDecided={() => {
             reload();
             runs.reload();

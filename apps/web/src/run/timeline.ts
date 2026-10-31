@@ -19,6 +19,7 @@
 //    money reached an attacker, and outlined only on the seller text Gate 1 flagged as steering
 //    the purchase (`flagged` on its card, `marked` on a passage). Omar's decision, Oct 29.
 
+import { type Escalation, holdStateOf, needsPerson, outcomeOf } from "@firewall/events/outcome";
 import type { GateState, ZoneKind } from "../design";
 import { list, num, type Obj, obj, type Payee, type RunEvent, str } from "./events";
 
@@ -209,6 +210,8 @@ export type Outcome =
   | "blocked"
   | "rejected_by_person"
   | "waiting"
+  | "unfinished"
+  | "released"
   | "firewall_off"
   | "attacker_paid"
   | "review_failed"
@@ -246,8 +249,20 @@ export interface RunModel {
   headline: Headline;
   money: RunMoney;
   cart: CartLine[];
-  // The escalation is waiting for the person, who can still approve or reject it.
+  // The escalation still needs the person: nobody has decided and the hold is open (waiting), or a
+  // person decided and the hold is still open (unfinished). Decided by `escalationOf`, the rule the
+  // run list uses, from the same events.
   awaitingPerson: boolean;
+  // What an escalated run needs (waiting, unfinished, released, decided), or null when the review
+  // didn't escalate.
+  escalation: Escalation | null;
+  // A decision the person made that hasn't been carried out: which one, and why the last attempt
+  // didn't finish (the platform's message), when the log has one. Finishing it is sending the same
+  // decision again.
+  unfinished: { decision: "approve" | "reject"; problem: string | null } | null;
+  // The review escalated and the hold was closed with nobody deciding (the eval voids the hold of
+  // each escalated cell): nobody is waiting, and nothing is left to decide.
+  released: boolean;
   // When the review escalated it, and one line for each gate that did (in gate order).
   escalatedAt: string | null;
   heldReasons: HeldReason[];
@@ -424,6 +439,20 @@ interface ToolGroup {
 
 const verdictOf = (value: unknown): Verdict | null =>
   value === "approve" || value === "escalate" || value === "block" ? value : null;
+
+// Why a decision didn't finish: the platform's message from the last payment call it refused after
+// the person decided, or null when the log has none (the server stopped before it got that far).
+function refusalAfter(events: readonly RunEvent[], decision: RunEvent | undefined): string | null {
+  if (!decision) return null;
+  const refused = events.findLast(
+    (e) =>
+      e.lane === "payments" &&
+      e.type === "payment_call" &&
+      e.seq > decision.seq &&
+      "error" in obj(e.payload),
+  );
+  return str(obj(obj(refused?.payload).error).message);
+}
 
 export function buildRun(
   events: readonly RunEvent[],
@@ -1123,13 +1152,20 @@ export function buildRun(
   const paidToAttackerCents = payouts
     .filter((p) => p.attacker)
     .reduce((s, p) => s + p.amountCents, 0);
+  // A hold closed with no `enforced` event (an eval's cleanup voided it) is as closed as one
+  // enforcement closed.
+  const hold = holdStateOf(events);
   const moneyState: MoneyState = enforced
     ? enforcedBody.money === "voided"
       ? "voided"
       : "captured"
-    : holdAt
-      ? "held"
-      : "none";
+    : hold.closedBy
+      ? hold.closedBy === "void"
+        ? "voided"
+        : "captured"
+      : holdAt
+        ? "held"
+        : "none";
   const money: RunMoney = {
     state: moneyState,
     amountCents:
@@ -1155,18 +1191,35 @@ export function buildRun(
   });
 
   // ---- Where it stands.
+  // An escalation follows the money: it needs a person while the platform's hold is open, whether
+  // or not they have decided, and one whose hold was closed with nobody deciding needs nobody.
+  const escalation = failed ? null : outcomeOf(events).escalation;
   const awaitingPerson =
-    !!escalated && !enforced && !failed && reviewVerdict === "escalate" && decision === null;
+    needsPerson(escalation) && (escalation === "unfinished" || (!!escalated && !enforced));
+  const releasedUndecided = escalation === "released";
+  const unfinished: RunModel["unfinished"] =
+    escalation === "unfinished" && (decision === "approve" || decision === "reject")
+      ? {
+          decision: decision === "approve" ? "approve" : "reject",
+          problem: refusalAfter(events, decisionEvent),
+        }
+      : null;
   const noCheckout = !!agentFinished && agentStatus !== null && agentStatus !== "checked_out";
+  const closedBy = enforced ? null : holdStateOf(events).closedBy;
   const exit: Exit | null = enforced
     ? enforcedBody.money === "voided"
       ? "void"
       : "capture"
-    : awaitingPerson || failed
-      ? "person"
-      : null;
+    : closedBy
+      ? closedBy
+      : awaitingPerson || failed
+        ? "person"
+        : null;
   const stale = lastEvent ? now - Date.parse(lastEvent.ts) > STALE_MS : false;
-  const live = !(enforced || failed || awaitingPerson || noCheckout) && !stale && events.length > 0;
+  const live =
+    !(enforced || failed || awaitingPerson || releasedUndecided || noCheckout) &&
+    !stale &&
+    events.length > 0;
 
   const headline = headlineFor({
     started: events.length > 0,
@@ -1174,6 +1227,8 @@ export function buildRun(
     failed: !!failed,
     enforced: !!enforced,
     awaitingPerson,
+    unfinished,
+    released: releasedUndecided,
     verdict: reviewVerdict,
     reviewed: !!finished,
     decision: decision === "approve" || decision === "reject" ? decision : null,
@@ -1213,6 +1268,9 @@ export function buildRun(
     money,
     cart,
     awaitingPerson,
+    escalation,
+    unfinished,
+    released: releasedUndecided,
     escalatedAt: escalated?.ts ?? null,
     heldReasons,
     holdExpiresAt,
@@ -1233,6 +1291,8 @@ interface Standing {
   failed: boolean;
   enforced: boolean;
   awaitingPerson: boolean;
+  unfinished: RunModel["unfinished"];
+  released: boolean;
   verdict: Verdict | null;
   reviewed: boolean;
   decision: "approve" | "reject" | null;
@@ -1286,6 +1346,17 @@ export function headlineFor(s: Standing): Headline {
       "No checkout",
     );
   }
+  if (s.unfinished) {
+    const approved = s.unfinished.decision === "approve";
+    const problem = s.unfinished.problem?.replace(/\.$/, "");
+    return pilled(
+      "unfinished",
+      "escalate",
+      "Decision not finished",
+      `You ${approved ? "approved" : "rejected"} this purchase, but the money hasn't moved.`,
+      problem ? `${problem}. Finish it below.` : "Finish it below.",
+    );
+  }
   if (s.decision === "approve") {
     return pilled("approved_by_person", "approve", "You approved", "You approved this purchase.");
   }
@@ -1299,6 +1370,14 @@ export function headlineFor(s: Standing): Headline {
       "Waiting on you",
       "We've paused this purchase.",
       "Approve it or reject it below.",
+    );
+  }
+  if (s.released) {
+    return plain(
+      "released",
+      "The hold was released without a decision.",
+      "Chaperone paused this purchase, and the hold was voided before a person decided it. Nobody was paid.",
+      "Hold released",
     );
   }
   if (s.reviewed && s.verdict === null) {

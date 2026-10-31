@@ -1,10 +1,11 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { RunSummary } from "../api";
 import { INBOX_POLL_MS } from "../inbox/useFreshness";
 import type { RunEvent } from "../run/events";
 import { fixtures } from "../run/fixtures";
-import { mockDevice, mockServer, renderApp, run } from "../test-utils";
+import { escalated, mockDevice, mockServer, renderApp, run } from "../test-utils";
 
 beforeEach(() => mockDevice(false));
 afterEach(() => {
@@ -16,13 +17,22 @@ afterEach(() => {
 // and an extra item in the cart (Gate 0 and Gate 2). The first was held a few seconds earlier.
 const POISONED = fixtures.escalated;
 const EXTRA = fixtures.extraItem;
+// The same held purchase after a person approved it and the platform refused to capture: their
+// decision is on the log and the hold is still open.
+const UNFINISHED = fixtures.escalatedUnfinished;
+// An escalated eval cell: its hold was voided when the cell was settled, and no one decided.
+const RELEASED = fixtures.escalatedReleased;
+const UNFINISHED_OF_POISONED = UNFINISHED.map((e) => ({
+  ...e,
+  runId: POISONED[0]?.runId as string,
+}));
 const idOf = (log: RunEvent[]) => log[0]?.runId as string;
 const logs = { [idOf(POISONED)]: POISONED, [idOf(EXTRA)]: EXTRA };
 
 const held = (log: RunEvent[], startedAt: string) =>
-  run(idOf(log), "sc_b01", startedAt, { verdict: "escalate", decidedBy: "review" });
+  run(idOf(log), "sc_b01", startedAt, escalated.waiting);
 const person = (id: string, verdict: "approve" | "block", at: string) => ({
-  ...run(id, "sc_b01", at, { verdict, decidedBy: "person" }),
+  ...run(id, "sc_b01", at, escalated.decided(verdict)),
   lastEventAt: at,
 });
 const scenarios = [
@@ -139,6 +149,18 @@ describe("the escalation inbox", () => {
     const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
     expect(within(item).getByText(/^Held for/)).toBeInTheDocument();
     expect(item.textContent).not.toMatch(/Hold ends|hold has ended/);
+  });
+
+  it("doesn't list an escalation whose hold was released with nobody deciding, as an eval's cleanup leaves it", async () => {
+    mockServer({
+      scenarios,
+      events: { [idOf(RELEASED)]: RELEASED },
+      runs: [run(idOf(RELEASED), "sc_b01", "2026-10-24T10:00:00Z", escalated.released)],
+    });
+    renderApp("/escalations");
+    expect(await screen.findByText("Nothing is waiting on you")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Approve and pay/ })).toBeNull();
+    expect(screen.getByRole("status", { name: "0 waiting for you" })).toBeInTheDocument();
   });
 
   it("waits for the log to say the review escalated before offering a decision", async () => {
@@ -265,38 +287,115 @@ describe("deciding from the inbox", () => {
     );
   });
 
-  it("keeps a run whose decision was written but not carried out, with the platform's message", async () => {
+  it("offers to finish a decision that was written but not carried out, and says why it didn't finish", async () => {
     SET_NOW();
     const user = userEvent.setup();
+    const decide = vi.fn(() => ({ status: 200, body: { status: "enforced", money: "captured" } }));
     const server = {
       scenarios,
-      events: logs,
+      events: { [idOf(UNFINISHED)]: UNFINISHED },
+      decide,
+      runs: [
+        {
+          ...run(
+            idOf(UNFINISHED),
+            "sc_b01",
+            "2026-10-24T10:00:00Z",
+            escalated.unfinished("approve"),
+          ),
+          eventCount: UNFINISHED.length,
+        },
+      ],
+    };
+    mockServer(server);
+    renderApp("/escalations");
+
+    // The platform refused, so the hold is open: the run is still here, says what was decided and
+    // why it didn't finish, and offers that decision and no other.
+    const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
+    expect(within(item).getByText("Decision not finished")).toBeInTheDocument();
+    expect(item.textContent).toMatch(/You approved this purchase, but the money hasn't moved/);
+    expect(item.textContent).toMatch(
+      /The last attempt failed: The payment platform is unavailable/,
+    );
+    expect(within(item).queryByRole("button", { name: /Reject/ })).toBeNull();
+    expect(screen.getByRole("status", { name: "1 waiting for you" })).toBeInTheDocument();
+
+    // Finishing sends the same decision again, and the run leaves with a note once it has gone through.
+    server.runs = [person(idOf(UNFINISHED), "approve", "2026-10-26T12:00:00Z")] as never;
+    await user.click(within(item).getByRole("button", { name: /Finish and pay/ }));
+    expect(decide).toHaveBeenCalledWith(idOf(UNFINISHED), { decision: "approve" });
+    expect(
+      await screen.findByText(/Approved\. \$109\.99 was captured and the seller paid\./),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Finish and pay/ })).toBeNull();
+  });
+
+  it("keeps an unfinished decision in the list when finishing it fails too, with the message", async () => {
+    SET_NOW();
+    const user = userEvent.setup();
+    mockServer({
+      scenarios,
+      events: { [idOf(UNFINISHED)]: UNFINISHED },
       decide: () => ({
         status: 502,
         body: { error: "payment_failed", message: "The platform refused the capture." },
       }),
-      runs: [held(POISONED, "2026-10-24T10:00:00Z")],
+      runs: [
+        {
+          ...run(
+            idOf(UNFINISHED),
+            "sc_b01",
+            "2026-10-24T10:00:00Z",
+            escalated.unfinished("approve"),
+          ),
+          eventCount: UNFINISHED.length,
+        },
+      ],
+    });
+    renderApp("/escalations");
+    const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
+    await user.click(within(item).getByRole("button", { name: /Finish and pay/ }));
+    expect(await within(item).findByRole("alert")).toHaveTextContent(
+      "The platform refused the capture.",
+    );
+    expect(within(item).getByRole("button", { name: /Finish and pay/ })).toBeEnabled();
+    expect(screen.getByRole("status", { name: "1 waiting for you" })).toBeInTheDocument();
+  });
+
+  it("offers a first decision again after a failed one, once the list says it is written", async () => {
+    SET_NOW();
+    const user = userEvent.setup();
+    const server = {
+      scenarios,
+      events: logs as Record<string, RunEvent[]>,
+      decide: () => ({
+        status: 502,
+        body: { error: "payment_failed", message: "The platform refused the capture." },
+      }),
+      runs: [held(POISONED, "2026-10-24T10:00:00Z")] as RunSummary[],
     };
     mockServer(server);
     renderApp("/escalations");
     const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
-    // The decision is in the log by now, so the list reads the run as decided by a person.
-    server.runs = [person(idOf(POISONED), "approve", "2026-10-26T12:00:00Z")] as never;
+    // The decision is on the log by now, and the hold is open: the list reads the run as unfinished.
+    server.events = { [idOf(POISONED)]: UNFINISHED_OF_POISONED };
+    server.runs = [
+      {
+        ...run(idOf(POISONED), "sc_b01", "2026-10-24T10:00:00Z", escalated.unfinished("approve")),
+        eventCount: UNFINISHED_OF_POISONED.length,
+      },
+    ];
     await user.click(within(item).getByRole("button", { name: /Approve and pay/ }));
     expect(await within(item).findByRole("alert")).toHaveTextContent(
       "The platform refused the capture.",
     );
-    // A later read of the list doesn't take it away: its money is still held.
-    await act(async () => {
-      window.dispatchEvent(new Event("focus"));
-    });
     await waitFor(() =>
-      expect(screen.getByRole("status", { name: "0 waiting for you" })).toBeInTheDocument(),
+      expect(
+        screen.getByRole("listitem", { name: "Mechanical keyboard, tactile" }),
+      ).toHaveTextContent(/Decision not finished/),
     );
-    expect(
-      screen.getByRole("listitem", { name: "Mechanical keyboard, tactile" }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Approve and pay/ })).toBeEnabled();
+    expect(screen.getByRole("status", { name: "1 waiting for you" })).toBeInTheDocument();
   });
 });
 

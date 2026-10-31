@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mockDevice, mockServer, renderApp, run } from "../test-utils";
+import { escalated, mockDevice, mockServer, renderApp, run } from "../test-utils";
 
 beforeEach(() => mockDevice(false));
 afterEach(() => vi.unstubAllGlobals());
@@ -18,10 +18,7 @@ describe("the Runs page", () => {
         }),
         run("run_old", "sc_b02", "2026-10-23T09:30:00Z", { decidedBy: "no_review" }),
         run("run_bare", "sc_b03", "2026-10-22T09:30:00Z"),
-        run("run_person", "sc_b04", "2026-10-21T09:30:00Z", {
-          verdict: "approve",
-          decidedBy: "person",
-        }),
+        run("run_person", "sc_b04", "2026-10-21T09:30:00Z", escalated.decided("approve")),
         run("run_failed", "sc_b05", "2026-10-20T09:30:00Z", { reviewFailed: true }),
       ],
       scenarios: [
@@ -137,8 +134,7 @@ describe("the history's filters", () => {
     }),
     run("run_held", "sc_b01", "2026-10-24T11:00:00Z", {
       kind: "benign",
-      verdict: "escalate",
-      decidedBy: "review",
+      ...escalated.waiting,
       reviews: ["full"],
     }),
   ];
@@ -159,6 +155,43 @@ describe("the history's filters", () => {
     expect(screen.getByLabelText("Outcome")).toHaveValue("blocked");
     expect(screen.getByLabelText("Kind")).toHaveValue("attack");
     expect(screen.getByText("Showing 1–1 of 1 matching runs, out of 4")).toBeInTheDocument();
+  });
+
+  it("filters held for a person by the hold: waiting and unfinished are, a released hold isn't", async () => {
+    const user = userEvent.setup();
+    mockServer({
+      runs: [
+        ...runs,
+        run("run_unfinished", "sc_b01", "2026-10-24T10:59:00Z", {
+          kind: "benign",
+          ...escalated.unfinished("approve"),
+          reviews: ["full"],
+        }),
+        // An eval cell's escalation, voided when the cell was settled.
+        run("run_released", "sc_b01", "2026-10-24T10:58:00Z", {
+          kind: "benign",
+          ...escalated.released,
+          reviews: ["off", "gate0", "full"],
+        }),
+      ],
+      scenarios,
+    });
+    renderApp("/runs");
+    await screen.findByRole("list", { name: "Runs" });
+
+    await user.selectOptions(screen.getByLabelText("Outcome"), "Held for a person");
+    expect(shownIds()).toEqual(["run_held", "run_unfinished"]);
+    const unfinished = screen
+      .getAllByRole("listitem")
+      .find((row) => row.textContent?.includes("run_unfinished")) as HTMLElement;
+    expect(within(unfinished).getByText("Decision not finished")).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent("/runs?outcome=held");
+
+    await user.selectOptions(screen.getByLabelText("Outcome"), "Hold released");
+    expect(shownIds()).toEqual(["run_released"]);
+    const released = within(screen.getByRole("list", { name: "Runs" })).getAllByRole("listitem")[0];
+    expect(within(released as HTMLElement).getByText("Hold released")).toBeInTheDocument();
+    expect(within(released as HTMLElement).queryByRole("img", { name: /Verdict/ })).toBeNull();
   });
 
   it("writes each filter into the address as it is chosen", async () => {

@@ -30,8 +30,9 @@ interface HeldProps {
   now: number;
   // A decision went through (null: someone else had decided it first).
   onDecided: (run: RunSummary, model: RunModel, result: DecisionResult | null) => void;
-  // A decision didn't go through, so the run stays here whatever the list says next.
-  onFailed: (run: RunSummary) => void;
+  // A decision didn't go through. It may have been written before the platform refused, so the list
+  // is read again: the run then says its decision is unfinished and offers to finish it.
+  onFailed: () => void;
 }
 
 function HeldHead({
@@ -46,7 +47,10 @@ function HeldHead({
   return (
     <header className="held-head">
       <div className="held-title">
-        <Pill state="escalate" label="Needs your decision" />
+        <Pill
+          state="escalate"
+          label={run.escalation === "unfinished" ? "Decision not finished" : "Needs your decision"}
+        />
         <h3 className="t-item">{title}</h3>
       </div>
       <div className="held-meta">
@@ -66,11 +70,7 @@ function HeldDecision({
   onDecided,
   onFailed,
 }: HeldProps & { model: RunModel }) {
-  const decision = useDecision(
-    run.runId,
-    (result) => onDecided(run, model, result),
-    () => onFailed(run),
-  );
+  const decision = useDecision(run.runId, (result) => onDecided(run, model, result), onFailed);
   const heldFor = model.escalatedAt ? Date.parse(model.escalatedAt) : null;
   const total = model.money.amountCents;
   return (
@@ -120,7 +120,7 @@ function HeldDecision({
               </div>
             )}
           </section>
-          <DecisionButtons {...decision} />
+          <DecisionButtons {...decision} unfinished={model.unfinished} />
         </div>
       </div>
       <footer className="held-foot">
@@ -163,29 +163,20 @@ export function Escalations() {
   // What was decided on this visit, newest first: each leaves the list with a confirmation.
   const [confirmations, setConfirmations] = useState<Confirmation[]>([]);
   const decidedHere = useMemo(() => new Set(confirmations.map((c) => c.runId)), [confirmations]);
-  // Runs a decision was tried on and didn't go through. A decision that failed after it was written
-  // reads as decided in the list, but its money is still held: it stays here until it is carried out.
-  const [stuck, setStuck] = useState<Record<string, RunSummary>>({});
-
-  const waiting = useMemo(() => {
-    const fromList = waitingRuns(runs).filter((run) => !decidedHere.has(run.runId));
-    const known = new Set(fromList.map((run) => run.runId));
-    const kept = Object.values(stuck).filter(
-      (run) => !known.has(run.runId) && !decidedHere.has(run.runId),
-    );
-    return [...fromList, ...kept];
-  }, [runs, stuck, decidedHere]);
+  // A decision that was written but not carried out (the platform refused) is still in the list:
+  // its hold is open, so the run says it is unfinished until the money has moved.
+  const waiting = useMemo(
+    () => waitingRuns(runs).filter((run) => !decidedHere.has(run.runId)),
+    [runs, decidedHere],
+  );
   const details = useHeldDetails(waiting);
 
   const items = oldestFirst(
     waiting
       .map((run) => ({ run, detail: details[run.runId] ?? ({ status: "loading" } as Detail) }))
-      // The review has escalated and nobody has decided: until the log says so, there is nothing
-      // to decide yet (a run the review is still finishing).
-      .filter(
-        ({ run, detail }) =>
-          detail.status !== "ready" || detail.model.awaitingPerson || run.runId in stuck,
-      )
+      // The review has escalated and the hold is open: until the log says so, there is nothing to
+      // decide yet (a run the review is still finishing).
+      .filter(({ detail }) => detail.status !== "ready" || detail.model.awaitingPerson)
       .map(({ run, detail }) => ({
         run,
         detail,
@@ -219,15 +210,10 @@ export function Escalations() {
       },
       ...now.filter((c) => c.runId !== run.runId),
     ]);
-    setStuck(({ [run.runId]: _, ...rest }) => rest);
     refresh();
   };
-  const failed = (run: RunSummary) => setStuck((now) => ({ ...now, [run.runId]: run }));
 
-  const recent = recentlyDecided(
-    runs.filter((run) => !(run.runId in stuck)),
-    decidedHere,
-  );
+  const recent = recentlyDecided(runs, decidedHere);
 
   const reloadButton = (
     <Button variant="secondary" small onClick={reload}>
@@ -299,7 +285,7 @@ export function Escalations() {
                 now={now}
                 detail={detail}
                 onDecided={decided}
-                onFailed={failed}
+                onFailed={refresh}
               />
             ))}
           </ul>

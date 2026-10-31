@@ -1,6 +1,7 @@
 // The server's own API, called with relative URLs: the Hono server serves this app and the API from
 // one origin, and in development Vite proxies them (vite.config.ts).
 
+import type { Escalation } from "@firewall/events/outcome";
 import type { Payee, RunEvent } from "./run/events";
 
 export interface RunSummary {
@@ -17,6 +18,12 @@ export interface RunSummary {
   decidedBy: "review" | "person" | "no_review" | null;
   // A gate broke: nothing was enforced and the order stays held.
   reviewFailed: boolean;
+  // The platform's hold on the order is still open: no capture or void of it has gone through.
+  holdOpen: boolean;
+  // What an escalated run needs, from the person's decision and the hold (see `escalationOf` in
+  // @firewall/events): waiting for a person, unfinished (decided, hold still open), released
+  // (the hold closed with no decision) or decided. Null when the review didn't escalate.
+  escalation: Escalation | null;
   // The seed the run's scenario was built with.
   seed: string | null;
   // The firewall configuration of each review the run went through, in order ("off", "gate0",

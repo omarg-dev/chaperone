@@ -186,6 +186,44 @@ describe("the run view", () => {
     expect(screen.queryByRole("button", { name: /Approve and pay/ })).toBeNull();
   });
 
+  it("offers to finish a decision the platform refused, and the same decision only", async () => {
+    const user = userEvent.setup();
+    const decide = vi.fn(() => ({ status: 200, body: { status: "enforced", money: "captured" } }));
+    await open(fixtures.escalatedUnfinished, { decide });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "You approved this purchase, but the money hasn't moved.",
+    );
+    expect(
+      screen.getByText(/The payment platform is unavailable\. Finish it below\./),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("img", { name: "Verdict: Decision not finished" })).toHaveLength(1);
+    const panel = screen.getByRole("region", { name: "Your decision" });
+    // The held cart is still shown, and the only way forward is the decision already made.
+    expect(within(panel).getByText("Halvard TKL")).toBeInTheDocument();
+    expect(within(panel).queryByRole("button", { name: /Reject/ })).toBeNull();
+    // The headline says what was decided and why it didn't finish; the panel doesn't say it again.
+    expect(within(panel).queryByText(/The last attempt failed/)).toBeNull();
+    expect(within(panel).queryByText(/the money hasn't moved/)).toBeNull();
+    await user.click(within(panel).getByRole("button", { name: /Finish and pay/ }));
+    expect(decide).toHaveBeenCalledWith(idOf(fixtures.escalatedUnfinished), {
+      decision: "approve",
+    });
+  });
+
+  it("says a hold released with no decision plainly, with no decision to make", async () => {
+    await open(fixtures.escalatedReleased);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "The hold was released without a decision.",
+    );
+    expect(screen.getByText("Hold released")).toBeInTheDocument();
+    expect(screen.getByText("Voided, nobody paid")).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Your decision" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Approve and pay|Reject and release/ })).toBeNull();
+    // Not waiting on anyone, and not following the run as if more were coming.
+    expect(screen.queryByText("Waiting on you")).toBeNull();
+    expect(screen.queryByText("Following this run as it happens.")).toBeNull();
+  });
+
   it("says when there is no such run, and when the server is down", async () => {
     mockServer({ events: {} });
     renderApp("/runs/run_nope");
