@@ -9,7 +9,8 @@ import {
   createArenaService,
   findScenario,
 } from "@firewall/arena";
-import { type EventLog, openEventLog } from "@firewall/events";
+import { type EventLog, needsPerson, openEventLog, outcomeOf } from "@firewall/events";
+import { decideEscalation } from "@firewall/firewall";
 import { DEFAULT_TOLERANCES, type MandateBuilder } from "@firewall/mandate";
 import { createFakePaymentAdapter, type FakePaymentAdapter } from "@firewall/payments";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -313,6 +314,34 @@ describe("settleCell: the one real enforcement", () => {
       );
       expect(hold.status, name).toBe(full.money === "captured" ? "CAPTURED" : "VOIDED");
     }
+  });
+
+  it("leaves an escalated cell released with no decision, not waiting on a person", async () => {
+    const { run, gates } = await shop("unrequested_extra");
+    const outcomes = await evaluateAll(run, gates);
+    const settlement = await settleCell(run, outcomes, { log, payments: fake });
+    expect(settlement).toMatchObject({ money: "held", releasedHold: true, error: null });
+
+    // The cleanup voided the hold and wrote no decision, so nobody is waiting: the run list, which
+    // the top bar's count, the Runs filter and the inbox all read, says so.
+    const events = log.listRun(run.runId as string);
+    expect(events.some((e) => e.type === "human_decision")).toBe(false);
+    const listed = log.listRuns().find((r) => r.runId === run.runId);
+    expect(listed).toMatchObject({
+      verdict: "escalate",
+      decidedBy: "review",
+      holdOpen: false,
+      escalation: "released",
+    });
+    expect(needsPerson(listed?.escalation ?? null)).toBe(false);
+    expect(outcomeOf(events)).toMatchObject({ escalation: "released" });
+
+    // Nothing is left to decide: an approval is refused, and writes no decision of its own.
+    const before = events.length;
+    await expect(
+      decideEscalation(run.runId as string, "approve", { log, payments: fake }),
+    ).rejects.toThrow(/released without a decision/);
+    expect(log.listRun(run.runId as string)).toHaveLength(before);
   });
 
   it("derives money from a verdict the way enforcement does", () => {

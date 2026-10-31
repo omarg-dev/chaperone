@@ -1,10 +1,12 @@
-import type { Event } from "@firewall/events";
+import { type Event, outcomeOf } from "@firewall/events";
 import {
   type Capture,
   createFakePaymentAdapter,
   type FakePaymentAdapter,
   type PaymentAdapter,
+  PaymentError,
   type Payout,
+  recordPayments,
 } from "@firewall/payments";
 import { afterEach, describe, expect, it } from "vitest";
 import { decideEscalation, enforceReview } from "./enforce.js";
@@ -190,6 +192,67 @@ describe("escalate", () => {
     expect(again.status).toBe("already_enforced");
     expect(s.calls("capture")).toHaveLength(1);
     expect(s.events().filter((e) => e.type === "human_decision")).toHaveLength(1);
+  });
+
+  it("a decision the platform refused leaves the hold open, still needing a person, and the same decision finishes it", async () => {
+    const fake = createFakePaymentAdapter();
+    let down = true;
+    const flaky: PaymentAdapter = {
+      ...fake,
+      createOrder: (i) => fake.createOrder(i),
+      getOrder: (i) => fake.getOrder(i),
+      authorizeOrder: (i, o) => fake.authorizeOrder(i, o),
+      getAuthorization: (i) => fake.getAuthorization(i),
+      voidAuthorization: (i) => fake.voidAuthorization(i),
+      reauthorize: (i) => fake.reauthorize(i),
+      refundCapture: (i, a) => fake.refundCapture(i, a),
+      getPayout: (i) => fake.getPayout(i),
+      createPayout: (i) => fake.createPayout(i),
+      captureAuthorization: async (id) => {
+        if (down) throw new PaymentError("platform_error", "The platform is down");
+        return fake.captureAuthorization(id);
+      },
+    };
+    const s = await setup("unrequested_extra", "full", fake as FakePaymentAdapter);
+    await enforceReview(s.runId, s.options);
+    expect(outcomeOf(s.events()).escalation).toBe("waiting");
+    const options = { ...s.options, payments: flaky };
+
+    await expect(decideEscalation(s.runId, "approve", options)).rejects.toThrow(/down/);
+    // The decision is on the log, but the money hasn't moved: the run still needs a person.
+    expect(s.events().filter((e) => e.type === "human_decision")).toHaveLength(1);
+    expect(outcomeOf(s.events())).toMatchObject({
+      verdict: "approve",
+      decidedBy: "person",
+      holdOpen: true,
+      escalation: "unfinished",
+    });
+    // The opposite decision is refused, and nothing is written for it.
+    await expect(decideEscalation(s.runId, "reject", options)).rejects.toThrow(/already decided/);
+    expect(s.events().filter((e) => e.type === "human_decision")).toHaveLength(1);
+
+    down = false;
+    const done = await decideEscalation(s.runId, "approve", options);
+    expect(done).toMatchObject({ status: "enforced", money: "captured", decidedBy: "person" });
+    expect(s.events().filter((e) => e.type === "human_decision")).toHaveLength(1);
+    expect(outcomeOf(s.events())).toMatchObject({ holdOpen: false, escalation: "decided" });
+  });
+
+  it("refuses to decide a hold that was already released with no decision, and writes nothing", async () => {
+    const s = await setup("unrequested_extra", "full");
+    const escalated = await enforceReview(s.runId, s.options);
+    // What the eval does to an escalated cell when it is done with it.
+    const recorded = recordPayments(s.fake, s.log, () => ({
+      runId: s.runId,
+      parentId: escalated.eventId,
+    }));
+    await recorded.voidAuthorization(escalated.authorizationId);
+    const before = s.events().length;
+    expect(outcomeOf(s.events()).escalation).toBe("released");
+    await expect(decideEscalation(s.runId, "approve", s.options)).rejects.toThrow(
+      /already released without a decision/,
+    );
+    expect(s.events()).toHaveLength(before);
   });
 
   it("reauthorizes a hold that outlived its honour period before capturing it", async () => {

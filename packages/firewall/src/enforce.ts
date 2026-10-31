@@ -1,4 +1,4 @@
-import type { Event, EventLog } from "@firewall/events";
+import { type Event, type EventLog, holdStateOf, isHoldOpen } from "@firewall/events";
 import {
   type Authorization,
   type Capture,
@@ -177,7 +177,10 @@ export function enforceReview(runId: string, options: EnforceOptions): Promise<E
 }
 
 // The person's decision on an escalated run: approve captures and pays out, reject voids. It's
-// written to the human lane first, then carried out by the same code as any other enforcement.
+// written to the human lane first, then carried out by the same code as any other enforcement. If
+// the platform refuses, the decision stays written and the hold stays open, which the run list
+// reads as an unfinished decision (`escalationOf`): sending the same decision again finishes it,
+// and the opposite one is refused. A hold already closed with no decision is refused up front.
 export function decideEscalation(
   runId: string,
   decision: "approve" | "reject",
@@ -196,6 +199,16 @@ export function decideEscalation(
     if (earlier && record(earlier.payload).decision !== decision) {
       throw new EnforcementError(
         `This run was already decided: ${String(record(earlier.payload).decision)} (${earlier.eventId})`,
+      );
+    }
+    // A hold that was closed with nobody deciding (the eval voids the hold of every escalated cell)
+    // has nothing left to decide. Refusing here, before the decision is written, keeps a person's
+    // decision from being recorded for money that can't move.
+    if (!earlier && !isHoldOpen(holdStateOf(events))) {
+      throw new EnforcementError(
+        holdStateOf(events).authorizationId === null
+          ? "The run has no held order to act on"
+          : "The hold on this order was already released without a decision, so there is nothing to decide",
       );
     }
     const person =
