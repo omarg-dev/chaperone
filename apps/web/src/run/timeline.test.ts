@@ -443,3 +443,61 @@ describe("the helpers", () => {
     ]);
   });
 });
+
+describe("what an escalated run says about being held", () => {
+  const cardTitle = (run: ReturnType<typeof build>, kind: RunItem["kind"]) =>
+    (run.items.find((i) => i.kind === kind) as { title: string } | undefined)?.title;
+
+  it("gives one line for each gate that escalated, the same line its card in the run view opens with", () => {
+    const run = build(fixtures.escalated);
+    expect(run.heldReasons.map((r) => [r.gate, r.label])).toEqual([
+      ["gate1", "Gate 1"],
+      ["gate2", "Gate 2"],
+    ]);
+    expect(run.heldReasons[0]?.reason).toBe(cardTitle(run, "gate1_card"));
+    expect(run.heldReasons[1]?.reason).toBe(cardTitle(run, "gate2_card"));
+
+    const extra = build(fixtures.extraItem);
+    expect(extra.heldReasons.map((r) => r.gate)).toEqual(["gate0", "gate2"]);
+    expect(extra.heldReasons[0]?.reason).toBe(cardTitle(extra, "gate0_card"));
+  });
+
+  it("names no gate for a run no gate escalated", () => {
+    expect(build(fixtures.approved).heldReasons).toEqual([]);
+    expect(build(fixtures.blocked).heldReasons).toEqual([]);
+  });
+
+  it("says when the review escalated it", () => {
+    const run = build(fixtures.escalated);
+    const at = fixtures.escalated.find((e) => e.lane === "review" && e.type === "escalated")?.ts;
+    expect(at).toBeTruthy();
+    expect(run.escalatedAt).toBe(at);
+    expect(build(fixtures.approved).escalatedAt).toBeNull();
+  });
+
+  it("reads when the hold ends from the payments lane, and doesn't make one up", () => {
+    expect(build(fixtures.escalated).holdExpiresAt).toBe("2026-11-26T23:20:38.611Z");
+
+    // The sandbox may not report it: the adapter writes an empty string.
+    const unreported = fixtures.escalated.map((e) => {
+      const p = e.payload as { operation?: string; result?: Record<string, unknown> };
+      return e.lane === "payments" && p.operation === "authorize_order"
+        ? { ...e, payload: { ...p, result: { ...p.result, expiresAt: "" } } }
+        : e;
+    });
+    expect(build(unreported).holdExpiresAt).toBeNull();
+  });
+
+  it("has no expiry once the hold was released", () => {
+    const last = fixtures.escalated.at(-1) as RunEvent;
+    const released: RunEvent = {
+      ...last,
+      seq: last.seq + 1,
+      eventId: "ev_void",
+      lane: "payments",
+      type: "payment_call",
+      payload: { operation: "void", input: ["AUTH-000002"], result: { status: "VOIDED" } },
+    };
+    expect(build([...fixtures.escalated, released]).holdExpiresAt).toBeNull();
+  });
+});
