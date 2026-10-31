@@ -27,7 +27,12 @@ import {
 import { openEventLog } from "@firewall/events";
 import { decideEscalation } from "@firewall/firewall";
 import { DEFAULT_TOLERANCES, type MandateBuilder, type MandateDraft } from "@firewall/mandate";
-import { createFakePaymentAdapter } from "@firewall/payments";
+import {
+  createFakePaymentAdapter,
+  type PaymentAdapter,
+  PaymentError,
+  recordPayments,
+} from "@firewall/payments";
 import {
   CAIRN,
   gatesReplaying,
@@ -65,6 +70,11 @@ interface Spec {
   // Changes to the base catalog before the run starts (the page the recording was made against).
   catalog?: (catalog: Catalog) => Catalog;
   decide?: "approve" | "reject";
+  // The person decides, but the platform refuses to move the money (a 502): the decision is on the
+  // log and the hold is still open.
+  decideFailing?: "approve" | "reject";
+  // The escalated hold is voided with nobody deciding, as the eval does when it settles a cell.
+  release?: boolean;
 }
 
 // The mandate a careful person would confirm for a scenario's own request.
@@ -193,6 +203,31 @@ const SPECS: Spec[] = [
     decide: "reject",
   },
   {
+    // The person approved, but the platform refused the capture: their decision is on the log and
+    // the hold is still open, so the run still needs attention.
+    name: "escalated_unfinished",
+    scenarioId: "sc_b01",
+    seed: "gate2-1",
+    firewall: "full",
+    model: shopping({ open: [HALVARD], buy: [HALVARD] }),
+    builder: scriptedBuilder(),
+    recording: "steered",
+    catalog: steeredPage,
+    decideFailing: "approve",
+  },
+  {
+    // The same escalation as an eval cell leaves it: its hold voided with nobody deciding.
+    name: "escalated_released",
+    scenarioId: "sc_b01",
+    seed: "gate2-1",
+    firewall: "full",
+    model: shopping({ open: [HALVARD], buy: [HALVARD] }),
+    builder: scriptedBuilder(),
+    recording: "steered",
+    catalog: steeredPage,
+    release: true,
+  },
+  {
     // Gate 0 escalates the extra mouse, and the model gates run after it.
     name: "extra_item",
     scenarioId: "sc_b01",
@@ -237,10 +272,44 @@ for (const spec of SPECS) {
     firewall: spec.firewall,
     ...(recording && { gates: gatesReplaying(recording) }),
   });
+  const runId = result.agent.runId;
   if (spec.decide) {
-    await decideEscalation(result.agent.runId, spec.decide, { log, payments });
+    await decideEscalation(runId, spec.decide, { log, payments });
   }
-  const events = log.listRun(result.agent.runId);
+  if (spec.decideFailing) {
+    const down: PaymentAdapter = {
+      ...payments,
+      captureAuthorization: async () => {
+        throw new PaymentError("platform_error", "The payment platform is unavailable");
+      },
+    };
+    await decideEscalation(runId, spec.decideFailing, { log, payments: down }).then(
+      () => {
+        throw new Error(`${spec.name}: the platform was meant to refuse`);
+      },
+      (error) => {
+        if (!(error instanceof PaymentError)) throw error;
+      },
+    );
+  }
+  if (spec.release) {
+    // What settleCell does to a hold an escalation left open: void it through recordPayments,
+    // pointing at the event that escalated it.
+    const events = log.listRun(runId);
+    const escalated = events.findLast((e) => e.lane === "review" && e.type === "escalated");
+    const authorized = events.findLast(
+      (e) => (e.payload as { operation?: string } | null)?.operation === "authorize_order",
+    );
+    const authorizationId = (authorized?.payload as { result?: { authorizationId?: string } })
+      ?.result?.authorizationId;
+    if (!escalated || !authorizationId) throw new Error(`${spec.name}: nothing to release`);
+    await recordPayments(payments, log, () => ({
+      runId,
+      scenarioId: spec.scenarioId,
+      parentId: escalated.eventId,
+    })).voidAuthorization(authorizationId);
+  }
+  const events = log.listRun(runId);
   writeFileSync(`${OUT}${spec.name}.json`, `${JSON.stringify(events, null, 2)}\n`);
   console.log(`${spec.name}: ${events.length} events, verdict ${result.review?.verdict}`);
   log.close();
