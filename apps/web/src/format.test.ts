@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { formatCost, formatElapsed, formatTime } from "./format";
+import {
+  formatAgo,
+  formatCost,
+  formatElapsed,
+  formatHoldEnds,
+  formatSpan,
+  formatTime,
+} from "./format";
 
 describe("formatTime", () => {
   it("writes day first, in English, with the viewer's zone named", () => {
@@ -33,5 +40,39 @@ describe("formatCost", () => {
   it("shows fractions of a cent, and says so when there is no cost", () => {
     expect(formatCost(0.0017882)).toBe("$0.0018");
     expect(formatCost(0)).toBe("No cost");
+  });
+});
+
+describe("formatSpan", () => {
+  const minute = 60_000;
+  it("uses the largest whole unit, rounding down", () => {
+    expect(formatSpan(0)).toBe("less than a minute");
+    expect(formatSpan(59_999)).toBe("less than a minute");
+    expect(formatSpan(minute)).toBe("1 minute");
+    expect(formatSpan(45 * minute)).toBe("45 minutes");
+    expect(formatSpan(60 * minute)).toBe("1 hour");
+    expect(formatSpan(23.9 * 60 * minute)).toBe("23 hours");
+    expect(formatSpan(24 * 60 * minute)).toBe("1 day");
+    expect(formatSpan(28.9 * 24 * 60 * minute)).toBe("28 days");
+  });
+
+  it("reads a time that hasn't happened yet as nothing", () => {
+    expect(formatSpan(-5 * minute)).toBe("less than a minute");
+  });
+});
+
+describe("formatAgo and formatHoldEnds", () => {
+  const now = Date.parse("2026-10-30T12:00:00Z");
+  it("says how long ago, and 'just now' inside the first minute", () => {
+    expect(formatAgo("2026-10-30T11:59:40Z", now)).toBe("just now");
+    expect(formatAgo("2026-10-30T09:00:00Z", now)).toBe("3 hours ago");
+    expect(formatAgo("nope", now)).toBe("nope");
+  });
+
+  it("says how long a hold has left, and when it has ended", () => {
+    expect(formatHoldEnds("2026-11-27T12:00:00Z", now)).toBe("Hold ends in 28 days");
+    expect(formatHoldEnds("2026-10-30T17:30:00Z", now)).toBe("Hold ends in 5 hours");
+    expect(formatHoldEnds("2026-10-30T11:00:00Z", now)).toBe("The hold has ended");
+    expect(formatHoldEnds("", now)).toBe("");
   });
 });

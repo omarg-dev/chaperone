@@ -19,6 +19,9 @@ export interface RunsState {
   // Runs whose escalation is waiting for a person to decide it.
   heldForPerson: number;
   reload: () => void;
+  // Read the list again without a loading state: what a page that keeps itself current calls. A
+  // failure leaves the list as it was.
+  refresh: () => void;
 }
 
 const RunsContext = createContext<RunsState | null>(null);
@@ -29,9 +32,9 @@ export function RunsProvider({ children }: { children: ReactNode }) {
   const [scenarioTitles, setScenarioTitles] = useState<Record<string, string>>({});
   const generation = useRef(0);
 
-  const load = useCallback(() => {
+  const load = useCallback((quiet = false) => {
     const mine = ++generation.current;
-    setStatus("loading");
+    if (!quiet) setStatus("loading");
     Promise.all([
       fetchRuns(),
       // Titles are a nicety: the list still works with ids alone.
@@ -44,10 +47,16 @@ export function RunsProvider({ children }: { children: ReactNode }) {
         setStatus("ready");
       },
       () => {
-        if (generation.current === mine) setStatus("error");
+        if (generation.current !== mine) return;
+        // A quiet read that fails leaves a list that was showing as it was, but a first read that
+        // was superseded must not leave the page loading for ever.
+        setStatus((now) => (quiet && now !== "loading" ? now : "error"));
       },
     );
   }, []);
+
+  const reload = useCallback(() => load(), [load]);
+  const refresh = useCallback(() => load(true), [load]);
 
   useEffect(() => {
     load();
@@ -62,9 +71,10 @@ export function RunsProvider({ children }: { children: ReactNode }) {
       runs,
       scenarioTitles,
       heldForPerson: runs.filter(isHeldForPerson).length,
-      reload: load,
+      reload,
+      refresh,
     }),
-    [status, runs, scenarioTitles, load],
+    [status, runs, scenarioTitles, reload, refresh],
   );
   return <RunsContext.Provider value={value}>{children}</RunsContext.Provider>;
 }

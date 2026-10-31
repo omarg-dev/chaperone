@@ -1,24 +1,6 @@
 import { Link } from "react-router";
 import { buttonClass, EmptyState } from "../design";
-import { useRuns } from "../runs/RunsProvider";
 import { PageHeader } from "./Page";
-
-export function Escalations() {
-  const { heldForPerson } = useRuns();
-  return (
-    <>
-      <PageHeader
-        title="Escalations"
-        lede="Purchases Chaperone paused because the decision is yours."
-      />
-      <EmptyState title="Nothing is waiting for you.">
-        When a gate can't be sure a cart matches what you asked for, the purchase is held here with
-        the cart and the reason. You approve it or block it.
-        {heldForPerson > 0 && ` ${heldForPerson} held right now, and the inbox is coming.`}
-      </EmptyState>
-    </>
-  );
-}
 
 export function Dashboard() {
   return (
