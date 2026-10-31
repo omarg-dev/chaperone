@@ -67,8 +67,11 @@ export const isHoldOpen = (hold: HoldState) => hold.authorizationId !== null && 
 //  - decided: a person decided and the hold is closed.
 export type Escalation = "waiting" | "unfinished" | "released" | "decided";
 
-export function escalationOf(decided: boolean, holdOpen: boolean): Escalation {
-  if (decided) return holdOpen ? "unfinished" : "decided";
+// `settled` is whether enforcement wrote its `enforced` event after the decision: a capture whose
+// payouts failed halfway closes the hold but leaves sellers unpaid, and a retry of the same
+// decision finishes it, so that is unfinished too.
+export function escalationOf(decided: boolean, holdOpen: boolean, settled = true): Escalation {
+  if (decided) return holdOpen || !settled ? "unfinished" : "decided";
   return holdOpen ? "waiting" : "released";
 }
 
@@ -87,6 +90,7 @@ export const NO_OUTCOME: RunOutcome = {
 export function outcomeOf(events: readonly OutcomeEvent[]): RunOutcome {
   let outcome: RunOutcome = NO_OUTCOME;
   let decision: unknown;
+  let settled = false;
   for (const event of events) {
     if (event.lane === "review" && event.type === "review_finished") {
       const verdict = record(event.payload).verdict;
@@ -98,12 +102,15 @@ export function outcomeOf(events: readonly OutcomeEvent[]): RunOutcome {
       outcome = { ...NO_OUTCOME, reviewFailed: true };
     } else if (event.lane === "human" && event.type === "human_decision") {
       decision = record(event.payload).decision;
+      settled = false;
+    } else if (event.lane === "review" && event.type === "enforced") {
+      settled = true;
     }
   }
   const holdOpen = isHoldOpen(holdStateOf(events));
   if (outcome.verdict === "escalate") {
     const decided = decision === "approve" || decision === "reject";
-    const escalation = escalationOf(decided, holdOpen);
+    const escalation = escalationOf(decided, holdOpen, settled);
     if (decided) {
       return {
         verdict: decision === "approve" ? "approve" : "block",

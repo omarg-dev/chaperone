@@ -1353,7 +1353,7 @@ export function headlineFor(s: Standing): Headline {
       "unfinished",
       "escalate",
       "Decision not finished",
-      `You ${approved ? "approved" : "rejected"} this purchase, but the money hasn't moved.`,
+      `You ${approved ? "approved" : "rejected"} this purchase, but it didn't finish.`,
       problem ? `${problem}. Finish it below.` : "Finish it below.",
     );
   }

@@ -314,7 +314,7 @@ describe("deciding from the inbox", () => {
     // why it didn't finish, and offers that decision and no other.
     const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
     expect(within(item).getByText("Decision not finished")).toBeInTheDocument();
-    expect(item.textContent).toMatch(/You approved this purchase, but the money hasn't moved/);
+    expect(item.textContent).toMatch(/You approved this purchase, but it didn't finish/);
     expect(item.textContent).toMatch(
       /The last attempt failed: The payment platform is unavailable/,
     );

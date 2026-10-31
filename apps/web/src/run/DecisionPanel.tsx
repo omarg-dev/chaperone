@@ -72,7 +72,7 @@ export function DecisionButtons({
       <div className="decision-finish">
         {!saidAbove && (
           <p className="decision-unfinished">
-            You {approved ? "approved" : "rejected"} this purchase, but the money hasn't moved.
+            You {approved ? "approved" : "rejected"} this purchase, but it didn't finish.
             {unfinished.problem ? ` The last attempt failed: ${unfinished.problem}` : ""}
           </p>
         )}

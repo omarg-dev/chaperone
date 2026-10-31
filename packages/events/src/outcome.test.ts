@@ -121,6 +121,7 @@ describe("escalationOf", () => {
     expect(escalationOf(false, false)).toBe("released");
     expect(escalationOf(true, true)).toBe("unfinished");
     expect(escalationOf(true, false)).toBe("decided");
+    expect(escalationOf(true, false, false)).toBe("unfinished");
     expect(
       ["waiting", "unfinished", "released", "decided", null].map((e) => needsPerson(e as never)),
     ).toEqual([true, true, false, false, false]);
@@ -208,6 +209,7 @@ describe("outcomeOf, on a real event log", () => {
         verdict("escalate"),
         decided("approve"),
         closed("capture", "A1"),
+        review("enforced", {}),
       ]),
     ).toMatchObject({
       verdict: "approve",
@@ -221,8 +223,32 @@ describe("outcomeOf, on a real event log", () => {
         verdict("escalate"),
         decided("reject"),
         closed("void", "A1"),
+        review("enforced", {}),
       ]),
     ).toMatchObject({ verdict: "block", decidedBy: "person", escalation: "decided" });
+  });
+
+  it("unfinished: the capture went through but enforcement stopped before the payouts were done", () => {
+    // The hold is closed, but no `enforced` event follows the decision: sellers may be unpaid, and
+    // sending the same decision again finishes the payouts.
+    expect(
+      summarise("r", [
+        authorized("A1"),
+        verdict("escalate"),
+        decided("approve"),
+        closed("capture", "A1"),
+      ]),
+    ).toMatchObject({ verdict: "approve", holdOpen: false, escalation: "unfinished" });
+    // An enforcement from before the decision (the escalation itself) doesn't settle it.
+    expect(
+      summarise("r2", [
+        authorized("A1"),
+        verdict("escalate"),
+        review("enforced", {}),
+        decided("approve"),
+        closed("capture", "A1"),
+      ]),
+    ).toMatchObject({ escalation: "unfinished" });
   });
 
   it("an escalation with no authorization on record has no hold to be waiting on", () => {

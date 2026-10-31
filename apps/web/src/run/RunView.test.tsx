@@ -191,7 +191,7 @@ describe("the run view", () => {
     const decide = vi.fn(() => ({ status: 200, body: { status: "enforced", money: "captured" } }));
     await open(fixtures.escalatedUnfinished, { decide });
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "You approved this purchase, but the money hasn't moved.",
+      "You approved this purchase, but it didn't finish.",
     );
     expect(
       screen.getByText(/The payment platform is unavailable\. Finish it below\./),
@@ -203,7 +203,7 @@ describe("the run view", () => {
     expect(within(panel).queryByRole("button", { name: /Reject/ })).toBeNull();
     // The headline says what was decided and why it didn't finish; the panel doesn't say it again.
     expect(within(panel).queryByText(/The last attempt failed/)).toBeNull();
-    expect(within(panel).queryByText(/the money hasn't moved/)).toBeNull();
+    expect(within(panel).queryByText(/it didn't finish/)).toBeNull();
     await user.click(within(panel).getByRole("button", { name: /Finish and pay/ }));
     expect(decide).toHaveBeenCalledWith(idOf(fixtures.escalatedUnfinished), {
       decision: "approve",

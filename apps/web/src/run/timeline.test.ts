@@ -243,7 +243,7 @@ describe("an escalation that follows the hold", () => {
     expect(run.headline).toMatchObject({
       outcome: "unfinished",
       pill: { state: "escalate", label: "Decision not finished" },
-      title: "You approved this purchase, but the money hasn't moved.",
+      title: "You approved this purchase, but it didn't finish.",
       lede: "The payment platform is unavailable. Finish it below.",
     });
     // Still held, not captured: the money is where the platform left it.
