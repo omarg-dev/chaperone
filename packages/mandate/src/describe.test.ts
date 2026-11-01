@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { describeDraft, fieldNamed, parseEdit } from "./describe.js";
-import { MandateError } from "./mandate.js";
+import { describeDraft, draftRows, editText, fieldNamed, parseEdit } from "./describe.js";
+import { EDITABLE_FIELDS, type MandateDraft, MandateError } from "./mandate.js";
 import { tactileDraft, vocabulary } from "./test-helpers.js";
 
 describe("describeDraft", () => {
@@ -112,5 +112,71 @@ describe("parseEdit", () => {
     expect(fieldNamed("price")).toBe("maxUnitPriceCents");
     expect(fieldNamed(" Requirements ")).toBe("constraints");
     expect(fieldNamed("hash")).toBeUndefined();
+  });
+});
+
+describe("draftRows", () => {
+  it("is what describeDraft prints, with the editable field each row is", () => {
+    expect(draftRows(tactileDraft, vocabulary).map((r) => [r.label, r.field])).toEqual([
+      ["Category", "category"],
+      ["Requirements", "constraints"],
+      ["Brands", "brandPolicy"],
+      ["Price ceiling", "maxUnitPriceCents"],
+      ["Quantity", "quantity"],
+      ["Extras allowed", "allowedExtras"],
+      ["Sellers", null],
+      ["Price tolerance", "tolerances"],
+      ["Not covered", null],
+    ]);
+  });
+
+  it("covers every field a person can edit, so none is missing from the page", () => {
+    const fields = draftRows(tactileDraft, vocabulary).flatMap((r) => (r.field ? [r.field] : []));
+    expect([...fields].sort()).toEqual([...EDITABLE_FIELDS].sort());
+  });
+});
+
+describe("editText", () => {
+  const drafts: MandateDraft[] = [
+    tactileDraft,
+    {
+      ...tactileDraft,
+      category: "mouse",
+      constraints: [
+        { attribute: "wireless", op: "eq", value: false },
+        { attribute: "weight_g", op: "lte", value: 70 },
+        { attribute: "dpi", op: "gte", value: 1600 },
+      ],
+      brandPolicy: {
+        mode: "listed_only",
+        listed: ["brand_pellucid_gear", "brand_brightfern"],
+        blocked: ["brand_yarrowind"],
+      },
+      maxUnitPriceCents: 4999,
+      quantity: 3,
+      allowedExtras: ["accessory", "keyboard"],
+      tolerances: { priceVsBestOfferPct: 7.5 },
+    },
+    {
+      ...tactileDraft,
+      constraints: [],
+      brandPolicy: { mode: "any", listed: [], blocked: ["brand_tidewell"] },
+      allowedExtras: [],
+    },
+  ];
+
+  it("reads back, through parseEdit, as the value it was written from", () => {
+    for (const draft of drafts) {
+      for (const field of EDITABLE_FIELDS) {
+        const text = editText(field, draft, vocabulary);
+        expect(parseEdit(field, text, draft, vocabulary).value).toEqual(draft[field]);
+      }
+    }
+  });
+
+  it("starts a missing price ceiling empty", () => {
+    expect(
+      editText("maxUnitPriceCents", { ...tactileDraft, maxUnitPriceCents: null }, vocabulary),
+    ).toBe("");
   });
 });

@@ -37,35 +37,64 @@ export function describeBrands(policy: BrandPolicy, vocabulary: Vocabulary): str
   return policy.blocked.length > 0 ? `${base}, except ${names(policy.blocked)}` : base;
 }
 
-// One line per field, labelled for a person rather than by field name.
-export function describeDraft(draft: MandateDraft, vocabulary: Vocabulary): string {
-  const rows: [string, string][] = [
-    ["Category", draft.category],
-    [
-      "Requirements",
-      draft.constraints.length > 0
-        ? draft.constraints.map((c) => describeConstraint(c, vocabulary)).join("; ")
-        : "none",
-    ],
-    ["Brands", describeBrands(draft.brandPolicy, vocabulary)],
-    [
-      "Price ceiling",
-      draft.maxUnitPriceCents === null
-        ? "not set (needed before you can accept)"
-        : `${dollars(draft.maxUnitPriceCents)} each`,
-    ],
-    ["Quantity", String(draft.quantity)],
-    ["Extras allowed", draft.allowedExtras.length > 0 ? draft.allowedExtras.join(", ") : "none"],
-    ["Sellers", "verified sellers only"],
-    ["Price tolerance", `up to ${draft.tolerances.priceVsBestOfferPct}% over the best offer`],
+// One row per term, labelled for a person rather than by field name. `field` is the editable field
+// a row is, or null for a row that is only said (the sellers rule, what the request left out).
+export interface DraftRow {
+  label: string;
+  value: string;
+  field: EditableField | null;
+}
+
+export function draftRows(draft: MandateDraft, vocabulary: Vocabulary): DraftRow[] {
+  const rows: DraftRow[] = [
+    { label: "Category", value: draft.category, field: "category" },
+    {
+      label: "Requirements",
+      value:
+        draft.constraints.length > 0
+          ? draft.constraints.map((c) => describeConstraint(c, vocabulary)).join("; ")
+          : "none",
+      field: "constraints",
+    },
+    { label: "Brands", value: describeBrands(draft.brandPolicy, vocabulary), field: "brandPolicy" },
+    {
+      label: "Price ceiling",
+      value:
+        draft.maxUnitPriceCents === null
+          ? "not set (needed before you can accept)"
+          : `${dollars(draft.maxUnitPriceCents)} each`,
+      field: "maxUnitPriceCents",
+    },
+    { label: "Quantity", value: String(draft.quantity), field: "quantity" },
+    {
+      label: "Extras allowed",
+      value: draft.allowedExtras.length > 0 ? draft.allowedExtras.join(", ") : "none",
+      field: "allowedExtras",
+    },
+    { label: "Sellers", value: "verified sellers only", field: null },
+    {
+      label: "Price tolerance",
+      value: `up to ${draft.tolerances.priceVsBestOfferPct}% over the best offer`,
+      field: "tolerances",
+    },
   ];
   if (draft.unmapped.length > 0) {
-    rows.push(["Not covered", draft.unmapped.map((u) => `"${u}"`).join(", ")]);
+    rows.push({
+      label: "Not covered",
+      value: draft.unmapped.map((u) => `"${u}"`).join(", "),
+      field: null,
+    });
   }
-  const width = Math.max(...rows.map(([label]) => label.length));
+  return rows;
+}
+
+// The draft as the person reads it on the command line.
+export function describeDraft(draft: MandateDraft, vocabulary: Vocabulary): string {
+  const rows = draftRows(draft, vocabulary);
+  const width = Math.max(...rows.map(({ label }) => label.length));
   return [
     `Request: "${draft.requestText}"`,
-    ...rows.map(([label, value]) => `  ${label.padEnd(width)}  ${value}`),
+    ...rows.map(({ label, value }) => `  ${label.padEnd(width)}  ${value}`),
   ].join("\n");
 }
 
@@ -189,4 +218,42 @@ function parseBrands(text: string, vocabulary: Vocabulary): BrandPolicy {
     return { mode: "listed_only", listed: idsOf(main.trim().slice(5)), blocked };
   }
   return fail(`"${text}" isn't a brand policy: try "any reputable" or "only Brightfern"`);
+}
+
+// What a field's value looks like typed the way `parseEdit` reads it, so an edit form can start from
+// the current value. Reading it back gives the same value.
+export function editText(
+  field: EditableField,
+  draft: MandateDraft,
+  vocabulary: Vocabulary,
+): string {
+  const names = (ids: string[]) => ids.map((id) => brandName(vocabulary, id)).join(", ");
+  switch (field) {
+    case "category":
+      return draft.category;
+    case "constraints":
+      return draft.constraints.length > 0
+        ? draft.constraints
+            .map((c) => {
+              const value =
+                typeof c.value === "boolean" ? (c.value ? "yes" : "no") : String(c.value);
+              return `${c.attribute}${OP_SYMBOLS[c.op]}${value}`;
+            })
+            .join(", ")
+        : "none";
+    case "brandPolicy": {
+      const { mode, listed, blocked } = draft.brandPolicy;
+      const base =
+        mode === "listed_only" ? `only ${names(listed)}` : mode === "any" ? "any" : "any reputable";
+      return blocked.length > 0 ? `${base} except ${names(blocked)}` : base;
+    }
+    case "maxUnitPriceCents":
+      return draft.maxUnitPriceCents === null ? "" : (draft.maxUnitPriceCents / 100).toFixed(2);
+    case "quantity":
+      return String(draft.quantity);
+    case "allowedExtras":
+      return draft.allowedExtras.length > 0 ? draft.allowedExtras.join(", ") : "none";
+    case "tolerances":
+      return String(draft.tolerances.priceVsBestOfferPct);
+  }
 }
