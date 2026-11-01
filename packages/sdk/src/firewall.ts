@@ -182,13 +182,24 @@ export function createFirewall(options: FirewallOptions): Firewall {
       return built.mandate;
     }
     // The person confirmed it somewhere else: check it is intact and put it in the run, where the
-    // gates look for it.
+    // gates look for it. One the person confirmed in this very run (the web app's mandate step
+    // locks it before the agent starts) is already there, and isn't written twice.
     const verified = verifyMandate(wanted);
     if (!verified.intact) {
       throw new FirewallConfigError(
         `The mandate can't be trusted: ${verified.problems.join("; ")}`,
       );
     }
+    const alreadyLocked = log
+      .listRun(runId)
+      .some(
+        (e) =>
+          e.lane === "mandate" &&
+          e.type === "mandate_locked" &&
+          (e.payload as { mandate?: { hash?: unknown } } | null)?.mandate?.hash ===
+            verified.mandate.hash,
+      );
+    if (alreadyLocked) return verified.mandate;
     log.append({
       runId,
       scenarioId,

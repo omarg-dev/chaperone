@@ -21,7 +21,9 @@ import { type RunAgentOptions, type RunOutcome, runAgent } from "./run.js";
 // the same two calls a developer's own agent makes.
 //
 // The person is simulated by `acceptsDraftAsIs`: the mandate is whatever the builder drafted from
-// the scenario's request, confirmed unchanged, which is what the eval's person does.
+// the scenario's request, confirmed unchanged, which is what the eval's person does. The web app's
+// person confirms the mandate in the browser before the run starts, and the run is given that
+// locked mandate and the run it was locked in.
 
 export interface PipelineOptions {
   arena: ArenaService;
@@ -34,7 +36,14 @@ export interface PipelineOptions {
   scenarioId: string;
   seed: string;
   limits?: RunAgentOptions["limits"];
-  builder: MandateBuilder;
+  // Where the mandate comes from, one of the two. `builder`: the person is simulated, and the
+  // mandate is whatever the builder drafts from the scenario's request, confirmed unchanged (the
+  // command line and the eval). `lockedMandate`: a person confirmed it already, in the run named
+  // by `runId` (the web app). Both end with the same locked mandate on the run's timeline.
+  builder?: MandateBuilder;
+  lockedMandate?: LockedMandate;
+  // An arena run already started for this scenario and seed (see RunAgentOptions.runId).
+  runId?: string;
   firewall: FirewallConfig;
   // The model gates, built for the run's catalog (the extractor's vocabulary is the catalog's). Only
   // `full` calls it.
@@ -90,6 +99,10 @@ export function purchasesOf(catalog: Catalog, order: OrderDraft | null): Purchas
 
 export async function runWithFirewall(options: PipelineOptions): Promise<PipelineResult> {
   const { arena } = options;
+  const mandate =
+    options.lockedMandate ??
+    (options.builder ? { builder: options.builder, person: acceptsDraftAsIs } : null);
+  if (!mandate) throw new Error("A run needs a mandate builder or a locked mandate");
   const started: { firewall?: Firewall } = {};
   const agent = await runAgent({
     arena,
@@ -100,6 +113,7 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
     model: options.model,
     scenarioId: options.scenarioId,
     seed: options.seed,
+    ...(options.runId && { runId: options.runId }),
     ...(options.limits && { limits: options.limits }),
     firewall: {
       config: options.firewall,
@@ -108,7 +122,7 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
       // The vocabulary is the base catalog's (the SDK's default for a built mandate): a mandate is
       // drafted from the request alone, before the agent shops, so it never depends on what a
       // scenario injects.
-      mandate: { builder: options.builder, person: acceptsDraftAsIs },
+      mandate,
     },
     beforeShopping: ({ firewall }) => {
       started.firewall = firewall;
@@ -116,7 +130,7 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
   });
   const { firewall } = started;
   if (!firewall) throw new Error("The agent run never started its firewall");
-  const mandate: LockedMandate | null = await firewall.ready();
+  const lockedMandate: LockedMandate | null = await firewall.ready();
   const mandateUsd = firewall.mandateCostUsd;
 
   const run = arena.get(agent.runId);
@@ -139,7 +153,7 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
   const reviewUsd = review?.costUsd ?? 0;
   return {
     agent,
-    mandate,
+    mandate: lockedMandate,
     review,
     enforcement,
     bought,

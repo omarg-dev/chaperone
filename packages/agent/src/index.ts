@@ -12,6 +12,7 @@ export {
   MissingConfigError,
 } from "./config.js";
 export { costUsd, type ModelPricing, type TokenCounts, tokenCounts } from "./cost.js";
+export { type LiveModels, type LiveOptions, liveModelsFromEnv } from "./live.js";
 export {
   type PipelineOptions,
   type PipelineResult,

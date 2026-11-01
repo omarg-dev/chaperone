@@ -10,7 +10,13 @@ import {
   findScenario,
 } from "@firewall/arena";
 import { type EventLog, openEventLog } from "@firewall/events";
-import { DEFAULT_TOLERANCES, type MandateBuilder, type MandateDraft } from "@firewall/mandate";
+import {
+  arenaVocabulary,
+  DEFAULT_TOLERANCES,
+  lockMandate,
+  type MandateBuilder,
+  type MandateDraft,
+} from "@firewall/mandate";
 import { createFakePaymentAdapter, type FakePaymentAdapter } from "@firewall/payments";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -238,5 +244,69 @@ describe("a whole run through the firewall", () => {
       runWithFirewall(options("sc_b01", rightListing("sc_b01", "1"), "full")),
     ).rejects.toThrow(/needs its model gates/);
     expect(payments("capture")).toEqual([]);
+  });
+});
+
+describe("a run whose mandate the person locked before the agent started", () => {
+  // The web app's order of things: the arena run is started, the person confirms the mandate in
+  // it, and the pipeline is handed the run and the locked mandate.
+  async function lockedRun(scenarioId: string) {
+    const run = arena.start(scenarioId, "1", { origin: "web", payments: "fake" });
+    const draft = (await builderFor(scenarioId).draft(run.scenario.request)).draft;
+    const mandate = lockMandate(draft, {
+      vocabulary: arenaVocabulary(),
+      confirmedAt: "2026-11-01T12:00:00.000Z",
+    });
+    log.append({
+      runId: run.runId,
+      scenarioId,
+      lane: "mandate",
+      type: "mandate_locked",
+      provenance: "system",
+      parentId: log.listRun(run.runId)[0]?.eventId ?? null,
+      payload: { mandate },
+    });
+    return { run, mandate };
+  }
+
+  it("shops in that run, with that mandate, and writes it no second time", async () => {
+    const { run, mandate } = await lockedRun("sc_b01");
+    const { builder: _unused, ...rest } = options("sc_b01", rightListing("sc_b01", "1"), "gate0");
+    const result = await runWithFirewall({ ...rest, runId: run.runId, lockedMandate: mandate });
+    expect(result.agent.runId).toBe(run.runId);
+    expect(result.mandate?.hash).toBe(mandate.hash);
+    expect(result.cost.mandateUsd).toBe(0);
+    const events = log.listRun(run.runId);
+    expect(events.filter((e) => e.type === "mandate_locked")).toHaveLength(1);
+    expect(events.filter((e) => e.type === "run_started")).toHaveLength(1);
+    expect(log.listRuns().filter((r) => r.runId === run.runId)).toHaveLength(1);
+    expect(result.review?.verdict).toBe("approve");
+    expect(result.enforcement?.money).toBe("captured");
+  });
+
+  it("gives an attack the same verdict as the command line's run: the checkout is voided", async () => {
+    const { run, mandate } = await lockedRun("sc_a01");
+    const { builder: _unused, ...rest } = options(
+      "sc_a01",
+      attackerListing("sc_a01", "1"),
+      "gate0",
+    );
+    const result = await runWithFirewall({ ...rest, runId: run.runId, lockedMandate: mandate });
+    expect(result.review?.verdict).toBe("block");
+    expect(result.enforcement?.money).toBe("voided");
+    expect(result.paidToAttackersCents).toBe(0);
+  });
+
+  it("refuses a run that isn't for the scenario and seed it was asked to shop", async () => {
+    const { run, mandate } = await lockedRun("sc_b01");
+    const { builder: _unused, ...rest } = options("sc_a01", "unused", "gate0");
+    await expect(
+      runWithFirewall({ ...rest, runId: run.runId, lockedMandate: mandate }),
+    ).rejects.toThrow(/is for sc_b01 with seed 1, not sc_a01/);
+  });
+
+  it("needs a builder or a locked mandate", async () => {
+    const { builder: _unused, ...rest } = options("sc_b01", "unused", "gate0");
+    await expect(runWithFirewall(rest)).rejects.toThrow(/builder or a locked mandate/);
   });
 });

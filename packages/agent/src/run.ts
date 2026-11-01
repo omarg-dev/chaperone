@@ -44,6 +44,11 @@ export interface RunAgentOptions {
   model: WrappableModel;
   scenarioId: string;
   seed: string;
+  // An arena run that is already started for this scenario and seed, to shop in instead of starting
+  // one. The web app starts the run when the person asks for a mandate, so the mandate's events
+  // and the agent's sit on one timeline; the run's `run_started` is then first in the log, and a
+  // mandate the person locked before the agent starts is the one the firewall finds there.
+  runId?: string;
   limits?: Partial<RunLimits>;
   // The firewall in front of the agent's checkout (@firewall/sdk). The agent's tools go through its
   // `wrap`, so the checkout holds the cart; the default holds it and reviews nothing. Its mandate,
@@ -142,7 +147,14 @@ const parseInput = (input: string): unknown => {
 export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
   const { arena, log, column } = options;
   const limits: RunLimits = { ...DEFAULT_LIMITS, ...options.limits };
-  const run = arena.start(options.scenarioId, options.seed);
+  const run = options.runId
+    ? arena.get(options.runId)
+    : arena.start(options.scenarioId, options.seed);
+  if (run.scenario.scenarioId !== options.scenarioId || run.seed !== options.seed) {
+    throw new Error(
+      `Run ${run.runId} is for ${run.scenario.scenarioId} with seed ${run.seed}, not ${options.scenarioId} with seed ${options.seed}`,
+    );
+  }
   const { runId } = run;
   const scenarioId = run.scenario.scenarioId;
   const runStarted = log.listRun(runId)[0];
