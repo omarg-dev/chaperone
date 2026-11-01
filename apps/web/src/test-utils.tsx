@@ -1,8 +1,9 @@
+import type { ResultsView } from "@firewall/eval/view";
 import { render } from "@testing-library/react";
 import { MemoryRouter, useLocation } from "react-router";
 import { vi } from "vitest";
 import { App } from "./App";
-import type { RunSummary, ScenarioInfo } from "./api";
+import type { ResultsList, RunSummary, ScenarioInfo } from "./api";
 import type { Payee, RunEvent } from "./run/events";
 import { ThemeProvider } from "./theme/ThemeProvider";
 
@@ -39,6 +40,11 @@ export interface FakeServer {
   // A run's events: fixed, or by how many times they have been asked for (to play a run live).
   events?: Record<string, RunEvent[]> | ((runId: string, call: number) => RunEvent[]);
   payees?: Payee[];
+  // The eval's results: the list, and each file by name. Unset, the server has no results folder.
+  results?: {
+    list: ResultsList;
+    files?: Record<string, ResultsView | { error: number; message: string }>;
+  };
   // The server's answer to a person's decision.
   decide?: (runId: string, body: { decision: string }) => { status: number; body: unknown };
 }
@@ -65,6 +71,18 @@ export function mockServer(server: FakeServer = {}) {
       return json(typeof events === "function" ? events(runId, call) : (events?.[runId] ?? []));
     }
     if (server.down) return new Response("down", { status: 503 });
+    if (path === "/eval/results") {
+      return json(server.results?.list ?? { available: false, results: [], unreadable: [] });
+    }
+    const file = path.match(/^\/eval\/results\/([^/]+)$/);
+    if (file) {
+      const found = server.results?.files?.[decodeURIComponent(file[1] as string)];
+      if (!found) return json({ error: "not_found", message: "No such results" }, 404);
+      if ("error" in found) {
+        return json({ error: "invalid_results", message: found.message }, found.error);
+      }
+      return json({ name: file[1], results: found });
+    }
     if (path === "/events/runs") return json(server.runs ?? []);
     if (path === "/arena/scenarios") return json(server.scenarios ?? []);
     return new Response("not found", { status: 404 });
@@ -137,3 +155,8 @@ export const escalated = {
   decided: (verdict: "approve" | "block") =>
     ({ verdict, decidedBy: "person", holdOpen: false, escalation: "decided" }) as const,
 } as const;
+
+// The dashboard loads on demand, and its first load in a test file pulls in the data grid, which
+// can take longer than a test waits when many files run at once. Calling this in a `beforeAll`
+// makes that load happen before any test starts the clock.
+export const loadDashboard = () => import("./dashboard/Dashboard");

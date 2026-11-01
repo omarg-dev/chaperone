@@ -1,0 +1,177 @@
+import type { ResultsSummary } from "@firewall/eval/view";
+import { useMemo } from "react";
+import { useSearchParams } from "react-router";
+import { Button, EmptyState } from "../design";
+import { formatDate } from "../format";
+import { PageHeader } from "../pages/Page";
+import { useRuns } from "../runs/RunsProvider";
+import { Comparison } from "./Comparison";
+import { LiveStrip } from "./LiveStrip";
+import { Provenance } from "./Provenance";
+import { ResultsGrid } from "./ResultsGrid";
+import { gridRows, headlineOf } from "./results";
+import { useResultsFile, useResultsList } from "./useResults";
+
+// The picker's text: when it ran and what produced it, so an older result can't be mistaken for the
+// newest, or a fake one for a sandbox one.
+export const optionLabel = (r: ResultsSummary) =>
+  `${formatDate(r.date)} · ${r.paymentAdapter} · ${r.column.label} · seeds ${r.seeds.join(", ")}`;
+
+function NoResults({
+  available,
+  unreadable,
+}: {
+  available: boolean;
+  unreadable: { name: string; reason: string }[];
+}) {
+  return (
+    <>
+      {available ? (
+        <EmptyState title="No eval results yet.">
+          The results folder is empty. Running the eval (pnpm --filter @firewall/eval run-matrix)
+          writes a results file there, and it appears here with its numbers.
+        </EmptyState>
+      ) : (
+        <EmptyState title="This server has no results folder.">
+          The eval's results are files, and the server reads them from the folder named by
+          RESULTS_DIR. That folder isn't here, so there is nothing to show.
+        </EmptyState>
+      )}
+      <Unreadable files={unreadable} />
+    </>
+  );
+}
+
+function Unreadable({ files }: { files: { name: string; reason: string }[] }) {
+  if (files.length === 0) return null;
+  return (
+    <p className="t-meta unreadable" role="note">
+      {files.length === 1 ? "One file" : `${files.length} files`} in the results folder couldn't be
+      read: {files.map((f) => `${f.name} (${f.reason.replace(/\.$/, "")})`).join("; ")}.
+    </p>
+  );
+}
+
+function Results({ name, knownRunIds }: { name: string; knownRunIds: ReadonlySet<string> }) {
+  const file = useResultsFile(name);
+  const { scenarioTitles } = useRuns();
+  const results = file.status === "ready" ? file.value : null;
+  const rows = useMemo(
+    () => (results ? gridRows(results, scenarioTitles) : []),
+    [results, scenarioTitles],
+  );
+  if (file.status === "loading") {
+    return (
+      <p className="t-meta" role="status">
+        Loading the results…
+      </p>
+    );
+  }
+  if (file.status === "error" || !results) {
+    return (
+      <EmptyState title="That result couldn't be read.">
+        {file.status === "error" ? file.message : ""}
+      </EmptyState>
+    );
+  }
+  return (
+    <>
+      <Provenance results={results} />
+      <h2 className="cmp-headline">{headlineOf(results)}</h2>
+      <Comparison results={results} />
+      <section className="grid-section" aria-labelledby="runs-title">
+        <h2 id="runs-title" className="t-section">
+          Every run
+        </h2>
+        <p className="t-meta grid-sub">What each firewall setting did to the money, run by run.</p>
+        <ResultsGrid rows={rows} knownRunIds={knownRunIds} />
+      </section>
+    </>
+  );
+}
+
+// /dashboard: how Chaperone is doing. The eval's newest results (or an older one, picked), then this
+// server's own runs.
+export function Dashboard() {
+  const { state, reload } = useResultsList();
+  const { runs } = useRuns();
+  const [params, setParams] = useSearchParams();
+  const knownRunIds = useMemo(() => new Set(runs.map((r) => r.runId)), [runs]);
+
+  const list = state.status === "ready" ? state.value : null;
+  const asked = params.get("result");
+  // The address names the result, so a view can be shared; a name the server doesn't list is the
+  // newest instead of an error.
+  const selected = list?.results.find((r) => r.name === asked) ?? list?.results[0] ?? null;
+
+  const picker =
+    list && list.results.length > 1 ? (
+      <label className="filter filter-result">
+        <span className="filter-label">Result</span>
+        <select
+          className="filter-control"
+          value={selected?.name ?? ""}
+          onChange={(e) =>
+            setParams(e.target.value === list.results[0]?.name ? {} : { result: e.target.value }, {
+              replace: true,
+            })
+          }
+        >
+          {list.results.map((r, i) => (
+            <option key={r.name} value={r.name}>
+              {i === 0 ? "Newest: " : ""}
+              {optionLabel(r)}
+            </option>
+          ))}
+        </select>
+      </label>
+    ) : null;
+
+  return (
+    <>
+      <PageHeader
+        title="How it's doing"
+        lede="How often agents are fooled with Chaperone off and on, from the eval, and what this server has seen."
+        aside={
+          <Button variant="secondary" small onClick={reload} disabled={state.status === "loading"}>
+            Refresh
+          </Button>
+        }
+      />
+      <LiveStrip />
+
+      <section className="eval" aria-labelledby="eval-title">
+        <div className="eval-head">
+          <h2 id="eval-title" className="t-section">
+            The eval
+          </h2>
+          {picker}
+        </div>
+        {state.status === "loading" && (
+          <p className="t-meta" role="status">
+            Loading the results…
+          </p>
+        )}
+        {state.status === "error" && (
+          <EmptyState
+            title="The eval results couldn't be read."
+            action={
+              <Button variant="secondary" small onClick={reload}>
+                Try again
+              </Button>
+            }
+          >
+            {state.message}
+          </EmptyState>
+        )}
+        {list && !selected && <NoResults available={list.available} unreadable={list.unreadable} />}
+        {list && selected && (
+          <>
+            <Results key={selected.name} name={selected.name} knownRunIds={knownRunIds} />
+            <Unreadable files={list.unreadable} />
+          </>
+        )}
+      </section>
+    </>
+  );
+}

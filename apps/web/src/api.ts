@@ -1,6 +1,7 @@
 // The server's own API, called with relative URLs: the Hono server serves this app and the API from
 // one origin, and in development Vite proxies them (vite.config.ts).
 
+import type { ResultsSummary, ResultsView } from "@firewall/eval/view";
 import type { Escalation } from "@firewall/events/outcome";
 import type { Payee, RunEvent } from "./run/events";
 
@@ -68,6 +69,32 @@ export const fetchRunEvents = (runId: string) =>
   getJson<RunEvent[]>(`/events/runs/${encodeURIComponent(runId)}`);
 export const fetchPayees = (runId: string) =>
   getJson<Payee[]>(`/events/runs/${encodeURIComponent(runId)}/payees`);
+
+// The eval's results files, as the server serves them (GET /eval/results). `available` is false when
+// the server has no results folder, which is not the same as a folder with nothing in it.
+export interface ResultsList {
+  available: boolean;
+  results: ResultsSummary[];
+  // Files that look like results but couldn't be read, and why.
+  unreadable: { name: string; reason: string }[];
+}
+
+export const fetchResultsList = () => getJson<ResultsList>("/eval/results");
+
+// One results file. A file the server refuses to read (422) says why in its own words.
+export async function fetchResults(name: string): Promise<ResultsView> {
+  const path = `/eval/results/${encodeURIComponent(name)}`;
+  const response = await fetch(path, { headers: { accept: "application/json" } });
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { message?: string } | null;
+    throw new ApiError(
+      response.status,
+      null,
+      body?.message ?? `${path} answered ${response.status}`,
+    );
+  }
+  return ((await response.json()) as { results: ResultsView }).results;
+}
 
 export interface DecisionResult {
   status: "enforced" | "already_enforced" | "awaiting_person";

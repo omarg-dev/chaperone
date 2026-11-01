@@ -1,0 +1,289 @@
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ResultsList } from "../api";
+import { escalated, loadDashboard, mockDevice, mockServer, renderApp, run } from "../test-utils";
+import { fakeResults, sandboxResults } from "./fixtures";
+
+// Every page of results mounts the data grid with its 60 rows, which jsdom draws slowly: seconds
+// when many test files share the machine. The waits are as short as before; a test is given the
+// time the machine needs.
+vi.setConfig({ testTimeout: 30_000 });
+
+beforeAll(loadDashboard, 60_000);
+beforeEach(() => mockDevice(false));
+afterEach(() => vi.unstubAllGlobals());
+
+const summary = (name: string, results: typeof fakeResults, startedAt: string) => ({
+  name,
+  paymentAdapter: results.meta.paymentAdapter,
+  column: results.meta.column,
+  gateModel: results.meta.gateModel,
+  seeds: results.meta.seeds,
+  date: startedAt.slice(0, 10),
+  startedAt,
+});
+
+const NEWEST = "2026-10-30T0900-sandbox-claude-haiku-5-5";
+const OLDEST = "2026-10-26T0012-fake-claude-haiku-5-5";
+const list: ResultsList = {
+  available: true,
+  results: [
+    summary(NEWEST, sandboxResults, "2026-10-30T09:00:00.000Z"),
+    summary(OLDEST, fakeResults, "2026-10-26T00:12:12.476Z"),
+  ],
+  unreadable: [],
+};
+const files = { [NEWEST]: sandboxResults, [OLDEST]: fakeResults };
+
+const at = "2026-10-24T10:00:00Z";
+
+describe("the dashboard, with no results", () => {
+  it("says the server has no results folder", async () => {
+    mockServer();
+    renderApp("/dashboard");
+    expect(await screen.findByText("This server has no results folder.")).toBeInTheDocument();
+    expect(screen.getByText(/RESULTS_DIR/)).toBeInTheDocument();
+  });
+
+  it("says an empty folder is empty", async () => {
+    mockServer({ results: { list: { available: true, results: [], unreadable: [] } } });
+    renderApp("/dashboard");
+    expect(await screen.findByText("No eval results yet.")).toBeInTheDocument();
+    expect(screen.getByText(/run-matrix/)).toBeInTheDocument();
+  });
+
+  it("names a file it couldn't read, with why", async () => {
+    mockServer({
+      results: {
+        list: {
+          available: true,
+          results: [],
+          unreadable: [{ name: "broken", reason: "The file isn't valid JSON." }],
+        },
+      },
+    });
+    renderApp("/dashboard");
+    expect(
+      await screen.findByText(/One file in the results folder couldn't be read/),
+    ).toHaveTextContent("broken (The file isn't valid JSON)");
+  });
+
+  it("says when the server can't be read at all, and can try again", async () => {
+    mockServer({ down: true });
+    renderApp("/dashboard");
+    expect(await screen.findByText("The eval results couldn't be read.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+  });
+});
+
+describe("the dashboard, with results", () => {
+  it("shows the newest result by default, and says what produced it", async () => {
+    mockServer({ results: { list, files } });
+    renderApp("/dashboard");
+    // The newest is the sandbox one: no banner, and it says so.
+    expect(await screen.findByText(/Sandbox result/)).toBeInTheDocument();
+    expect(screen.queryByText(/not a sandbox result/i)).not.toBeInTheDocument();
+    const facts = screen.getByText("Payment adapter").closest("dl") as HTMLElement;
+    expect(facts).toHaveTextContent("sandbox");
+    expect(facts).toHaveTextContent("Claude Haiku 5.5 (claude-haiku-5-5)");
+    expect(facts).toHaveTextContent("claude-haiku-5-5");
+    expect(facts).toHaveTextContent("1, 2");
+    expect(facts).toHaveTextContent("26 Oct 2026");
+  });
+
+  it("carries a banner on a fake result, in the escalate amber and not the attacker's red", async () => {
+    mockServer({ results: { list: { ...list, results: [list.results[1] as never] }, files } });
+    renderApp("/dashboard");
+    const banner = await screen.findByRole("note", { name: "" });
+    expect(banner).toHaveTextContent("Development numbers, not a sandbox result.");
+    expect(banner).toHaveTextContent("fake payment adapter");
+    expect(banner).toHaveClass("fake-banner");
+    expect(banner).not.toHaveClass("pill-attacker");
+    const facts = screen.getByText("Payment adapter").closest("dl") as HTMLElement;
+    expect(facts).toHaveTextContent("fake");
+  });
+
+  it("shows the harness's headline numbers for each firewall setting", async () => {
+    mockServer({ results: { list: { ...list, results: [list.results[1] as never] }, files } });
+    renderApp("/dashboard");
+    const comparison = await screen.findByRole("region", {
+      name: "Off, Gate 0 only and the full tree, compared",
+    });
+    expect(
+      screen.getByRole("heading", { name: "With the full tree, no attack reached the attacker." }),
+    ).toBeInTheDocument();
+    const text = comparison.textContent ?? "";
+    for (const expected of [
+      "68.8%",
+      "25.0%",
+      "0.0%",
+      "8.2% (4 of 49)",
+      "15.0% (9 of 60)",
+      "$0.0023",
+      "3.3 s",
+    ]) {
+      expect(text).toContain(expected);
+    }
+    // The dots say the same counts in words, for a screen reader.
+    expect(
+      within(comparison).getByRole("img", {
+        name: "4 of 16 reached the attacker, 7 held or blocked, the agent was not fooled in 5",
+      }),
+    ).toBeInTheDocument();
+    // Above zero is the attacker's colour; zero is neutral.
+    const big = comparison.querySelectorAll(".cmp-big");
+    expect([...big].map((el) => el.classList.contains("cmp-big-attacker"))).toEqual([
+      true,
+      true,
+      false,
+    ]);
+  });
+
+  it("opens an older result from the picker, and keeps the choice in the address", async () => {
+    const user = userEvent.setup();
+    mockServer({ results: { list, files } });
+    renderApp("/dashboard");
+    const picker = await screen.findByRole("combobox", { name: "Result" });
+    expect(picker).toHaveDisplayValue(/Newest: 30 Oct 2026 · sandbox/);
+    await user.selectOptions(picker, OLDEST);
+    expect(
+      await screen.findByText("Development numbers, not a sandbox result."),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent(`/dashboard?result=${OLDEST}`);
+    // The picker says what each result is, so an old one isn't mistaken for the newest.
+    expect(
+      within(picker).getByRole("option", {
+        name: /26 Oct 2026 · fake · Claude Haiku 5.5 · seeds 1, 2/,
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it("opens the result a shared address names, and the newest for one the server doesn't have", async () => {
+    mockServer({ results: { list, files } });
+    renderApp(`/dashboard?result=${OLDEST}`);
+    expect(
+      await screen.findByText("Development numbers, not a sandbox result."),
+    ).toBeInTheDocument();
+    renderApp("/dashboard?result=nowhere");
+    expect((await screen.findAllByText(/Sandbox result/)).length).toBeGreaterThan(0);
+  });
+
+  it("says why a file the server refused couldn't be shown", async () => {
+    mockServer({
+      results: {
+        list,
+        files: { [NEWEST]: { error: 422, message: "The file isn't valid JSON." } },
+      },
+    });
+    renderApp("/dashboard");
+    expect(await screen.findByText("That result couldn't be read.")).toBeInTheDocument();
+    expect(screen.getByText("The file isn't valid JSON.")).toBeInTheDocument();
+  });
+});
+
+describe("the table of runs", () => {
+  const onlyFake = { list: { ...list, results: [list.results[1] as never] }, files };
+
+  it("draws each run's outcome under each firewall setting, attacks first", async () => {
+    mockServer({ results: onlyFake });
+    renderApp("/dashboard");
+    const table = await screen.findByRole("region", { name: "Every run in this matrix" });
+    await waitFor(() => expect(table.querySelectorAll(".ag-row").length).toBeGreaterThan(0));
+    for (const header of [
+      "Scenario",
+      "Seed",
+      "Kind",
+      "Agent",
+      "Off",
+      "Gate 0 only",
+      "Full tree",
+      "Run",
+    ]) {
+      expect(within(table).getByText(header)).toBeInTheDocument();
+    }
+    const first = table.querySelector('.ag-row[row-index="0"]') as HTMLElement;
+    expect(first).toHaveTextContent("sc_a01");
+    expect(first).toHaveTextContent("Attack");
+    expect(within(first).getByRole("img", { name: "Verdict: Paid attacker" })).toBeInTheDocument();
+    expect(within(first).getAllByRole("img", { name: "Verdict: Blocked" })).toHaveLength(2);
+  });
+
+  it("filters by kind and by what a setting did, and says how many are left", async () => {
+    const user = userEvent.setup();
+    mockServer({ results: onlyFake });
+    renderApp("/dashboard");
+    await screen.findByText("60 runs");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "attack");
+    expect(screen.getByText("16 of 60 runs")).toBeInTheDocument();
+    // A setting means nothing until an outcome is chosen.
+    expect(screen.getByRole("combobox", { name: "Under" })).toBeDisabled();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Ended as" }), "attacker");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Under" }), "gate0");
+    expect(screen.getByText("4 of 60 runs")).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Under" }), "full");
+    expect(await screen.findByText("No run matches these filters.")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByText("60 runs")).toBeInTheDocument();
+  });
+
+  it("links a run to the run view only when this server has it", async () => {
+    const first = fakeResults.cells.find(
+      (c) => c.run.scenarioId === "sc_a01" && c.run.seed === "1",
+    );
+    const runId = first?.run.runId as string;
+    mockServer({
+      results: onlyFake,
+      runs: [run(runId, "sc_a01", at, { verdict: "block", decidedBy: "review", kind: "attack" })],
+    });
+    renderApp("/dashboard");
+    const table = await screen.findByRole("region", { name: "Every run in this matrix" });
+    await waitFor(() => expect(table.querySelectorAll(".ag-row").length).toBeGreaterThan(0));
+    const row = table.querySelector('.ag-row[row-index="0"]') as HTMLElement;
+    await waitFor(() =>
+      expect(within(row).getByRole("link", { name: "Open run" })).toHaveAttribute(
+        "href",
+        `/runs/${runId}`,
+      ),
+    );
+    const second = table.querySelector('.ag-row[row-index="1"]') as HTMLElement;
+    expect(second).toHaveTextContent("Not on this server");
+    expect(within(second).queryByRole("link")).not.toBeInTheDocument();
+  });
+});
+
+describe("this server's runs", () => {
+  it("counts them, labelled as this server's and not the eval's", async () => {
+    mockServer({
+      runs: [
+        run("a", "sc_a01", at, { verdict: "block", decidedBy: "review" }),
+        run("b", "sc_a02", at, { verdict: "approve", decidedBy: "no_review", attackerPaid: true }),
+        run("c", "sc_b01", at, escalated.waiting),
+        run("d", "sc_b02", at, escalated.released),
+        run("e", "sc_b03", at, { verdict: "approve", decidedBy: "review" }),
+      ],
+    });
+    renderApp("/dashboard");
+    const strip = await screen.findByRole("region", { name: "This server's runs" });
+    expect(strip).toHaveTextContent("Counted from the run log here, not from the eval.");
+    const stat = (label: string) =>
+      within(strip).getByRole("link", { name: new RegExp(label) }).textContent;
+    expect(stat("Runs")).toBe("5Runs");
+    expect(stat("Waiting on you")).toBe("1Waiting on you");
+    expect(stat("Paid an attacker")).toBe("1Paid an attacker");
+    expect(stat("Blocked")).toBe("1Blocked");
+    expect(stat("Approved")).toBe("1Approved");
+    expect(stat("Holds released")).toBe("1Holds released");
+    expect(within(strip).getByRole("link", { name: /Paid an attacker/ })).toHaveAttribute(
+      "href",
+      "/runs?outcome=attacker_paid",
+    );
+  });
+
+  it("says so when there are none", async () => {
+    mockServer({ runs: [] });
+    renderApp("/dashboard");
+    const strip = await screen.findByRole("region", { name: "This server's runs" });
+    expect(await within(strip).findByText("No runs on this server yet.")).toBeInTheDocument();
+  });
+});

@@ -29,6 +29,9 @@ export function Shell() {
   const { heldForPerson } = useRuns();
   // A run is drawn across three columns, so its page is wider than the lists.
   const onRun = useMatch("/runs/:runId") !== null;
+  // The dashboard sets a table of nine columns beside a three-column comparison.
+  const onDashboard = useMatch("/dashboard") !== null;
+  const wide = onRun || onDashboard;
   return (
     <div className="shell">
       <header className="topbar">
@@ -65,7 +68,7 @@ export function Shell() {
           <ThemeSwitch />
         </div>
       </header>
-      <main className={onRun ? "page page-wide" : "page"}>
+      <main className={wide ? "page page-wide" : "page"}>
         <Outlet />
       </main>
     </div>
