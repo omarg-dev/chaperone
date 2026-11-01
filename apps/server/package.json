@@ -9,10 +9,12 @@
     "start": "node dist/index.js"
   },
   "dependencies": {
+    "@firewall/agent": "workspace:*",
     "@firewall/arena": "workspace:*",
     "@firewall/eval": "workspace:*",
     "@firewall/events": "workspace:*",
     "@firewall/firewall": "workspace:*",
+    "@firewall/mandate": "workspace:*",
     "@firewall/payments": "workspace:*",
     "@hono/node-server": "2.1.5",
     "@hono/zod-validator": "0.9.1",
@@ -22,6 +24,7 @@
   },
   "devDependencies": {
     "@firewall/web": "workspace:*",
+    "ai": "7.0.134",
     "esbuild": "0.28.2",
     "tsx": "4.23.15"
   }

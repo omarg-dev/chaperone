@@ -1,10 +1,11 @@
 import { baseCatalog, buildArena, findScenario } from "@firewall/arena";
 import type { Event, EventLog } from "@firewall/events";
 import { decideEscalation, EnforcementError } from "@firewall/firewall";
-import { type PaymentAdapter, PaymentError } from "@firewall/payments";
+import { PaymentError } from "@firewall/payments";
 import { zValidator } from "@hono/zod-validator";
 import { Hono } from "hono";
 import { z } from "zod";
+import type { PaymentSetup } from "../payments.js";
 
 const decision = z.object({
   decision: z.enum(["approve", "reject"]),
@@ -64,11 +65,25 @@ export function runList(log: EventLog) {
   });
 }
 
+// Whether this server can carry out a decision on a run, by which adapter the run's money is on.
+// A run says which in its `run_started` (the web app's live runs do); one that doesn't is from the
+// eval or the command line, whose fake runs lived in processes that are gone, so only the sandbox
+// can act on it. Null when it can.
+export function cannotDecide(events: readonly Event[], setup: PaymentSetup): string | null {
+  const recorded = (events[0]?.payload as { payments?: unknown } | null)?.payments;
+  if (recorded === setup.name || (recorded === undefined && setup.name === "sandbox")) return null;
+  if (recorded === "fake" || recorded === "sandbox") {
+    return recorded === "fake"
+      ? "This run moved practice money, which only the server that ran it held. This server is connected to the sandbox now, so it can't decide this one."
+      : "This run's money is in the payment sandbox, and this server is moving practice money only, so it can't decide this one.";
+  }
+  return "This run came from the command line or the eval, and its practice money isn't held by this server. A run decided here has to have been started here, or have its money in the sandbox.";
+}
+
 export interface EventRoutesOptions {
-  // What a person's decision is carried out through. Unset, the server can't decide a run, and
-  // says so: the in-memory fake lives in the process that made it, so only the sandbox adapter can
-  // act on a hold the server didn't create.
-  payments?: PaymentAdapter;
+  // What a person's decision is carried out through: the server's one payment adapter. Unset, the
+  // server can't decide a run, and says so.
+  payments?: PaymentSetup;
   // What to tell a person when `payments` is unset (which variables are missing).
   paymentsUnavailable?: string;
 }
@@ -98,10 +113,12 @@ export function eventRoutes(log: EventLog, options: EventRoutesOptions = {}) {
           503,
         );
       }
+      const refusal = cannotDecide(log.listRun(runId), options.payments);
+      if (refusal) return c.json({ error: "cannot_decide", message: refusal }, 409);
       try {
         const done = await decideEscalation(runId, answer, {
           log,
-          payments: options.payments,
+          payments: options.payments.adapter,
           ...(note && { note }),
         });
         return c.json({
