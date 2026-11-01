@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@firewall/arena": "workspace:*",
+    "@firewall/eval": "workspace:*",
     "@firewall/events": "workspace:*",
     "@firewall/firewall": "workspace:*",
     "@firewall/payments": "workspace:*",

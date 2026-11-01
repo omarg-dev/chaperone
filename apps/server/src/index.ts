@@ -9,7 +9,7 @@ import { createApp } from "./app.js";
 import { readConfig } from "./config.js";
 import { version } from "./version.js";
 
-const { port, dataDir } = readConfig(process.env);
+const { port, dataDir, resultsDir: configuredResults } = readConfig(process.env);
 
 // The bundled build ships the event log's migrations next to itself (see build.mjs). Run from
 // source, there's no such folder and the events package finds its own.
@@ -27,6 +27,11 @@ const arena = createArenaService({ log });
 const bundledWeb = fileURLToPath(new URL("./web", import.meta.url));
 const builtWeb = fileURLToPath(new URL("../../web/dist", import.meta.url));
 const webDir = [bundledWeb, builtWeb].find((dir) => existsSync(join(dir, "index.html")));
+
+// The eval's results files: RESULTS_DIR, or the repo's results/ folder when run from source. The
+// bundled build has no such folder next to it, so the dashboard says there are none until
+// RESULTS_DIR points at some.
+const resultsDir = configuredResults ?? fileURLToPath(new URL("../../../results", import.meta.url));
 
 // A person's decision on an escalated run is carried out on the sandbox, so it needs the sandbox
 // variables (.env.example). Without them the server runs as before and the decision route says
@@ -47,6 +52,7 @@ const server = serve(
       arena,
       ...(payments && { payments }),
       ...(paymentsUnavailable && { paymentsUnavailable }),
+      resultsDir,
       ...(webDir && { webDir }),
     }).fetch,
     port,

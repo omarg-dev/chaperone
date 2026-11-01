@@ -26,6 +26,9 @@ importers:
       '@firewall/arena':
         specifier: workspace:*
         version: link:../../packages/arena
+      '@firewall/eval':
+        specifier: workspace:*
+        version: link:../../packages/eval
       '@firewall/events':
         specifier: workspace:*
         version: link:../../packages/events
