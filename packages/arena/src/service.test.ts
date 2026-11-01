@@ -34,6 +34,17 @@ describe("arena service", () => {
     });
   });
 
+  it("records who started a run and which payment adapter holds its money, when told", () => {
+    arena.start("sc_b01", "1", { origin: "web", payments: "fake" });
+    const [started] = log.listRun("run_test");
+    expect(started?.payload).toEqual({
+      seed: "1",
+      request: expect.any(String),
+      origin: "web",
+      payments: "fake",
+    });
+  });
+
   it("refuses a scenario that doesn't exist", () => {
     expect(() => arena.start("sc_nope", "1")).toThrow(/No scenario/);
   });

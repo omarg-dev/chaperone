@@ -20,7 +20,13 @@ const review = (type: string, payload: unknown): OutcomeEvent => ({
 
 describe("facetsOf", () => {
   it("is empty for a run with none of the events", () => {
-    expect(facetsOf([])).toEqual({ seed: null, reviews: [], paidPayees: [] });
+    expect(facetsOf([])).toEqual({
+      seed: null,
+      reviews: [],
+      paidPayees: [],
+      origin: null,
+      payments: null,
+    });
   });
 
   it("reads the configurations in the order the reviews ran", () => {
@@ -47,6 +53,27 @@ describe("facetsOf", () => {
       }),
     ]);
     expect(facets.paidPayees).toEqual(["attacker_1"]);
+  });
+
+  it("reads who started the run and which payment adapter holds its money", () => {
+    const started = (payload: unknown): OutcomeEvent => ({
+      lane: "arena",
+      type: "run_started",
+      payload,
+    });
+    expect(facetsOf([started({ seed: "1", origin: "web", payments: "fake" })])).toMatchObject({
+      origin: "web",
+      payments: "fake",
+    });
+    // A run from the eval or the command line says neither.
+    expect(facetsOf([started({ seed: "1" })])).toMatchObject({ origin: null, payments: null });
+    // Only the arena's run_started counts, and only text does.
+    expect(
+      facetsOf([
+        { lane: "agent", type: "run_started", payload: { origin: "web" } },
+        started({ origin: 3, payments: ["fake"] }),
+      ]),
+    ).toMatchObject({ origin: null, payments: null });
   });
 
   it("ignores a run_started that isn't the arena's or has no seed", () => {

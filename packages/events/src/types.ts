@@ -97,6 +97,12 @@ export interface RunFacets {
   // The payee keys the money was paid out to, once it was captured. Which of them is an attacker
   // is the arena's to say, so the server answers that.
   paidPayees: string[];
+  // Who started the run, when its `run_started` says: "web" for a live run begun from the web app
+  // (the daily spend cap counts those). Null for every other run.
+  origin: string | null;
+  // Which payment adapter held the run's money ("fake" or "sandbox"), when its `run_started` says.
+  // Null for runs from before the web app recorded it.
+  payments: string | null;
 }
 
 export interface RunSummary extends RunOutcome, RunFacets {
