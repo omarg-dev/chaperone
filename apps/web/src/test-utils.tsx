@@ -45,6 +45,13 @@ export interface FakeServer {
     list: ResultsList;
     files?: Record<string, ResultsView | { error: number; message: string }>;
   };
+  // The server's answer to a call under /live (the Start a run page): by method and path, or
+  // undefined for one it doesn't know.
+  live?: (call: {
+    method: string;
+    path: string;
+    body: unknown;
+  }) => { status: number; body: unknown } | undefined;
   // The server's answer to a person's decision.
   decide?: (runId: string, body: { decision: string }) => { status: number; body: unknown };
 }
@@ -55,6 +62,14 @@ export function mockServer(server: FakeServer = {}) {
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const path = String(input);
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
+    if (path.startsWith("/live/")) {
+      const answer = server.live?.({
+        method: init?.method ?? "GET",
+        path,
+        body: init?.body ? JSON.parse(String(init.body)) : null,
+      });
+      return answer ? json(answer.body, answer.status) : new Response("not found", { status: 404 });
+    }
     const run = path.match(/^\/events\/runs\/([^/]+)(\/payees|\/decision)?$/);
     if (run && !server.down) {
       const runId = decodeURIComponent(run[1] as string);
@@ -124,6 +139,8 @@ export const run = (
       | "kind"
       | "attackerPaid"
       | "seed"
+      | "origin"
+      | "payments"
     >
   > = {},
 ): RunSummary => ({
@@ -142,6 +159,8 @@ export const run = (
   reviews: [],
   kind: null,
   attackerPaid: false,
+  origin: null,
+  payments: null,
   ...outcome,
 });
 

@@ -77,3 +77,8 @@ export function noVerdictText(run: RunSummary): string {
   if (run.escalation === "released") return "Hold released";
   return run.decidedBy === "no_review" ? "Firewall off" : "No review yet";
 }
+
+// Which money a run moved, said quietly beside it: the fake is practice money.
+export const PAYMENTS_LABELS = { fake: "Practice money", sandbox: "Sandbox" } as const;
+export const paymentsLabel = (payments: RunSummary["payments"]): string | null =>
+  payments ? PAYMENTS_LABELS[payments] : null;

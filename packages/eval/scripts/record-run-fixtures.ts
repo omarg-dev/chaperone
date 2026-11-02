@@ -26,7 +26,15 @@ import {
 } from "@firewall/arena";
 import { openEventLog } from "@firewall/events";
 import { decideEscalation } from "@firewall/firewall";
-import { DEFAULT_TOLERANCES, type MandateBuilder, type MandateDraft } from "@firewall/mandate";
+import {
+  arenaVocabulary,
+  DEFAULT_TOLERANCES,
+  draftMandate,
+  type MandateBuilder,
+  type MandateDraft,
+  mandateProgressOf,
+  stepMandate,
+} from "@firewall/mandate";
 import {
   createFakePaymentAdapter,
   type PaymentAdapter,
@@ -75,6 +83,11 @@ interface Spec {
   decideFailing?: "approve" | "reject";
   // The escalated hold is voided with nobody deciding, as the eval does when it settles a cell.
   release?: boolean;
+  // A run started from the web app: the arena run is marked origin web and carries its adapter, the
+  // person's mandate is drafted and decided one step at a time (the server's order of things), and
+  // the pipeline is handed the run and the locked mandate. "rejected" and "waiting" stop at the
+  // mandate: the person said no, or hasn't said anything yet.
+  web?: "run" | "rejected" | "waiting";
 }
 
 // The mandate a careful person would confirm for a scenario's own request.
@@ -238,6 +251,38 @@ const SPECS: Spec[] = [
     recording: "unrequested_extra",
   },
   {
+    // The honest cart again, but from the web app: the person drafted and locked the mandate
+    // first, in the run, and the money is practice money.
+    name: "web_approved",
+    scenarioId: "sc_b01",
+    seed: "gate2-1",
+    firewall: "full",
+    model: shopping({ open: [TERN, HALVARD], buy: [HALVARD] }),
+    builder: scriptedBuilder(),
+    recording: "honest",
+    web: "run",
+  },
+  {
+    // A mandate the person rejected: no agent ran.
+    name: "web_mandate_rejected",
+    scenarioId: "sc_b01",
+    seed: "gate2-1",
+    firewall: "full",
+    model: shopping({ open: [], buy: [] }),
+    builder: scriptedBuilder(),
+    web: "rejected",
+  },
+  {
+    // A mandate drafted and not yet confirmed.
+    name: "web_mandate_waiting",
+    scenarioId: "sc_b01",
+    seed: "gate2-1",
+    firewall: "full",
+    model: shopping({ open: [], buy: [] }),
+    builder: scriptedBuilder(),
+    web: "waiting",
+  },
+  {
     // No firewall, and an agent steered to an attacker's store: the attacker is paid.
     name: "attacker_paid",
     scenarioId: "sc_a01",
@@ -259,6 +304,41 @@ for (const spec of SPECS) {
   });
   const payments = createFakePaymentAdapter();
   const recording = spec.recording ? loadGate2Recording(spec.recording) : null;
+  // The web app's order of things: start the run, draft the mandate, decide it, then run.
+  let webRun: { runId: string; mandate: NonNullable<Awaited<ReturnType<typeof lockedIn>>> } | null =
+    null;
+  async function lockedIn(runId: string) {
+    const context = {
+      log,
+      runId,
+      scenarioId: spec.scenarioId,
+      vocabulary: arenaVocabulary(),
+    };
+    const request = findScenario(spec.scenarioId)?.request ?? "";
+    await draftMandate(context, spec.builder, request);
+    if (spec.web === "waiting") return null;
+    const progress = mandateProgressOf(log.listRun(runId));
+    if (progress.status !== "drafted") throw new Error(`${spec.name}: nothing to decide`);
+    if (spec.web === "rejected") {
+      stepMandate(context, progress, { kind: "reject", reason: "Not what I meant" });
+      return null;
+    }
+    stepMandate(context, progress, { kind: "accept" });
+    const done = mandateProgressOf(log.listRun(runId));
+    return done.status === "locked" ? done.mandate : null;
+  }
+  if (spec.web) {
+    const started = arena.start(spec.scenarioId, spec.seed, { origin: "web", payments: "fake" });
+    const mandate = await lockedIn(started.runId);
+    if (!mandate) {
+      const events = log.listRun(started.runId);
+      writeFileSync(`${OUT}${spec.name}.json`, `${JSON.stringify(events, null, 2)}\n`);
+      console.log(`${spec.name}: ${events.length} events, no agent`);
+      log.close();
+      continue;
+    }
+    webRun = { runId: started.runId, mandate };
+  }
   const result = await runWithFirewall({
     arena,
     log,
@@ -268,7 +348,9 @@ for (const spec of SPECS) {
     model: spec.model,
     scenarioId: spec.scenarioId,
     seed: spec.seed,
-    builder: spec.builder,
+    ...(webRun
+      ? { runId: webRun.runId, lockedMandate: webRun.mandate }
+      : { builder: spec.builder }),
     firewall: spec.firewall,
     ...(recording && { gates: gatesReplaying(recording) }),
   });

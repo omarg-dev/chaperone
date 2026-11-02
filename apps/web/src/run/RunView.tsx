@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router";
 import { Button, buttonClass, EmptyState, formatMoney, Pill, StateGlyph, Zone } from "../design";
 import { formatCost, formatTime } from "../format";
 import { useRuns } from "../runs/RunsProvider";
+import { paymentsLabel } from "../runs/state";
 import { DecisionPanel } from "./DecisionPanel";
 import { ReplayBar } from "./ReplayBar";
 import { RunTimeline } from "./RunTimeline";
@@ -150,6 +151,7 @@ function RunPage({ runId }: { runId: string }) {
     scenarioTitle ?? model.scenarioId,
     model.seed ? `Seed ${model.seed}` : null,
     model.startedAt ? formatTime(model.startedAt) : null,
+    paymentsLabel(model.payments),
     model.costUsd > 0 ? `${formatCost(model.costUsd)} in model calls` : null,
   ].filter(Boolean);
 

@@ -205,6 +205,10 @@ export interface RunMoney {
 
 export type Outcome =
   | "in_progress"
+  // The run stopped at the mandate: the person rejected it, or the builder couldn't draft one.
+  | "no_agent"
+  // A mandate was drafted and nobody has confirmed it yet.
+  | "mandate_waiting"
   | "approved"
   | "approved_by_person"
   | "blocked"
@@ -242,6 +246,9 @@ export interface RunModel {
   scenarioId: string | null;
   startedAt: string | null;
   seed: string | null;
+  // Which payment adapter holds the run's money, when the run says (a run started from the web app
+  // does): "fake" is practice money.
+  payments: "fake" | "sandbox" | null;
   request: string | null;
   terms: MandateTerm[];
   mandateHash: string | null;
@@ -437,6 +444,9 @@ interface ToolGroup {
   inputs: Obj[];
 }
 
+const paymentsOf = (value: unknown): "fake" | "sandbox" | null =>
+  value === "fake" || value === "sandbox" ? value : null;
+
 const verdictOf = (value: unknown): Verdict | null =>
   value === "approve" || value === "escalate" || value === "block" ? value : null;
 
@@ -568,8 +578,48 @@ export function buildRun(
     });
   }
 
-  // ---- The agent: its tool calls, grouped by turn and tool, in our words.
+  // A mandate that ended before the agent could start: the person rejected it, or none could be
+  // drafted. The run stops there, and says so.
+  const rejected = find("human", "mandate_rejected");
+  const draftFailed = find("mandate", "mandate_draft_failed");
   const agentStarted = find("agent", "agent_started");
+  const mandateStop: Standing["mandate"] =
+    agentStarted || locked
+      ? null
+      : rejected
+        ? "rejected"
+        : draftFailed
+          ? "failed"
+          : find("mandate", "mandate_drafted")
+            ? "waiting"
+            : null;
+  if (mandateStop === "rejected" && rejected) {
+    const reason = str(obj(rejected.payload).reason);
+    items.push({
+      id: `step_${rejected.eventId}`,
+      at: rejected.ts,
+      zone: "catalog",
+      group: "mandate",
+      kind: "step",
+      tag: "Mandate",
+      title: "Rejected",
+      lines: [],
+      ...(reason && { quote: reason }),
+    });
+  } else if (mandateStop === "failed" && draftFailed) {
+    items.push({
+      id: `step_${draftFailed.eventId}`,
+      at: draftFailed.ts,
+      zone: "catalog",
+      group: "mandate",
+      kind: "step",
+      tag: "Mandate",
+      title: "Couldn't be drafted",
+      lines: [],
+    });
+  }
+
+  // ---- The agent: its tool calls, grouped by turn and tool, in our words.
   const agentModel = str(obj(agentStarted?.payload).modelId);
   if (agentStarted) {
     items.push({
@@ -1218,6 +1268,7 @@ export function buildRun(
   const stale = lastEvent ? now - Date.parse(lastEvent.ts) > STALE_MS : false;
   const live =
     !(enforced || failed || awaitingPerson || releasedUndecided || noCheckout) &&
+    !(mandateStop === "rejected" || mandateStop === "failed" || mandateStop === "waiting") &&
     !stale &&
     events.length > 0;
 
@@ -1236,6 +1287,7 @@ export function buildRun(
     moneyState,
     agentStatus,
     holding: !!holdAt,
+    mandate: mandateStop,
   });
 
   const toMs = (iso: string) => Date.parse(iso);
@@ -1260,6 +1312,7 @@ export function buildRun(
     scenarioId: first?.scenarioId ?? started?.scenarioId ?? null,
     startedAt: first?.ts ?? null,
     seed: str(obj(started?.payload).seed),
+    payments: paymentsOf(obj(started?.payload).payments),
     request,
     terms,
     mandateHash: str(mandate.hash),
@@ -1300,6 +1353,8 @@ interface Standing {
   moneyState: MoneyState;
   agentStatus: string | null;
   holding: boolean;
+  // The mandate stopped the run (rejected, couldn't be drafted) or is still waiting for the person.
+  mandate: "rejected" | "failed" | "waiting" | null;
 }
 
 export function headlineFor(s: Standing): Headline {
@@ -1317,6 +1372,30 @@ export function headlineFor(s: Standing): Headline {
     lede: string | null = null,
   ): Headline => ({ outcome, pill: { state, label }, badge: null, title, lede });
 
+  if (s.mandate === "rejected") {
+    return plain(
+      "no_agent",
+      "You rejected the mandate, so no agent ran.",
+      "Nothing was bought and no money moved.",
+      "No run",
+    );
+  }
+  if (s.mandate === "failed") {
+    return plain(
+      "no_agent",
+      "The mandate couldn't be drafted, so no agent ran.",
+      "Nothing was bought and no money moved.",
+      "No run",
+    );
+  }
+  if (s.mandate === "waiting") {
+    return plain(
+      "mandate_waiting",
+      "This mandate is waiting for you.",
+      "Confirm it on the Start a run page, and the agent can shop. Nothing runs until you do.",
+      "Not confirmed",
+    );
+  }
   // Red is for one thing: money that reached an attacker, however the run got there.
   if (s.attackerPaid) {
     return pilled(

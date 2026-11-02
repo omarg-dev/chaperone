@@ -34,6 +34,11 @@ export interface RunSummary {
   kind: "attack" | "benign" | null;
   // Money was paid out to one of the scenario's attackers.
   attackerPaid: boolean;
+  // "web" for a live run started from the Start a run page; null for the eval's and the command
+  // line's.
+  origin: string | null;
+  // Which payment adapter holds the run's money, when the run says: "fake" is practice money.
+  payments: "fake" | "sandbox" | null;
 }
 
 export interface ScenarioInfo {
@@ -49,6 +54,8 @@ export class ApiError extends Error {
     readonly status: number,
     readonly code: string | null,
     message: string,
+    // The rest of the server's answer, for the few that carry more (a refused edit's problems).
+    readonly body: Record<string, unknown> = {},
   ) {
     super(message);
     this.name = "ApiError";
@@ -127,3 +134,89 @@ export async function postDecision(
   }
   return (await response.json()) as DecisionResult;
 }
+
+// ---- Live runs (the Start a run page)
+
+export type FirewallSetting = "off" | "gate0" | "full";
+
+export interface LiveBudget {
+  capUsd: number;
+  spentUsd: number;
+  remainingUsd: number;
+  // What the agent may spend in a run that starts now, after the review's allowance.
+  agentRoomUsd: number;
+  // The day's budget is used up.
+  exhausted: boolean;
+  // The next UTC midnight.
+  resetsAt: string;
+}
+
+export interface LiveStatus {
+  available: boolean;
+  // Why live runs are off, in a sentence, or null.
+  reason: string | null;
+  payments: "fake" | "sandbox" | null;
+  budget: LiveBudget;
+  // A live run is in progress.
+  busy: boolean;
+  agentModel: string;
+  gateModel: string;
+}
+
+export interface MandateRow {
+  label: string;
+  value: string;
+  field: string | null;
+  // What an edit box starts from, and what to type; null where the row can't be edited.
+  editText: string | null;
+  hint: string | null;
+}
+
+export interface MandateView {
+  runId: string;
+  scenarioId: string;
+  request: string;
+  state: "drafted" | "locked" | "rejected" | "failed";
+  rows: MandateRow[];
+  problems: string[];
+  canConfirm: boolean;
+  lock: { hash: string; confirmedAt: string } | null;
+  note: string | null;
+  costUsd: number;
+}
+
+export type MandateAction =
+  | { action: "edit"; field: string; input: string }
+  | { action: "confirm" }
+  | { action: "reject"; reason?: string };
+
+async function sendJson<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(path, {
+    method: "POST",
+    headers: { "content-type": "application/json", accept: "application/json" },
+    body: JSON.stringify(body),
+  });
+  const answer = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!response.ok) {
+    throw new ApiError(
+      response.status,
+      typeof answer?.error === "string" ? answer.error : null,
+      typeof answer?.message === "string" ? answer.message : `${path} answered ${response.status}`,
+      answer ?? {},
+    );
+  }
+  return answer as T;
+}
+
+export const fetchLiveStatus = () => getJson<LiveStatus>("/live/status");
+export const fetchMandate = (runId: string) =>
+  getJson<MandateView>(`/live/runs/${encodeURIComponent(runId)}/mandate`);
+export const postDraft = (scenarioId: string) =>
+  sendJson<MandateView>("/live/runs", { scenarioId });
+export const postMandate = (runId: string, action: MandateAction) =>
+  sendJson<MandateView>(`/live/runs/${encodeURIComponent(runId)}/mandate`, action);
+export const postStart = (runId: string, firewall: FirewallSetting) =>
+  sendJson<{ runId: string; firewall: FirewallSetting }>(
+    `/live/runs/${encodeURIComponent(runId)}/start`,
+    { firewall },
+  );
