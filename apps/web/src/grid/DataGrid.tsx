@@ -7,13 +7,15 @@ import {
   type ICellRendererParams,
   type IRowNode,
   ModuleRegistry,
+  RowApiModule,
   type RowClickedEvent,
   RowStyleModule,
+  ScrollApiModule,
   type SortChangedEvent,
   ValidationModule,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { type ReactNode, useCallback, useMemo } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
 import { gridTheme } from "./theme";
 
 // AG Grid Community, behind one small component. The pages know rows, columns and a label; they
@@ -33,6 +35,9 @@ ModuleRegistry.registerModules([
   ColumnApiModule,
   // `getRowClass`, which marks the row whose detail is open.
   RowStyleModule,
+  // `getRowNode` and `ensureNodeVisible`, which find an opened detail and bring it into view.
+  RowApiModule,
+  ScrollApiModule,
   // AG's development checks (it names a module a page needs and didn't register). Left out of the
   // production build, which is why the grid chunk doesn't carry it.
   ...(import.meta.env.DEV ? [ValidationModule] : []),
@@ -78,7 +83,8 @@ export interface DataGridProps<Row> {
   // Opens the row with this ID, showing `render(row)` full width under it. One row at a time.
   detail?: {
     openId: string | null;
-    height: number;
+    // Tall enough for what `render` draws, which can depend on the row.
+    height: number | ((row: Row) => number);
     render: (row: Row) => ReactNode;
   };
 }
@@ -112,6 +118,18 @@ export function DataGrid<Row>({
   detail,
 }: DataGridProps<Row>) {
   const openId = detail?.openId ?? null;
+  const grid = useRef<AgGridReact<Marked<Row>>>(null);
+
+  // A detail opened near the bottom of the table is scrolled into view, no further than it needs.
+  useEffect(() => {
+    if (openId === null) return;
+    const timer = setTimeout(() => {
+      const api = grid.current?.api;
+      const node = api?.getRowNode(`${openId}${DETAIL_SUFFIX}`);
+      if (api && node) api.ensureNodeVisible(node);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [openId]);
 
   const data = useMemo<Marked<Row>[]>(() => {
     const shown = [...rows] as Marked<Row>[];
@@ -156,7 +174,10 @@ export function DataGrid<Row>({
   const options: GridOptions<Marked<Row>> = {
     isFullWidthRow: ({ rowNode }) => rowNode.data?.__detailOf !== undefined,
     fullWidthCellRenderer: DetailRow,
-    getRowHeight: ({ data: row }) => (row?.__detailOf !== undefined ? detail?.height : undefined),
+    getRowHeight: ({ data: row }) => {
+      if (row?.__detailOf === undefined || !detail) return undefined;
+      return typeof detail.height === "number" ? detail.height : detail.height(row);
+    },
     // The open row's detail sits directly under it whichever way the table is sorted: the detail is a
     // copy of its row, so it sorts beside it, and this puts it right after.
     postSortRows: ({ nodes }) => {
@@ -178,6 +199,7 @@ export function DataGrid<Row>({
   return (
     <section className={`data-grid data-grid-${layout}`} aria-label={label}>
       <AgGridReact<Marked<Row>>
+        ref={grid}
         theme={gridTheme}
         rowData={data}
         columnDefs={columnDefs}

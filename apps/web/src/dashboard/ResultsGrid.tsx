@@ -1,7 +1,10 @@
-import { useMemo, useState } from "react";
+import type { ResultsView } from "@firewall/eval/view";
+import { useCallback, useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Button, Pill } from "../design";
 import { type CellProps, DataGrid, type GridColumn } from "../grid";
+import { CellDetailPanel } from "./CellDetail";
+import { type CellDetail, cellOf, detailOf } from "./detail";
 import {
   CONFIG_INFO,
   CONFIG_ORDER,
@@ -39,13 +42,28 @@ function OutcomeView({ cell }: { cell: OutcomeCell }) {
   }
 }
 
-const ScenarioCell = ({ data }: CellProps<GridRow>) =>
+// The scenario, and the control that opens the cell under each setting. It is a real button, so the
+// open state is said to assistive technology; a click on it reaches the row, which toggles, so it has
+// no handler of its own.
+const ScenarioCell = ({ data, openId }: CellProps<GridRow> & { openId: string | null }) =>
   data && (
-    <div className="cell-stack">
-      <span className="cell-title" title={data.title}>
-        {data.title}
-      </span>
-      <span className="t-data">{data.scenarioId}</span>
+    <div className="cell-open">
+      <button
+        type="button"
+        className="row-toggle"
+        aria-expanded={openId === data.id}
+        aria-label={`Show ${data.title}, seed ${data.seed}, under each setting`}
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <path d="M5.5 3.5 10.5 8l-5 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+      </button>
+      <div className="cell-stack">
+        <span className="cell-title" title={data.title}>
+          {data.title}
+        </span>
+        <span className="t-data">{data.scenarioId}</span>
+      </div>
     </div>
   );
 
@@ -77,14 +95,21 @@ function RunCell({ data, known }: CellProps<GridRow> & { known: ReadonlySet<stri
   );
 }
 
-function columnsFor(known: ReadonlySet<string>, withCause: boolean): GridColumn<GridRow>[] {
+function columnsFor(
+  known: ReadonlySet<string>,
+  withCause: boolean,
+  openId: string | null,
+): GridColumn<GridRow>[] {
   return [
     {
       headerName: "Scenario",
       field: "title",
-      flex: 3,
-      minWidth: 240,
+      // The scenario stays in view while the settings' columns scroll past it.
+      pinned: "left",
+      lockPinned: true,
+      width: 330,
       cellRenderer: ScenarioCell,
+      cellRendererParams: { openId },
     },
     { headerName: "Seed", field: "seed", width: 90, comparator: (a, b) => Number(a) - Number(b) },
     {
@@ -95,7 +120,7 @@ function columnsFor(known: ReadonlySet<string>, withCause: boolean): GridColumn<
       minWidth: 130,
       cellRenderer: KindCell,
     },
-    { headerName: "Agent", field: "agent", flex: 1.2, minWidth: 120 },
+    { headerName: "Agent", field: "agent", flex: 1.2, minWidth: 110 },
     ...CONFIG_ORDER.map(
       (config): GridColumn<GridRow> => ({
         headerName: CONFIG_INFO[config].name,
@@ -103,7 +128,7 @@ function columnsFor(known: ReadonlySet<string>, withCause: boolean): GridColumn<
         // Sorted worst first, so an ascending sort puts the attacks that got through at the top.
         valueGetter: ({ data }) => (data ? outcomeRank(data.outcomes[config]) : 0),
         flex: 1.6,
-        minWidth: 190,
+        minWidth: 170,
         cellRenderer: OutcomeColumnCell,
         cellRendererParams: { config },
       }),
@@ -116,12 +141,15 @@ function columnsFor(known: ReadonlySet<string>, withCause: boolean): GridColumn<
       colId: "run",
       sortable: false,
       flex: 1.2,
-      minWidth: 140,
+      minWidth: 170,
       cellRenderer: RunCell,
       cellRendererParams: { known },
     },
   ];
 }
+
+// Tall enough for the heading, the gates, the verdict, cost and time, and a line for each note.
+const detailHeight = (detail: CellDetail) => 366 + detail.notes.length * 34;
 
 function Select<T extends string>({
   label,
@@ -162,21 +190,46 @@ function Select<T extends string>({
 // filtered by scenario kind, by setting and outcome ("what did Gate 0 only let through?") and by a
 // search, and sorted by any column.
 export function ResultsGrid({
+  results,
   rows,
   knownRunIds,
 }: {
+  results: ResultsView;
   rows: readonly GridRow[];
   knownRunIds: ReadonlySet<string>;
 }) {
   const [filters, setFilters] = useState<RowFilters>(NO_ROW_FILTERS);
+  // The row whose cell is open under each setting: one at a time, and a click on it again closes it.
+  const [openId, setOpenId] = useState<string | null>(null);
   const shown = useMemo(() => filterRows(rows, filters), [rows, filters]);
   const columns = useMemo(
     () =>
       columnsFor(
         knownRunIds,
         rows.some((r) => r.cause !== null),
+        openId,
       ),
-    [knownRunIds, rows],
+    [knownRunIds, rows, openId],
+  );
+  const toggle = useCallback(
+    (row: GridRow) => setOpenId((now) => (now === row.id ? null : row.id)),
+    [],
+  );
+  const heightOf = useCallback(
+    (row: GridRow) => {
+      const cell = cellOf(results, row.id);
+      return cell ? detailHeight(detailOf(cell, row)) : 0;
+    },
+    [results],
+  );
+  const renderDetail = useCallback(
+    (row: GridRow) => {
+      const cell = cellOf(results, row.id);
+      return (
+        cell && <CellDetailPanel detail={detailOf(cell, row)} onClose={() => setOpenId(null)} />
+      );
+    },
+    [results],
   );
   const set = (patch: Partial<RowFilters>) => setFilters((now) => ({ ...now, ...patch }));
 
@@ -237,6 +290,9 @@ export function ResultsGrid({
         label="Every run in this matrix"
         rowId={(row) => row.id}
         emptyText="No run matches these filters."
+        activateOnClick
+        onRowActivate={toggle}
+        detail={{ openId, height: heightOf, render: renderDetail }}
       />
     </div>
   );

@@ -84,7 +84,7 @@ function Results({ name, knownRunIds }: { name: string; knownRunIds: ReadonlySet
           Every run
         </h2>
         <p className="t-meta grid-sub">What each firewall setting did to the money, run by run.</p>
-        <ResultsGrid rows={rows} knownRunIds={knownRunIds} />
+        <ResultsGrid results={results} rows={rows} knownRunIds={knownRunIds} />
       </section>
     </>
   );

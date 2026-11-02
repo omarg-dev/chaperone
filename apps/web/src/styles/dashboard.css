@@ -364,3 +364,109 @@
     font-size: 2.125rem;
   }
 }
+
+/* The scenario cell, with the control that opens the cell under each setting. */
+.cell-open {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 100%;
+  min-width: 0;
+}
+
+.row-toggle {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.row-toggle:hover {
+  background: var(--sunk);
+  color: var(--ink);
+}
+
+.row-toggle svg {
+  transition: transform 120ms ease;
+}
+
+.row-toggle[aria-expanded="true"] svg {
+  transform: rotate(90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-toggle svg {
+    transition: none;
+  }
+}
+
+/* One cell of the matrix under each setting, open under its row. */
+.cell-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  max-width: 880px;
+}
+
+.cell-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.cell-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.cell-detail-table th,
+.cell-detail-table td {
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  border-top: 1px solid var(--line);
+  text-align: start;
+  vertical-align: middle;
+  font-size: var(--text-body);
+}
+
+.cell-detail-table thead th,
+.cell-detail-table thead td {
+  border-top: 0;
+  vertical-align: bottom;
+}
+
+.cell-detail-table tbody th {
+  width: 120px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.cell-detail-setting {
+  display: block;
+  font-weight: 700;
+}
+
+.cell-detail-total th,
+.cell-detail-total td {
+  border-top-color: var(--line-strong);
+}
+
+.detail-gate {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.cell-detail-note {
+  margin: 0;
+}
