@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import { Button, Pill } from "../design";
-import { type CellProps, DataGrid, type GridColumn } from "./ag/DataGrid";
+import { type CellProps, DataGrid, type GridColumn } from "../grid/DataGrid";
 import {
   CONFIG_INFO,
   CONFIG_ORDER,
