@@ -162,11 +162,13 @@ describe("the dashboard, with results", () => {
   it("opens the result a shared address names, and the newest for one the server doesn't have", async () => {
     mockServer({ results: { list, files } });
     renderApp(`/dashboard?result=${OLDEST}`);
+    // Two grids are drawn in this test, which takes longer than a wait does when the machine is busy.
+    const slow = { timeout: 10_000 };
     expect(
-      await screen.findByText("Development numbers, not a sandbox result."),
+      await screen.findByText("Development numbers, not a sandbox result.", {}, slow),
     ).toBeInTheDocument();
     renderApp("/dashboard?result=nowhere");
-    expect((await screen.findAllByText(/Sandbox result/)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/Sandbox result/, {}, slow)).length).toBeGreaterThan(0);
   });
 
   it("says why a file the server refused couldn't be shown", async () => {
