@@ -175,7 +175,9 @@ export const escalated = {
     ({ verdict, decidedBy: "person", holdOpen: false, escalation: "decided" }) as const,
 } as const;
 
-// The dashboard loads on demand, and its first load in a test file pulls in the data grid, which
-// can take longer than a test waits when many files run at once. Calling this in a `beforeAll`
-// makes that load happen before any test starts the clock.
-export const loadDashboard = () => import("./dashboard/Dashboard");
+// The data grid loads on demand (the Runs page and the dashboard share it), and its first load in a
+// test file can take longer than a test waits when many files run at once. Calling this in a
+// `beforeAll` makes that load happen before any test starts the clock. The dashboard is a lazy page
+// of its own as well.
+export const loadGrid = () => import("./grid/DataGrid");
+export const loadDashboard = () => Promise.all([import("./dashboard/Dashboard"), loadGrid()]);

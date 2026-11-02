@@ -24,10 +24,15 @@ export const gridTheme = themeQuartz.withParams({
   cellHorizontalPadding: "var(--space-4)",
   rowHeight: 56,
   headerHeight: 40,
-  // 60 runs would be a page of their own: past this the table scrolls inside itself.
+  // The pinned column (the scenario) is told apart from the ones that scroll under it by a line, and
+  // a column's edge shows where it can be dragged.
+  pinnedColumnBorder: "1px solid var(--line-strong)",
+  headerColumnResizeHandleColor: "var(--line-strong)",
+  // A table that draws every row (the dashboard's) is a page of its own at 60 runs: past this it
+  // scrolls inside itself. The Runs history sets its own height and draws only what is in view.
   autoHeightMaxBodyHeight: 616,
-  // The grid has no menus, filters or editors of its own on this page (the toolbar above it filters),
-  // but the ones AG would draw follow the same tokens.
+  // The grids have no menus, filters or editors of AG's own (the toolbars above them filter), but the
+  // ones AG would draw follow the same tokens.
   chromeBackgroundColor: "var(--sunk)",
   menuBackgroundColor: "var(--surface)",
   inputBorder: "1px solid var(--line-strong)",

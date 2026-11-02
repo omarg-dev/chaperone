@@ -1,8 +1,9 @@
-import { type ReactNode, useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router";
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import type { RunSummary } from "../api";
 import { Button, buttonClass, EmptyState, Pill } from "../design";
 import { formatTime } from "../format";
+import { type CellProps, DataGrid, type GridColumn, type GridSort } from "../grid";
 import {
   applyFilters,
   type Filters,
@@ -10,10 +11,16 @@ import {
   isFiltered,
   type Kind,
   NO_FILTERS,
-  paginate,
   parseFilters,
 } from "../runs/filters";
 import { useRuns } from "../runs/RunsProvider";
+import {
+  compareRuns,
+  DEFAULT_SORT,
+  SORT_COLUMNS,
+  type SortColumn,
+  scenarioName,
+} from "../runs/sort";
 import {
   CONFIG_LABELS,
   CONFIGS,
@@ -70,6 +77,89 @@ function Firewall({ run }: { run: RunSummary }) {
   );
 }
 
+const RunCell = ({ data, titles }: CellProps<RunSummary> & { titles: Record<string, string> }) => {
+  if (!data) return null;
+  const title = data.scenarioId ? titles[data.scenarioId] : undefined;
+  return (
+    <div className="cell-stack">
+      <span className="run-title">
+        <Link to={`/runs/${data.runId}`} className="run-link" title={scenarioName(data, titles)}>
+          {title ?? data.scenarioId ?? "No scenario"}
+        </Link>
+        {data.kind === "attack" && <span className="badge">Attack</span>}
+        {data.payments && (
+          <span className="run-money-kind t-meta">{paymentsLabel(data.payments)}</span>
+        )}
+      </span>
+      <span className="t-data">
+        {title && data.scenarioId ? `${data.scenarioId} · ` : ""}
+        {data.runId}
+      </span>
+    </div>
+  );
+};
+
+const StartedCell = ({ data }: CellProps<RunSummary>) =>
+  data && (
+    <time className="run-time t-meta" dateTime={data.startedAt}>
+      {formatTime(data.startedAt)}
+    </time>
+  );
+
+const FirewallCell = ({ data }: CellProps<RunSummary>) => data && <Firewall run={data} />;
+const VerdictCell = ({ data }: CellProps<RunSummary>) => data && <Verdict run={data} />;
+
+// The grid sorts with the same comparison the tests pin (`compareRuns`): each column hands AG the
+// run itself, and AG hands the pair back to it.
+const sortBy =
+  (column: SortColumn, titles: Record<string, string>) => (a: RunSummary, b: RunSummary) =>
+    compareRuns(a, b, column, titles);
+
+function columnsFor(titles: Record<string, string>): GridColumn<RunSummary>[] {
+  const column = (column: SortColumn): GridColumn<RunSummary> => ({
+    colId: column,
+    valueGetter: ({ data }) => data,
+    comparator: sortBy(column, titles),
+    sortingOrder: ["asc", "desc"],
+  });
+  return [
+    {
+      ...column("scenario"),
+      headerName: "Scenario",
+      // The scenario stays in view when the other columns scroll past it.
+      pinned: "left",
+      lockPinned: true,
+      width: 380,
+      minWidth: 260,
+      cellRenderer: RunCell,
+      cellRendererParams: { titles },
+    },
+    {
+      ...column("started"),
+      headerName: "Started",
+      width: 190,
+      minWidth: 150,
+      // Newest first is where a click on it starts.
+      sortingOrder: ["desc", "asc"],
+      cellRenderer: StartedCell,
+    },
+    {
+      ...column("firewall"),
+      headerName: "Firewall",
+      flex: 1,
+      minWidth: 150,
+      cellRenderer: FirewallCell,
+    },
+    {
+      ...column("verdict"),
+      headerName: "Verdict",
+      flex: 1.5,
+      minWidth: 280,
+      cellRenderer: VerdictCell,
+    },
+  ];
+}
+
 function Select({
   label,
   value,
@@ -98,8 +188,11 @@ export function Runs() {
 
   // The URL is the filters' home, so a filtered view can be shared; replacing keeps the back button
   // for leaving the page rather than for undoing each filter.
-  const update = (patch: Partial<Filters>) =>
-    setParams(filtersToParams({ ...filters, page: 1, ...patch }), { replace: true });
+  const update = useCallback(
+    (patch: Partial<Filters>) =>
+      setParams(filtersToParams({ ...filters, ...patch }), { replace: true }),
+    [filters, setParams],
+  );
 
   // The search box is typed into at its own pace, and writes the URL once the typing pauses.
   const [text, setText] = useState(filters.query);
@@ -119,9 +212,28 @@ export function Runs() {
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [runs, scenarioTitles, filters.scenario]);
 
-  const matching = useMemo(() => applyFilters(runs, filters), [runs, filters]);
-  const shown = paginate(matching, filters.page);
+  const matching = useMemo(
+    () => applyFilters(runs, filters, scenarioTitles),
+    [runs, filters, scenarioTitles],
+  );
   const filtered = isFiltered(filters);
+  const columns = useMemo(() => columnsFor(scenarioTitles), [scenarioTitles]);
+
+  // The sort lives in the address like the filters do. The grid shows it and reports a click on a
+  // header; the address is what it is kept in.
+  const sort = useMemo<GridSort>(
+    () => ({ colId: filters.sort.column, direction: filters.sort.direction }),
+    [filters.sort],
+  );
+  const sortChanged = useCallback(
+    (next: GridSort | null) => {
+      const column = SORT_COLUMNS.find((candidate) => candidate === next?.colId);
+      update({ sort: next && column ? { column, direction: next.direction } : DEFAULT_SORT });
+    },
+    [update],
+  );
+  const navigate = useNavigate();
+  const openRun = useCallback((run: RunSummary) => navigate(`/runs/${run.runId}`), [navigate]);
 
   const refresh = (
     <Button variant="secondary" small onClick={reload} disabled={status === "loading"}>
@@ -129,7 +241,14 @@ export function Runs() {
     </Button>
   );
   const clear = (
-    <Button variant="secondary" small onClick={() => setParams({}, { replace: true })}>
+    // The sort is how the runs are ordered, not which are shown, so clearing the filters keeps it.
+    <Button
+      variant="secondary"
+      small
+      onClick={() =>
+        setParams(filtersToParams({ ...NO_FILTERS, sort: filters.sort }), { replace: true })
+      }
+    >
       Clear filters
     </Button>
   );
@@ -172,12 +291,12 @@ export function Runs() {
         <>
           <search className="filters" aria-label="Filter runs">
             <label className="filter filter-search">
-              <span className="filter-label">Run ID</span>
+              <span className="filter-label">Search</span>
               <input
                 className="filter-control"
                 type="search"
                 value={text}
-                placeholder="Search by run ID"
+                placeholder="Run ID or scenario"
                 autoComplete="off"
                 spellCheck={false}
                 onChange={(e) => setText(e.target.value)}
@@ -235,8 +354,8 @@ export function Runs() {
             {matching.length === 0
               ? "No runs match."
               : filtered
-                ? `Showing ${shown.from}–${shown.to} of ${matching.length} matching runs, out of ${runs.length}`
-                : `Showing ${shown.from}–${shown.to} of ${runs.length} runs`}
+                ? `Showing ${matching.length} of ${runs.length} runs`
+                : `${runs.length} runs`}
           </p>
         </>
       )}
@@ -247,66 +366,18 @@ export function Runs() {
         </EmptyState>
       )}
 
-      {shown.items.length > 0 && (
-        <ul className="run-list" aria-label="Runs">
-          <li className="run-row run-head" aria-hidden="true">
-            <span>Scenario</span>
-            <span>Started</span>
-            <span>Firewall</span>
-            <span>Verdict</span>
-          </li>
-          {shown.items.map((run) => {
-            const title = run.scenarioId ? scenarioTitles[run.scenarioId] : undefined;
-            return (
-              <li key={run.runId} className="run-row">
-                <div className="run-scenario">
-                  <span className="run-title">
-                    <Link to={`/runs/${run.runId}`} className="run-link t-item">
-                      {title ?? run.scenarioId ?? "No scenario"}
-                    </Link>
-                    {run.kind === "attack" && <span className="badge">Attack</span>}
-                    {run.payments && (
-                      <span className="run-money-kind t-meta">{paymentsLabel(run.payments)}</span>
-                    )}
-                  </span>
-                  <span className="t-data">
-                    {title && run.scenarioId ? `${run.scenarioId} · ` : ""}
-                    {run.runId}
-                  </span>
-                </div>
-                <time className="run-time t-meta" dateTime={run.startedAt}>
-                  {formatTime(run.startedAt)}
-                </time>
-                <Firewall run={run} />
-                <Verdict run={run} />
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      {shown.pages > 1 && (
-        <nav className="pager" aria-label="Pages of runs">
-          <Button
-            variant="secondary"
-            small
-            disabled={shown.page <= 1}
-            onClick={() => update({ page: shown.page - 1 })}
-          >
-            Previous
-          </Button>
-          <span className="t-meta">
-            Page {shown.page} of {shown.pages}
-          </span>
-          <Button
-            variant="secondary"
-            small
-            disabled={shown.page >= shown.pages}
-            onClick={() => update({ page: shown.page + 1 })}
-          >
-            Next
-          </Button>
-        </nav>
+      {matching.length > 0 && (
+        <DataGrid
+          layout="scroll"
+          label="Runs"
+          rows={matching}
+          columns={columns}
+          rowId={(run) => run.runId}
+          emptyText="No runs match."
+          sort={sort}
+          onSortChange={sortChanged}
+          onRowActivate={openRun}
+        />
       )}
     </>
   );

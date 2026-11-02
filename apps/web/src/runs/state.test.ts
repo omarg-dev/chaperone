@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { run } from "../test-utils";
+import { escalated, run } from "../test-utils";
 import {
   configLabel,
   configOf,
@@ -7,6 +7,7 @@ import {
   noVerdictText,
   OUTCOMES,
   outcomeOf,
+  outcomeRank,
   pillStateOf,
 } from "./state";
 
@@ -110,5 +111,21 @@ describe("how a run ended", () => {
     expect(configOf(run("r", "s", at))).toBeNull();
     expect(configLabel("gate0")).toBe("Gate 0 only");
     expect(configLabel("something_new")).toBe("something_new");
+  });
+
+  it("ranks every outcome, what needs an eye first", () => {
+    const rank = (outcome: Parameters<typeof run>[3]) => outcomeRank(run("r", "s", at, outcome));
+    const order = [
+      rank({ attackerPaid: true }),
+      rank({ ...escalated.waiting }),
+      rank({ reviewFailed: true }),
+      rank({ ...escalated.released }),
+      rank({ verdict: "block", decidedBy: "review" }),
+      rank({ verdict: "approve", decidedBy: "review" }),
+      rank({ decidedBy: "no_review" }),
+      rank({}),
+    ];
+    expect(order).toEqual([...order].sort((a, b) => a - b));
+    expect(new Set(order).size).toBe(OUTCOMES.length);
   });
 });

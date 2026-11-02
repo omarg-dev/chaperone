@@ -82,3 +82,17 @@ export function noVerdictText(run: RunSummary): string {
 export const PAYMENTS_LABELS = { fake: "Practice money", sandbox: "Sandbox" } as const;
 export const paymentsLabel = (payments: RunSummary["payments"]): string | null =>
   payments ? PAYMENTS_LABELS[payments] : null;
+
+// The order the verdict column sorts in: what needs a person's eye first, so an ascending sort opens
+// on the money that reached an attacker and then on what is waiting for a decision.
+const OUTCOME_RANK: Record<RunOutcome, number> = {
+  attacker_paid: 0,
+  held: 1,
+  review_failed: 2,
+  released: 3,
+  blocked: 4,
+  approved: 5,
+  firewall_off: 6,
+  not_reviewed: 7,
+};
+export const outcomeRank = (run: RunSummary): number => OUTCOME_RANK[outcomeOf(run)];

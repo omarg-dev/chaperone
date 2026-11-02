@@ -11,6 +11,7 @@ import "./styles/shell.css";
 import "./styles/timeline.css";
 import "./styles/run.css";
 import "./styles/inbox.css";
+import "./styles/grid.css";
 import "./styles/dashboard.css";
 import "./styles/start.css";
 
