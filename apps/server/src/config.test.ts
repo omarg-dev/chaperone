@@ -7,7 +7,7 @@ describe("readConfig", () => {
       port: 3000,
       dataDir: "data",
       resultsDir: null,
-      liveDailyUsd: 1,
+      liveDailyUsd: 0.25,
     });
   });
 
@@ -24,9 +24,9 @@ describe("readConfig", () => {
     expect(readConfig({ RESULTS_DIR: "" }).resultsDir).toBeNull();
   });
 
-  it("caps a day's live runs at $1.00 unless FIREWALL_LIVE_DAILY_USD says otherwise", () => {
-    expect(readConfig({}).liveDailyUsd).toBe(1);
-    expect(readConfig({ FIREWALL_LIVE_DAILY_USD: "" }).liveDailyUsd).toBe(1);
+  it("caps a day's live runs at $0.25 unless FIREWALL_LIVE_DAILY_USD says otherwise", () => {
+    expect(readConfig({}).liveDailyUsd).toBe(0.25);
+    expect(readConfig({ FIREWALL_LIVE_DAILY_USD: "" }).liveDailyUsd).toBe(0.25);
     expect(readConfig({ FIREWALL_LIVE_DAILY_USD: "2.5" }).liveDailyUsd).toBe(2.5);
     // Zero turns live runs off for the day.
     expect(readConfig({ FIREWALL_LIVE_DAILY_USD: "0" }).liveDailyUsd).toBe(0);

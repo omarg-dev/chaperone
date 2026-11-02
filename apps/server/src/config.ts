@@ -10,10 +10,10 @@ export interface Config {
   liveDailyUsd: number;
 }
 
-// The default cap on a day's live runs: $1.00, about a hundred runs at the half a cent to a cent
-// each costs (docs/PLAN.md, "Cost"). It is a ceiling per day, not a share of the $5 model budget:
-// lower it if that has to last to Dec 15.
-export const DEFAULT_LIVE_DAILY_USD = 1;
+// The default cap on a day's live runs: $0.25, a few dozen runs at the half a cent or so each costs
+// (docs/PLAN.md, "Cost"). Omar chose it on Nov 2 so the Anthropic credit, which the gates spend in
+// every eval column too, lasts through judging to Dec 15.
+export const DEFAULT_LIVE_DAILY_USD = 0.25;
 
 export function readConfig(env: NodeJS.ProcessEnv): Config {
   const raw = env.PORT ?? "3000";
