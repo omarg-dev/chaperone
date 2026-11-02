@@ -12,6 +12,7 @@ import "./styles/timeline.css";
 import "./styles/run.css";
 import "./styles/inbox.css";
 import "./styles/dashboard.css";
+import "./styles/start.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("index.html has no #root element");
