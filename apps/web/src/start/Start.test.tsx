@@ -297,8 +297,8 @@ describe("setting the mandate", () => {
     });
     renderApp("/start?run=run_gone");
     expect(await screen.findByRole("radio", { name: /Tactile keyboard/ })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/start"));
-    expect(screen.getByTestId("location")).not.toHaveTextContent("run_gone");
+    await waitFor(() => expect(screen.getByTestId("location")).not.toHaveTextContent("run_gone"));
+    expect(screen.getByTestId("location")).toHaveTextContent("/start");
   });
 });
 
