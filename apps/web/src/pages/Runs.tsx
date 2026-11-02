@@ -129,7 +129,7 @@ function columnsFor(titles: Record<string, string>): GridColumn<RunSummary>[] {
       // The scenario stays in view when the other columns scroll past it.
       pinned: "left",
       lockPinned: true,
-      width: 380,
+      width: 430,
       minWidth: 260,
       cellRenderer: RunCell,
       cellRendererParams: { titles },
@@ -137,7 +137,7 @@ function columnsFor(titles: Record<string, string>): GridColumn<RunSummary>[] {
     {
       ...column("started"),
       headerName: "Started",
-      width: 190,
+      width: 180,
       minWidth: 150,
       // Newest first is where a click on it starts.
       sortingOrder: ["desc", "asc"],
@@ -154,7 +154,7 @@ function columnsFor(titles: Record<string, string>): GridColumn<RunSummary>[] {
       ...column("verdict"),
       headerName: "Verdict",
       flex: 1.5,
-      minWidth: 280,
+      minWidth: 270,
       cellRenderer: VerdictCell,
     },
   ];

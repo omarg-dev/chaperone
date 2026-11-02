@@ -149,7 +149,7 @@ function columnsFor(
 }
 
 // Tall enough for the heading, the gates, the verdict, cost and time, and a line for each note.
-const detailHeight = (detail: CellDetail) => 366 + detail.notes.length * 34;
+const detailHeight = (detail: CellDetail) => 384 + detail.notes.length * 34;
 
 function Select<T extends string>({
   label,
