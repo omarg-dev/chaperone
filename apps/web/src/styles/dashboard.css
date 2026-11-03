@@ -472,3 +472,20 @@
 .cell-detail-note {
   margin: 0;
 }
+
+/* A group row's figure under one setting: how many of its runs got through. Red only when money
+   reached an attacker. */
+.group-figure {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.group-figure strong {
+  font-family: var(--font-display);
+  font-size: var(--text-item);
+  color: var(--ink);
+}
+
+.group-figure-attacker strong {
+  color: var(--attacker);
+}

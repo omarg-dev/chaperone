@@ -7,6 +7,9 @@ import { ENTERPRISE } from "./flag";
 // and its count at once while the grid arrives, and the dashboard and the Runs page share the one
 // chunk. Only types are imported from `./DataGrid` here, so nothing but this file reaches it.
 export type { CellProps, DataGridProps, GridColumn, GridSort, HeaderProps } from "./DataGrid";
+// Whether the Enterprise features are on (see flag.ts), for a page to leave out the controls that need
+// them.
+export { ENTERPRISE };
 
 // The grid, and with it the Enterprise modules when `flag.ts` has them on (a constant, so with the flag
 // off the build never includes them).

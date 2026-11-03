@@ -170,13 +170,29 @@ export function DataGrid<Row>({
 
   const activate = useCallback(
     (node: IRowNode<Row> | null, how: "click" | "key") => {
-      // A detail row and a group row aren't runs: only a row with its own data is activated.
-      if (node?.data && !node.detail && !node.group) onRowActivate?.(node.data, how);
+      if (!node) return;
+      // A group row opens and closes; a detail row is the page's own.
+      if (node.group) node.setExpanded(!node.expanded);
+      else if (node.data && !node.detail) onRowActivate?.(node.data, how);
     },
     [onRowActivate],
   );
 
+  // A grouped table: a column the page marked `rowGroup`. The group's own row is drawn in the column
+  // the page marked `showRowGroup` (the page's cell renderer says how), and shows each aggregated
+  // column's figure for the runs under it.
+  const grouped = ENTERPRISE && columns.some((column) => column.rowGroup);
+
   const options: GridOptions<Row> = {
+    ...(grouped
+      ? {
+          groupDisplayType: "custom",
+          // Groups open closed: the figures are the point, and a click or Enter opens one.
+          groupDefaultExpanded: 0,
+          suppressAggFuncInHeader: true,
+          suppressGroupRowsSticky: true,
+        }
+      : {}),
     ...(ENTERPRISE && detail
       ? {
           masterDetail: true,
@@ -191,6 +207,7 @@ export function DataGrid<Row>({
       : {}),
     getRowClass: ({ node, data: row }) => {
       if (node.detail) return "is-detail";
+      if (node.group) return "is-group";
       return row && openId !== null && rowId(row) === openId ? "is-open" : undefined;
     },
   };
@@ -218,9 +235,8 @@ export function DataGrid<Row>({
         onSortChanged={sortChanged}
         onRowDataUpdated={({ api }: RowDataUpdatedEvent<Row>) => syncOpen(api)}
         onRowClicked={(event: RowClickedEvent<Row>) => {
-          if (activateOnClick && !isInteractive(event.event?.target ?? null)) {
-            activate(event.node, "click");
-          }
+          if (isInteractive(event.event?.target ?? null)) return;
+          if (event.node.group || activateOnClick) activate(event.node, "click");
         }}
         onCellKeyDown={(event: CellKeyDownEvent<Row>) => {
           const key = event.event as KeyboardEvent | null;

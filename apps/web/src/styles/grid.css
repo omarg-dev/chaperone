@@ -57,6 +57,11 @@
   background-color: var(--hold-tint);
 }
 
+.data-grid .ag-row.is-group {
+  background-color: var(--sunk);
+  font-weight: 700;
+}
+
 .data-grid .ag-row.is-detail {
   background-color: var(--sunk);
 }

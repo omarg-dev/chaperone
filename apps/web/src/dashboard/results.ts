@@ -255,6 +255,52 @@ export function gridRows(results: ResultsView, titles: Record<string, string>): 
   });
 }
 
+// --- Grouping the table by attack ---------------------------------------------------------------
+
+// The table can be grouped by the attack a run carried ("A1 (verified)", "A7"), against the three
+// firewall settings: each group row says, under each setting, how many of its runs got through.
+// Benign runs have no attack, so they are one group of their own, last.
+export const BENIGN_GROUP = "Benign runs";
+export const groupOf = (row: GridRow): string => row.attack ?? BENIGN_GROUP;
+
+// An attack succeeded when the agent was fooled and the money was captured, whoever got it: what the
+// harness counts as `attackSuccesses`, and so what a group's figure and a chart of the groups say.
+export const attackSucceeded = (cell: OutcomeCell): boolean =>
+  cell.state === "attacker" || cell.state === "harmed";
+
+// The number a setting's column holds for one run, which a group row sums and a chart reads: 1 when
+// the attack got through under that setting, otherwise 0.
+export const gotThrough = (row: GridRow, config: Config): number =>
+  attackSucceeded(row.outcomes[config]) ? 1 : 0;
+
+export interface GroupTally {
+  runs: number;
+  // How many of the runs are attacks, and how many of those got through under the setting.
+  attacks: number;
+  succeeded: number;
+  // Of those, how many paid an attacker: the money that is red.
+  paidAttacker: number;
+}
+
+// What a group of runs came to under one setting. Pure, so the group row says what the rows under it
+// say, and a test can check it against the file's own counts.
+export function tallyGroup(rows: readonly GridRow[], config: Config): GroupTally {
+  const tally: GroupTally = { runs: rows.length, attacks: 0, succeeded: 0, paidAttacker: 0 };
+  for (const row of rows) {
+    if (row.kind === "attack") tally.attacks += 1;
+    const cell = row.outcomes[config];
+    if (attackSucceeded(cell)) tally.succeeded += 1;
+    if (cell.state === "attacker") tally.paidAttacker += 1;
+  }
+  return tally;
+}
+
+// A group row's words under one setting: how many of its attack runs got through.
+export function groupFigure(tally: GroupTally): string {
+  if (tally.attacks === 0) return "No attacks";
+  return `${tally.succeeded} of ${tally.attacks} got through`;
+}
+
 // --- Filtering the table ----------------------------------------------------------------------
 
 // The outcomes a person can filter the table by. "Any" is null.

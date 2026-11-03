@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { Amount, amountParts, formatMoney, Rate, rateParts } from "./Amount";
 import { Mark } from "./Mark";
@@ -6,6 +7,7 @@ import { MONEY_STATE_LABELS, MONEY_STATES, MoneyGlyph } from "./MoneyGlyph";
 import { PageRoute, Station } from "./PageRoute";
 import { GATE_STATE_LABELS, GATE_STATES, MONEY_OF_GATE, Pill } from "./Pill";
 import { Seal, sealGroups } from "./Seal";
+import { Toggle } from "./Toggle";
 import { Vault } from "./Vault";
 import { Zone } from "./Zone";
 
@@ -187,5 +189,25 @@ describe("the seal", () => {
     expect(
       screen.getByRole("img", { name: "Seal: locked by you, sha256 ffd84b5a ec819dad 904174d3" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("the toggle", () => {
+  it("is a checkbox with its label, which says what it does", async () => {
+    const user = userEvent.setup();
+    const seen: boolean[] = [];
+    render(
+      <Toggle checked={false} onChange={(on) => seen.push(on)} hint="Rows under their attack">
+        Group by attack
+      </Toggle>,
+    );
+    const box = screen.getByRole("checkbox", { name: "Group by attack" });
+    expect(box).not.toBeChecked();
+    expect(screen.getByText("Group by attack").closest("label")).toHaveAttribute(
+      "title",
+      "Rows under their attack",
+    );
+    await user.click(box);
+    expect(seen).toEqual([true]);
   });
 });
