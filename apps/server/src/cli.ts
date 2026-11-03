@@ -1,12 +1,13 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { exportRuns, InvalidRunsFileError, importRuns, openEventLog } from "@firewall/events";
 import Database from "better-sqlite3";
 import { eventLogOptions } from "./open-log.js";
 
 export const USAGE = `Usage:
-  export-runs [--out FILE] [--sandbox] [--run RUN_ID]...
+  export-runs [--db FILE] [--out FILE] [--sandbox] [--run RUN_ID]...
       Writes runs from the event log as a runs file (JSON), to FILE or to standard output.
+      --db reads another log, such as the .events.db an eval matrix run wrote under results/.
       --sandbox keeps only the runs whose money was on the payment sandbox; --run picks runs.
   import-runs FILE
       Appends the runs in a runs file to the event log. FILE - reads standard input. Events already
@@ -39,16 +40,21 @@ export async function runCli(
   try {
     if (command === "export-runs") {
       let out: string | null = null;
+      let db: string | null = null;
       let sandbox = false;
       const runIds: string[] = [];
       for (let i = 0; i < args.length; i++) {
         const arg = args[i];
         if (arg === "--out") out = args[++i] ?? fail("--out needs a file");
+        else if (arg === "--db") db = args[++i] ?? fail("--db needs a file");
         else if (arg === "--run") runIds.push(args[++i] ?? fail("--run needs a run ID"));
         else if (arg === "--sandbox") sandbox = true;
         else fail(`Unknown option ${arg}`);
       }
-      const log = openEventLog(eventLogOptions(dataDir));
+      if (db && !existsSync(db)) fail(`There is no event log at ${db}`);
+      const log = openEventLog(
+        db ? { ...eventLogOptions(dirname(db)), path: db } : eventLogOptions(dataDir),
+      );
       try {
         const file = exportRuns(log, {
           ...(runIds.length > 0 && { runIds }),

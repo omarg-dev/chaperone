@@ -82,6 +82,18 @@ describe("export-runs and import-runs", () => {
     expect(err).toContain("Imported 0 events from 0 runs; 2 were already");
   });
 
+  it("exports from a log in any file, which is how an eval run's events come out", async () => {
+    const elsewhere = join(dir, "results");
+    seed(elsewhere);
+    const file = join(dir, "runs.json");
+    expect(
+      await runCli(["export-runs", "--db", join(elsewhere, "events.db"), "--out", file], {}, io),
+    ).toBe(0);
+    expect(err).toContain("Exported 4 events from 2 runs");
+    expect(await runCli(["export-runs", "--db", join(dir, "nope.db")], {}, io)).toBe(1);
+    expect(existsSync(join(dir, "nope.db"))).toBe(false);
+  });
+
   it("writes the file to standard output and reads it back from standard input", async () => {
     const source = join(dir, "source");
     seed(source);
