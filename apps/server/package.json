@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "@firewall/web": "workspace:*",
+    "@types/better-sqlite3": "9.6.0",
     "ai": "7.0.134",
     "esbuild": "0.28.2",
     "tsx": "4.23.15"
