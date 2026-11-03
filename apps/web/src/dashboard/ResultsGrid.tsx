@@ -1,11 +1,12 @@
 import type { ResultsView } from "@firewall/eval/view";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router";
 import { Button, Pill, Toggle } from "../design";
-import { type CellProps, DataGrid, ENTERPRISE, type GridColumn } from "../grid";
+import { type CellProps, DataGrid, ENTERPRISE, type GridColumn, type GridHandle } from "../grid";
 import { CellDetailPanel } from "./CellDetail";
 import { type CellDetail, cellOf, detailOf } from "./detail";
 import {
+  attackGroupCount,
   CONFIG_INFO,
   CONFIG_ORDER,
   type Config,
@@ -142,7 +143,8 @@ function OutcomeColumnCell(props: CellProps<GridRow> & { config: Config }) {
 }
 
 function RunCell({ data, known }: CellProps<GridRow> & { known: ReadonlySet<string> }) {
-  if (!data?.runId) return <span className="t-meta">No run</span>;
+  if (!data) return null;
+  if (!data.runId) return <span className="t-meta">No run</span>;
   const to = runLink(data, known);
   // The eval's runs live in the results' own event log. This server's run view can only open one it
   // also holds, so a run it doesn't hold is named, not linked to an empty page.
@@ -180,6 +182,8 @@ function columnsFor(
     {
       headerName: "Scenario",
       field: "title",
+      // The attacks' names (the group rows are drawn in this column) label the bars of a chart.
+      chartDataType: "category",
       // The group rows are drawn in this column, so the attack's name and its control sit where the
       // scenarios' do.
       ...(grouped ? { showRowGroup: "attack" } : {}),
@@ -226,6 +230,7 @@ function columnsFor(
       headerName: "Run",
       colId: "run",
       sortable: false,
+      chartDataType: "excluded",
       flex: 1.2,
       minWidth: 170,
       cellRenderer: RunCell,
@@ -320,6 +325,59 @@ export function ResultsGrid({
     },
     [results],
   );
+  // Integrated charts: one of the attacks against the settings, or of the cells picked in the table. It
+  // is drawn in the page, under the toolbar, and follows the table while it is open.
+  const grid = useRef<GridHandle>(null);
+  const chartBox = useRef<HTMLDivElement>(null);
+  const [chart, setChart] = useState<"attacks" | "picked" | null>(null);
+  const [picked, setPicked] = useState(false);
+  // The chart of the attacks reads the group rows, so it opens the grouped table and waits for it.
+  const [wantsAttacks, setWantsAttacks] = useState(false);
+  const attackGroups = attackGroupCount(shown);
+  const drawAttacks = useCallback(() => {
+    const box = chartBox.current;
+    if (!box || attackGroups === 0) return false;
+    return (
+      grid.current?.chart({
+        container: box,
+        cells: { colIds: ["title", ...CONFIG_ORDER], rows: attackGroups },
+        chartType: "groupedColumn",
+      }) ?? false
+    );
+  }, [attackGroups]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: asked once, when the grouped table is there.
+  useEffect(() => {
+    if (!wantsAttacks || !grouped) return;
+    const timer = setTimeout(() => {
+      setWantsAttacks(false);
+      setChart(drawAttacks() ? "attacks" : null);
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [wantsAttacks, grouped]);
+  // The chart reads rows by their place in the table, so when the rows change a chart of cells that were
+  // picked is closed (those cells are gone), and the chart of the attacks is drawn again.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the rows or the grouping change.
+  useEffect(() => {
+    if (chart === "picked") {
+      grid.current?.closeChart();
+      setChart(null);
+    } else if (chart === "attacks") setWantsAttacks(true);
+  }, [shown, grouped]);
+  const closeChart = () => {
+    grid.current?.closeChart();
+    setChart(null);
+  };
+  const chartPicked = () => {
+    const box = chartBox.current;
+    if (!box) return;
+    const drawn = grid.current?.chart({
+      container: box,
+      cells: "selection",
+      categoryColId: "title",
+      chartType: "groupedColumn",
+    });
+    setChart(drawn ? "picked" : null);
+  };
   const set = (patch: Partial<RowFilters>) => setFilters((now) => ({ ...now, ...patch }));
 
   return (
@@ -371,6 +429,30 @@ export function ResultsGrid({
             </Toggle>
           </div>
         )}
+        {ENTERPRISE && (
+          <div className="filter-clear chart-actions">
+            <Button
+              variant="secondary"
+              small
+              disabled={attackGroups === 0}
+              onClick={() => {
+                setGrouped(true);
+                setWantsAttacks(true);
+              }}
+            >
+              Chart attacks
+            </Button>
+            <Button
+              variant="secondary"
+              small
+              disabled={!picked}
+              title={picked ? undefined : "Drag across cells in the table to pick some."}
+              onClick={chartPicked}
+            >
+              Chart picked cells
+            </Button>
+          </div>
+        )}
         {isRowFiltered(filters) && (
           <div className="filter-clear">
             <Button variant="secondary" small onClick={() => setFilters(NO_ROW_FILTERS)}>
@@ -379,6 +461,19 @@ export function ResultsGrid({
           </div>
         )}
       </div>
+      {ENTERPRISE && (
+        <section className="chart-panel" aria-label="Chart" hidden={chart === null}>
+          <div className="chart-head">
+            <h3 className="t-item">
+              {chart === "picked" ? "The cells you picked" : "Attacks that got through"}
+            </h3>
+            <Button variant="secondary" small onClick={closeChart}>
+              Close chart
+            </Button>
+          </div>
+          <div ref={chartBox} className="chart-box" />
+        </section>
+      )}
       <p className="t-meta run-count" role="status">
         {shown.length === rows.length
           ? `${rows.length} runs`
@@ -393,6 +488,9 @@ export function ResultsGrid({
         activateOnClick
         onRowActivate={toggle}
         detail={{ openId, height: heightOf, render: renderDetail }}
+        charts
+        handle={grid}
+        onSelectionChange={setPicked}
       />
     </div>
   );

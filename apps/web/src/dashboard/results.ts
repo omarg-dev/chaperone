@@ -273,6 +273,12 @@ export const attackSucceeded = (cell: OutcomeCell): boolean =>
 export const gotThrough = (row: GridRow, config: Config): number =>
   attackSucceeded(row.outcomes[config]) ? 1 : 0;
 
+// How many attack groups the rows make (the benign runs' group is not one): the rows a chart of the
+// attacks reads, since the groups are the table's first rows while they are closed and the attacks
+// come first.
+export const attackGroupCount = (rows: readonly GridRow[]): number =>
+  new Set(rows.flatMap((row) => (row.attack === null ? [] : [row.attack]))).size;
+
 export interface GroupTally {
   runs: number;
   // How many of the runs are attacks, and how many of those got through under the setting.

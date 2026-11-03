@@ -1,5 +1,10 @@
 import { ModuleRegistry } from "ag-grid-community";
-import { AggregationModule, MasterDetailModule, RowGroupingModule } from "ag-grid-enterprise";
+import {
+  AggregationModule,
+  CellSelectionModule,
+  MasterDetailModule,
+  RowGroupingModule,
+} from "ag-grid-enterprise";
 
 // The Enterprise modules the grids use, and no others. Importing this file registers them, so it is
 // loaded only when `flag.ts` says Enterprise is on, by the grid's lazy loader in `index.tsx` and by
@@ -11,4 +16,10 @@ import { AggregationModule, MasterDetailModule, RowGroupingModule } from "ag-gri
 //   attack types, the Runs history's scenarios).
 // - `AggregationModule`: a group row's own figure for a column (how many of its runs got through),
 //   which is also what a chart of the groups reads.
-ModuleRegistry.registerModules([MasterDetailModule, RowGroupingModule, AggregationModule]);
+// - `CellSelectionModule`: cells picked by dragging, which is what "chart these cells" charts.
+ModuleRegistry.registerModules([
+  MasterDetailModule,
+  RowGroupingModule,
+  AggregationModule,
+  CellSelectionModule,
+]);

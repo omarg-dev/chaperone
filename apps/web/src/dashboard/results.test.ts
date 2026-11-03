@@ -2,6 +2,7 @@ import type { CellView, ResultsView } from "@firewall/eval/view";
 import { describe, expect, it } from "vitest";
 import { fakeResults, sandboxResults } from "./fixtures";
 import {
+  attackGroupCount,
   attackSucceeded,
   attackTally,
   BENIGN_GROUP,
@@ -295,6 +296,12 @@ describe("the table grouped by attack", () => {
     expect(names.at(-1)).toBe(BENIGN_GROUP);
     expect(groups.get(BENIGN_GROUP)).toHaveLength(44);
     expect([...groups.values()].reduce((n, g) => n + g.length, 0)).toBe(60);
+  });
+
+  it("counts the attack groups a chart reads, and not the benign one", () => {
+    expect(attackGroupCount(rows)).toBe(8);
+    expect(attackGroupCount(rows.filter((row) => row.kind === "benign"))).toBe(0);
+    expect(attackGroupCount(rows.filter((row) => row.attack?.startsWith("A1")))).toBe(2);
   });
 
   it("adds up, under each setting, to the file's own count of attacks that got through", () => {

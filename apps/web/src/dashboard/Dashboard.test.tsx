@@ -481,6 +481,32 @@ describe("the table grouped by attack", () => {
   });
 });
 
+describe("charting the table", () => {
+  const onlyFake = { list: { ...list, results: [list.results[1] as never] }, files };
+
+  it("offers a chart of the attacks, and a chart of picked cells once some are picked", async () => {
+    mockServer({ results: onlyFake });
+    renderApp("/dashboard");
+    await screen.findByRole("region", { name: "Every run in this matrix" });
+    expect(screen.getByRole("button", { name: "Chart attacks" })).toBeEnabled();
+    // Nothing is picked until someone drags across cells, and the button says how to.
+    const picked = screen.getByRole("button", { name: "Chart picked cells" });
+    expect(picked).toBeDisabled();
+    expect(picked).toHaveAttribute("title", "Drag across cells in the table to pick some.");
+    // The chart has its own place in the page, empty and hidden until it is drawn.
+    expect(screen.queryByRole("region", { name: "Chart" })).not.toBeInTheDocument();
+  });
+
+  it("has nothing to chart when no attack is shown", async () => {
+    const user = userEvent.setup();
+    mockServer({ results: onlyFake });
+    renderApp("/dashboard");
+    await screen.findByRole("region", { name: "Every run in this matrix" });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
+    expect(screen.getByRole("button", { name: "Chart attacks" })).toBeDisabled();
+  });
+});
+
 describe("this server's runs", () => {
   it("counts them, labelled as this server's and not the eval's", async () => {
     mockServer({

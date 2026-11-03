@@ -1,6 +1,9 @@
 import {
   type CellKeyDownEvent,
+  type CellSelectionChangedEvent,
   CellStyleModule,
+  type ChartRef,
+  ClientSideRowModelApiModule,
   ClientSideRowModelModule,
   type ColDef,
   ColumnApiModule,
@@ -19,7 +22,18 @@ import {
   ValidationModule,
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
-import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  type ReactNode,
+  type RefObject,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { useTheme } from "../theme/ThemeProvider";
+import { type ChartTokens, chartThemeFrom, readChartTokens } from "./chartTheme";
 import { ENTERPRISE } from "./flag";
 import { gridTheme } from "./theme";
 
@@ -35,6 +49,8 @@ import { gridTheme } from "./theme";
 // client-side row model and the few features below.
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
+  // `collapseAll`, which closes the groups before a chart reads their rows.
+  ClientSideRowModelApiModule,
   // `getColumnState`, which says which column is sorted.
   ColumnApiModule,
   // `getRowClass`, which marks the row whose detail is open.
@@ -61,6 +77,24 @@ export type HeaderProps<Params = object> = IHeaderParams & Params;
 export interface GridSort {
   colId: string;
   direction: "asc" | "desc";
+}
+
+// What a page asks of a grid that has charts: chart these columns' first rows (the group rows, when the
+// table is grouped), or the cells the person picked. The chart is drawn into `container`, in the page.
+export interface ChartRequest {
+  container: HTMLElement;
+  cells: { colIds: string[]; rows: number } | "selection";
+  chartType: "groupedColumn" | "groupedBar" | "line" | "pie";
+  // The column whose values label the chart, added to the picked cells when they don't include it.
+  categoryColId?: string;
+}
+
+// What a page can do to its grid, through the `handle` prop.
+export interface GridHandle {
+  // Draws a chart from cells of the grid, which follows the grid's data while it is open. False when
+  // there was nothing to chart (no cells picked).
+  chart: (request: ChartRequest) => boolean;
+  closeChart: () => void;
 }
 
 export interface DataGridProps<Row> {
@@ -90,6 +124,12 @@ export interface DataGridProps<Row> {
     height: number | ((row: Row) => number);
     render: (row: Row) => ReactNode;
   };
+  // Turns on integrated charts (an Enterprise feature, and the dashboard's only), and cell selection to
+  // pick what to chart. The page gets `handle` to draw one, and `onSelectionChange` says whether any cells
+  // are picked.
+  charts?: boolean;
+  handle?: RefObject<GridHandle | null>;
+  onSelectionChange?: (picked: boolean) => void;
 }
 
 interface GridContext<Row> {
@@ -116,6 +156,9 @@ export function DataGrid<Row>({
   onRowActivate,
   activateOnClick = false,
   detail,
+  charts = false,
+  handle,
+  onSelectionChange,
 }: DataGridProps<Row>) {
   const openId = ENTERPRISE ? (detail?.openId ?? null) : null;
   const grid = useRef<AgGridReact<Row>>(null);
@@ -143,6 +186,70 @@ export function DataGrid<Row>({
     }, 0);
     return () => clearTimeout(timer);
   }, [openId, syncOpen]);
+
+  // Integrated charts: the tokens the chart is dressed in (read again when the theme changes, once the
+  // page has applied it), the chart that is open, and what the page can ask for.
+  const withCharts = ENTERPRISE && charts;
+  const { resolved } = useTheme();
+  const [tokens, setTokens] = useState<ChartTokens | null>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `resolved` is when to read again.
+  useEffect(() => {
+    if (!withCharts) return;
+    const timer = setTimeout(() => setTokens(readChartTokens(document.documentElement)), 0);
+    return () => clearTimeout(timer);
+  }, [withCharts, resolved]);
+  const chartTheme = useMemo(() => (tokens ? chartThemeFrom(tokens) : null), [tokens]);
+  const openChart = useRef<ChartRef | null>(null);
+  useImperativeHandle(
+    handle,
+    () => ({
+      closeChart: () => {
+        openChart.current?.destroyChart();
+        openChart.current = null;
+      },
+      chart: ({ container, cells, chartType, categoryColId }) => {
+        const api = grid.current?.api;
+        if (!api || !withCharts) return false;
+        openChart.current?.destroyChart();
+        openChart.current = null;
+        let unlink = false;
+        let cellRange: Parameters<GridApi<Row>["createRangeChart"]>[0]["cellRange"];
+        if (cells === "selection") {
+          const range = api.getCellRanges()?.[0];
+          if (!range) return false;
+          cellRange = {
+            rowStartIndex: Math.min(range.startRow?.rowIndex ?? 0, range.endRow?.rowIndex ?? 0),
+            rowEndIndex: Math.max(range.startRow?.rowIndex ?? 0, range.endRow?.rowIndex ?? 0),
+            columns: [
+              ...new Set([
+                ...(categoryColId ? [categoryColId] : []),
+                ...range.columns.map((column) => column.getColId()),
+              ]),
+            ],
+          };
+        } else {
+          // The group rows are the first rows only while every group is closed.
+          api.collapseAll();
+          cellRange = { rowStartIndex: 0, rowEndIndex: cells.rows - 1, columns: cells.colIds };
+          // A chart reads rows by their place in the table, so opening a group would move the rows it
+          // reads. This one is a picture of the groups as they were, and the page draws it again when
+          // the rows change.
+          unlink = true;
+        }
+        openChart.current =
+          api.createRangeChart({
+            cellRange,
+            chartType,
+            chartContainer: container,
+            unlinkChart: unlink,
+            useGroupColumnAsCategory: true,
+          }) ?? null;
+        return openChart.current !== null;
+      },
+    }),
+    [withCharts],
+  );
+  useEffect(() => () => openChart.current?.destroyChart(), []);
 
   // The sort, when the page owns it: each column says whether it is the sorted one.
   const columnDefs = useMemo(
@@ -184,6 +291,14 @@ export function DataGrid<Row>({
   const grouped = ENTERPRISE && columns.some((column) => column.rowGroup);
 
   const options: GridOptions<Row> = {
+    ...(withCharts && chartTheme
+      ? {
+          enableCharts: true,
+          cellSelection: true,
+          customChartThemes: { chaperone: chartTheme },
+          chartThemes: ["chaperone"],
+        }
+      : {}),
     ...(grouped
       ? {
           groupDisplayType: "custom",
@@ -233,6 +348,9 @@ export function DataGrid<Row>({
         // Tab leaves the grid after the cell in focus, instead of walking every cell of a long table.
         tabToNextCell={() => false}
         onSortChanged={sortChanged}
+        onCellSelectionChanged={({ api }: CellSelectionChangedEvent<Row>) =>
+          onSelectionChange?.((api.getCellRanges()?.length ?? 0) > 0)
+        }
         onRowDataUpdated={({ api }: RowDataUpdatedEvent<Row>) => syncOpen(api)}
         onRowClicked={(event: RowClickedEvent<Row>) => {
           if (isInteractive(event.event?.target ?? null)) return;
