@@ -18,11 +18,25 @@
 .route::before {
   content: "";
   position: absolute;
-  top: 74px;
+  top: calc(74px + var(--above-height, 0px));
   bottom: 0;
   left: var(--spine-left);
   width: var(--spine-width);
   background: var(--spine);
+}
+
+/* A one line row over the header (the run view's breadcrumb): it has a fixed height, so the spine knows
+   where the title is. */
+.route-with-above {
+  --above-height: 40px;
+}
+
+.route-above {
+  height: 24px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 /* The title and its filled station. */

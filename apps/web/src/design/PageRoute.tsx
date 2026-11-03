@@ -8,25 +8,38 @@ import { type ReactNode, useId } from "react";
 export function PageRoute({
   title,
   lede,
+  eyebrow,
+  above,
   aside,
   titleSize = "display",
   className,
+  headerClassName,
   children,
 }: {
   title: ReactNode;
   lede?: ReactNode;
+  // Sits over the title: a state, a badge.
+  eyebrow?: ReactNode;
+  // A one line row over the whole header (a breadcrumb). The spine starts below it.
+  above?: ReactNode;
   // Sits at the right of the title: a tab row, a button.
   aside?: ReactNode;
   // "display" is a page's name (64px); "headline" is a sentence (the run view's).
   titleSize?: "display" | "headline";
   className?: string;
+  headerClassName?: string;
   children?: ReactNode;
 }) {
   return (
-    <div className={["route", className].filter(Boolean).join(" ")} data-route="">
-      <header className="route-title">
+    <div
+      className={["route", above && "route-with-above", className].filter(Boolean).join(" ")}
+      data-route=""
+    >
+      {above && <div className="route-above">{above}</div>}
+      <header className={["route-title", headerClassName].filter(Boolean).join(" ")}>
         <span className="station station-title" aria-hidden="true" />
         <div className="route-title-text">
+          {eyebrow}
           <h1 className={titleSize === "display" ? "t-display" : "t-headline"}>{title}</h1>
           {lede && <p className="t-lede route-lede">{lede}</p>}
         </div>

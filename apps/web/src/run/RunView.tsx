@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { Button, buttonClass, EmptyState, formatMoney, Pill, StateGlyph, Zone } from "../design";
+import { Amount, Button, buttonClass, EmptyState, PageRoute, Pill, Seal, Station } from "../design";
 import { formatCost, formatTime } from "../format";
 import { useRuns } from "../runs/RunsProvider";
 import { paymentsLabel } from "../runs/state";
@@ -57,21 +57,27 @@ function CopyId({ id }: { id: string }) {
   );
 }
 
-// The money's state, said once beside the headline: how much, and where it is.
+// The money's state, said once beside the headline: how much, and where it is, inside the clasp. The
+// bracket is the mark's, grown: open while the money is held, its right arm drawn down when the hold
+// is voided (the amount struck through with it), and empty with the amount out past it once it was
+// captured. The motion is plain CSS (run.css) driven by the money's state, so the replay plays it as
+// the playhead reaches it, and `prefers-reduced-motion` gets the end state.
 function MoneyBlock({ model }: { model: RunModel }) {
   const { money } = model;
   if (money.state === "none" || money.amountCents === null) return null;
   const attacker = money.paidToAttackerCents > 0;
+  const state = attacker ? "attacker" : money.state;
   return (
-    <div className={`run-money run-money-${attacker ? "attacker" : money.state}`}>
-      {money.state === "held" && (
-        <span className="run-money-glyph">
-          <StateGlyph state="held" size={46} />
-        </span>
-      )}
+    // Keyed by the state, so a replay that crosses into a new state plays that state's motion.
+    <div key={state} className={`run-money run-money-${state}`}>
+      <span className="run-arm run-arm-left" aria-hidden="true" />
+      {money.state === "voided" && <span className="run-arm run-arm-right" aria-hidden="true" />}
       <div className="run-money-text">
-        <span className="money money-xl">{formatMoney(money.amountCents)}</span>
         <span className="run-money-label">{MONEY_LABELS[money.state]}</span>
+        <span className="run-money-figure">
+          <Amount cents={money.amountCents} size="hero" tone={attacker ? "attacker" : "plain"} />
+          {money.state === "voided" && <span className="run-strike" aria-hidden="true" />}
+        </span>
       </div>
     </div>
   );
@@ -156,55 +162,65 @@ function RunPage({ runId }: { runId: string }) {
   ].filter(Boolean);
 
   return (
-    <div className="run">
-      <nav className="run-crumbs t-meta" aria-label="Breadcrumb">
-        <Link to="/runs">Runs</Link>
-        <span aria-hidden="true">/</span>
-        <span className="t-data">{runId}</span>
-        <CopyId id={runId} />
-        {meta.length > 0 && (
-          <>
-            <span aria-hidden="true">·</span>
-            <span>{meta.join(" · ")}</span>
-          </>
-        )}
-        {replaying && (
-          <span className="badge run-replaying">
-            Replay, event {replay.position} of {events.length}
-          </span>
-        )}
-      </nav>
-
-      <header className="run-top">
-        <div className="run-headline">
-          {headline.pill ? (
-            <Pill state={headline.pill.state} label={headline.pill.label} />
-          ) : (
-            headline.badge && <span className="badge run-badge">{headline.badge}</span>
+    <PageRoute
+      className="run"
+      headerClassName="run-top"
+      titleSize="headline"
+      above={
+        <nav className="run-crumbs t-meta" aria-label="Breadcrumb">
+          <Link to="/runs">Runs</Link>
+          <span aria-hidden="true">/</span>
+          <span className="t-data">{runId}</span>
+          <CopyId id={runId} />
+          {meta.length > 0 && (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>{meta.join(" · ")}</span>
+            </>
           )}
-          <h1 className="t-headline">{headline.title}</h1>
-          {headline.lede && <p className="run-lede">{headline.lede}</p>}
-        </div>
-        <MoneyBlock model={model} />
-      </header>
-
+          {replaying && (
+            <span className="badge run-replaying">
+              Replay, event {replay.position} of {events.length}
+            </span>
+          )}
+        </nav>
+      }
+      eyebrow={
+        headline.pill ? (
+          <Pill state={headline.pill.state} label={headline.pill.label} />
+        ) : (
+          headline.badge && <span className="badge run-badge">{headline.badge}</span>
+        )
+      }
+      title={headline.title}
+      lede={headline.lede}
+      aside={<MoneyBlock model={model} />}
+    >
       {model.request && (
-        <Zone kind="catalog" label="What you asked, and what you locked">
+        <Station heading="What you asked, and what you locked" className="run-brief-station">
           <div className="run-brief">
-            <q className="run-request">{model.request}</q>
-            {model.terms.length > 0 && (
-              <dl className="run-terms" aria-label="The locked mandate">
-                {model.terms.map((term) => (
-                  <div key={term.label}>
-                    <dt>{term.label}</dt>
-                    <dd>{term.value}</dd>
-                    {term.hint && <dd className="run-term-hint">{term.hint}</dd>}
-                  </div>
-                ))}
-              </dl>
+            <div className="run-brief-words">
+              <q className="run-request t-voice">{model.request}</q>
+              {model.terms.length > 0 && (
+                <dl className="run-terms" aria-label="The locked mandate">
+                  {model.terms.map((term) => (
+                    <div key={term.label}>
+                      <dt>{term.label}</dt>
+                      <dd>{term.value}</dd>
+                      {term.hint && <dd className="run-term-hint">{term.hint}</dd>}
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </div>
+            {model.mandateHash && (
+              <Seal
+                hash={model.mandateHash}
+                lockedAt={model.mandateLockedAt ? formatTime(model.mandateLockedAt) : null}
+              />
             )}
           </div>
-        </Zone>
+        </Station>
       )}
 
       {model.awaitingPerson && !replaying && (
@@ -219,32 +235,34 @@ function RunPage({ runId }: { runId: string }) {
         />
       )}
 
-      {model.earlierReviews.length > 0 && (
-        <p className="t-meta">
-          This checkout was reviewed {model.earlierReviews.length + 1} times, under different
-          firewall settings ({[...model.earlierReviews, "the last one below"].join(", ")}). The
-          timeline shows the last.
-        </p>
-      )}
+      <Station heading="How the review went" className="run-timeline-station">
+        {model.earlierReviews.length > 0 && (
+          <p className="t-meta run-earlier">
+            This checkout was reviewed {model.earlierReviews.length + 1} times, under different
+            firewall settings ({[...model.earlierReviews, "the last one below"].join(", ")}). The
+            timeline shows the last.
+          </p>
+        )}
 
-      {!replay.open && !whole.live && events.length > 1 && (
-        <div className="run-replay-entry">
-          <Button variant="secondary" small onClick={replay.start}>
-            Replay this run
-          </Button>
-          <span className="t-meta">Watch it build up, one event at a time.</span>
-        </div>
-      )}
+        {!replay.open && !whole.live && events.length > 1 && (
+          <div className="run-replay-entry">
+            <Button variant="secondary" small onClick={replay.start}>
+              Replay this run
+            </Button>
+            <span className="t-meta">Watch it build up, one event at a time.</span>
+          </div>
+        )}
 
-      <RunTimeline model={model} />
+        <RunTimeline model={model} />
 
-      {model.live && !replay.open && (
-        <p className="t-meta run-live" role="status">
-          Following this run as it happens.
-        </p>
-      )}
+        {model.live && !replay.open && (
+          <p className="t-meta run-live" role="status">
+            Following this run as it happens.
+          </p>
+        )}
+      </Station>
 
       {replay.open && <ReplayBar events={events} replay={replay} />}
-    </div>
+    </PageRoute>
   );
 }

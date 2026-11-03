@@ -252,6 +252,8 @@ export interface RunModel {
   request: string | null;
   terms: MandateTerm[];
   mandateHash: string | null;
+  // When the person locked it, from the mandate lane's `mandate_locked`.
+  mandateLockedAt: string | null;
   agentModel: string | null;
   headline: Headline;
   money: RunMoney;
@@ -1316,6 +1318,7 @@ export function buildRun(
     request,
     terms,
     mandateHash: str(mandate.hash),
+    mandateLockedAt: locked?.ts ?? null,
     agentModel,
     headline,
     money,

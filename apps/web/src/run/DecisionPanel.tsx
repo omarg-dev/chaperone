@@ -144,7 +144,16 @@ export function DecisionButtons({
 }
 
 // The held cart: each line with its store and amount.
-export function HeldCart({ cart, size = "sm" }: { cart: CartLine[]; size?: "sm" | "lg" }) {
+export function HeldCart({
+  cart,
+  size = "sm",
+  amounts = true,
+}: {
+  cart: CartLine[];
+  size?: "sm" | "lg";
+  // Each line's amount, or only what it is: a cart of one line has the page's own amount to say it.
+  amounts?: boolean;
+}) {
   return (
     <ul className="decision-lines">
       {cart.map((line) => (
@@ -156,14 +165,15 @@ export function HeldCart({ cart, size = "sm" }: { cart: CartLine[]; size?: "sm" 
             </span>
             {line.sellerName && <span className="decision-seller">{line.sellerName}</span>}
           </div>
-          <Amount cents={line.totalCents} size={size} />
+          {amounts && <Amount cents={line.totalCents} size={size} />}
         </li>
       ))}
     </ul>
   );
 }
 
-// What a person can do with a purchase Chaperone paused: the held cart, and the two ways out.
+// What a person can do with a purchase Chaperone paused: the held cart, and the two ways out. It is a
+// station on the route in the hold's own tint, not a card: "The decision is yours."
 export function DecisionPanel({
   runId,
   cart,
@@ -177,9 +187,12 @@ export function DecisionPanel({
 }) {
   const decision = useDecision(runId, () => onDecided());
   return (
-    <section className="decision" aria-label="Your decision">
+    <section className="decision station-section" aria-label="Your decision">
+      <span className="station station-ring" aria-hidden="true" />
+      <h2 className="decision-heading t-section">The decision is yours.</h2>
       <div className="decision-cart">
-        <HeldCart cart={cart} />
+        {/* One line is the whole cart, and the header already says its amount. */}
+        <HeldCart cart={cart} amounts={cart.length > 1} />
       </div>
       <DecisionButtons {...decision} unfinished={unfinished} saidAbove />
     </section>

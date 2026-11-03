@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Disclosure, formatMoney, type GateState, Pill, ReadChip } from "../design";
+import { Disclosure, formatMoney, type GateState, MoneyGlyph, Pill, ReadChip } from "../design";
 import { formatCost } from "../format";
 import { Timeline, type TimelineFooter, type TimelineItem } from "../timeline/Timeline";
 import type { NodeTone } from "../timeline/types";
@@ -296,7 +296,10 @@ export function exitsOf(model: RunModel): TimelineFooter {
       exit === "capture" ? (attacker ? "attacker" : "approve") : exit === "void" ? "block" : "hold",
     catalog: (
       <>
-        <span className="tl-exit-title">Capture and pay the seller</span>
+        <span className="tl-exit-title">
+          <MoneyGlyph state={attacker && exit === "capture" ? "attacker" : "captured"} size={24} />
+          Capture and pay the seller
+        </span>
         {exit === "capture" &&
           money.payouts.map((payout) => (
             <span key={payout.payeeKey} className="tl-exit-line">
@@ -310,7 +313,10 @@ export function exitsOf(model: RunModel): TimelineFooter {
         {exit === "person" && (
           <span className="tl-exit-dot" role="img" aria-label="The money, held" />
         )}
-        <span className="tl-exit-title">To the person</span>
+        <span className="tl-exit-title">
+          <MoneyGlyph state="person" size={24} />
+          To the person
+        </span>
         {exit === "person" && (
           <span className="tl-exit-line">
             {model.unfinished
@@ -324,7 +330,10 @@ export function exitsOf(model: RunModel): TimelineFooter {
     ),
     seller: (
       <>
-        <span className="tl-exit-title">Void the hold</span>
+        <span className="tl-exit-title">
+          <MoneyGlyph state="voided" size={24} />
+          Void the hold
+        </span>
         {exit === "void" && <span className="tl-exit-line">Nobody is paid</span>}
       </>
     ),
