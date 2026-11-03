@@ -49,7 +49,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: the MVP (steps 0 to 18) is merged and released as 0.1.1; in v1.1 the design pass, the web app shell and the live run view (which covers step 4) are merged, and steps 5 (history and replay), 6 (the escalation inbox), 7 (the dashboard, on AG Grid Community), 8 (the onboarding flow, the Start a run page) and 10 (more of the app on AG Grid Community, added Nov 2) are open for review; next is step 9, the hosted deploy.** MVP step 6, the first technical checks, is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now: v1.2 step 1, Gate 3 (the trace auditor, run last in the full tree, escalating and never blocking), is open for review on top of the v1.1 stack; the gate freeze is Nov 5. The MVP (steps 0 to 18) is merged and released as 0.1.1; in v1.1 the design pass, the web app shell and the live run view (which covers step 4) are merged, and steps 5 (history and replay), 6 (the escalation inbox), 7 (the dashboard, on AG Grid Community), 8 (the onboarding flow, the Start a run page) and 10 (more of the app on AG Grid Community, added Nov 2) are open for review; next is step 9, the hosted deploy.** MVP step 6, the first technical checks, is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -103,7 +103,7 @@ Done when: a judge can open the hosted URL, replay a real attack run, and start 
 
 | # | Step | Status |
 |---|---|---|
-| 1 | Gate 3, trace auditor | ⬜ |
+| 1 | Gate 3, trace auditor | 👀 PR open |
 | 2 | Refunds after capture | ⬜ |
 | 3 | OpenAI and Gemini agent columns | ⬜ |
 | 4 | Eval matrix on Render Workflows | ⬜ |
