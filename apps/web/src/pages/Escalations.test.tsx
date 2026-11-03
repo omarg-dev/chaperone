@@ -106,9 +106,8 @@ describe("the escalation inbox", () => {
     );
     // A held purchase is amber, never red.
     expect(document.querySelector(".pill-attacker")).toBeNull();
-    expect(within(item).getByRole("img", { name: "Verdict: Needs your decision" })).toHaveClass(
-      "pill-escalate",
-    );
+    expect(item).toHaveAttribute("data-state", "escalate");
+    expect(within(item).getByText("Held for")).toHaveClass("held-for-label");
   });
 
   it("says the same as the run page about why a cart was held", async () => {
@@ -147,7 +146,7 @@ describe("the escalation inbox", () => {
     });
     renderApp("/escalations");
     const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
-    expect(within(item).getByText(/^Held for/)).toBeInTheDocument();
+    expect(within(item).getByText(/^Held for \d/)).toBeInTheDocument();
     expect(item.textContent).not.toMatch(/Hold ends|hold has ended/);
   });
 
@@ -158,7 +157,7 @@ describe("the escalation inbox", () => {
       runs: [run(idOf(RELEASED), "sc_b01", "2026-10-24T10:00:00Z", escalated.released)],
     });
     renderApp("/escalations");
-    expect(await screen.findByText("Nothing is waiting on you")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing is waiting on you.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Approve and pay/ })).toBeNull();
     expect(screen.getByRole("status", { name: "0 waiting for you" })).toBeInTheDocument();
   });
@@ -171,8 +170,55 @@ describe("the escalation inbox", () => {
       runs: [held(POISONED, "2026-10-24T11:03:00Z")],
     });
     renderApp("/escalations");
-    expect(await screen.findByText("Nothing is waiting on you")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing is waiting on you.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Approve and pay/ })).toBeNull();
+  });
+});
+
+describe("the vault on the inbox", () => {
+  it("holds the oldest hold's cart, and the other holds' carts sit on the page, since a screen has one vault", async () => {
+    SET_NOW();
+    mockServer({
+      scenarios,
+      events: logs,
+      runs: [
+        { ...held(EXTRA, "2026-10-24T09:00:00Z"), eventCount: EXTRA.length },
+        { ...held(POISONED, "2026-10-24T10:00:00Z"), eventCount: POISONED.length },
+      ],
+    });
+    renderApp("/escalations");
+    const items = await screen.findAllByRole("listitem", { name: "Mechanical keyboard, tactile" });
+    const carts = items.map((item) => within(item).getByRole("region", { name: "The held cart" }));
+    // The poisoned run was held first (2 days before "now"), so it is the first item.
+    expect(carts[0]).toHaveClass("vault");
+    expect(carts[1]).not.toHaveClass("vault");
+    expect(document.querySelectorAll(".vault")).toHaveLength(1);
+  });
+
+  it("says who an approval pays, and totals a cart of several lines once", async () => {
+    SET_NOW();
+    mockServer({
+      scenarios,
+      events: logs,
+      runs: [{ ...held(EXTRA, "2026-10-24T09:00:00Z"), eventCount: EXTRA.length }],
+    });
+    renderApp("/escalations");
+    const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
+    const cart = within(item).getByRole("region", { name: "The held cart" });
+    expect(within(cart).getByText("Both sellers are paid")).toBeInTheDocument();
+    expect(within(cart).getByText("Total")).toBeInTheDocument();
+    expect(within(cart).getByText("$128.98")).toBeInTheDocument();
+  });
+
+  it("is empty, and still a vault, when nothing is waiting", async () => {
+    mockServer({ runs: [] });
+    renderApp("/escalations");
+    const vault = await screen.findByRole("region", { name: "Held for you right now" });
+    expect(vault).toHaveClass("vault");
+    expect(within(vault).getByRole("link", { name: "See every run" })).toHaveAttribute(
+      "href",
+      "/runs",
+    );
   });
 });
 
@@ -244,7 +290,7 @@ describe("deciding from the inbox", () => {
         /Rejected\. The hold on \$109\.99 was released and nobody was paid\./,
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("Nothing is waiting on you")).toBeInTheDocument();
+    expect(screen.getByText("Nothing is waiting on you.")).toBeInTheDocument();
   });
 
   it("shows the server's message plainly when it has no payment platform, and keeps the buttons", async () => {
@@ -404,7 +450,7 @@ describe("the empty inbox and the runs decided lately", () => {
     mockServer({ scenarios, runs: [run("run_a", "sc_b01", "2026-10-24T10:00:00Z")] });
     renderApp("/escalations");
     expect(
-      await screen.findByRole("heading", { name: "Nothing is waiting on you" }),
+      await screen.findByRole("heading", { name: "Nothing is waiting on you." }),
     ).toBeInTheDocument();
     expect(document.querySelector(".empty")).not.toBeNull();
   });
@@ -413,7 +459,7 @@ describe("the empty inbox and the runs decided lately", () => {
     mockServer({ scenarios });
     renderApp("/escalations");
     expect(
-      await screen.findByRole("heading", { name: "Nothing is waiting on you" }),
+      await screen.findByRole("heading", { name: "Nothing is waiting on you." }),
     ).toBeInTheDocument();
   });
 
@@ -484,7 +530,7 @@ describe("keeping the inbox current", () => {
   it("reads the list again when the window gets focus", async () => {
     const fetchMock = mockServer({ scenarios, runs: [] });
     renderApp("/escalations");
-    await screen.findByText("Nothing is waiting on you");
+    await screen.findByText("Nothing is waiting on you.");
     const before = listCalls(fetchMock);
     await act(async () => {
       window.dispatchEvent(new Event("focus"));
@@ -511,7 +557,7 @@ describe("keeping the inbox current", () => {
   it("stops when the page is left", async () => {
     const fetchMock = mockServer({ scenarios, runs: [] });
     const { unmount } = renderApp("/escalations");
-    await screen.findByText("Nothing is waiting on you");
+    await screen.findByText("Nothing is waiting on you.");
     await act(() => vi.advanceTimersByTimeAsync(INBOX_POLL_MS));
     const before = listCalls(fetchMock);
     expect(before).toBeGreaterThan(1);
@@ -547,6 +593,6 @@ describe("when the server is down", () => {
     renderApp("/escalations");
     expect(await screen.findByText("Escalations didn't load.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
-    expect(screen.queryByText("Nothing is waiting on you")).toBeNull();
+    expect(screen.queryByText("Nothing is waiting on you.")).toBeNull();
   });
 });

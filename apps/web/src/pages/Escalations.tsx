@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import type { DecisionResult, RunSummary } from "../api";
-import { Button, buttonClass, EmptyState, formatMoney, Pill, StateGlyph } from "../design";
+import { Amount, Button, EmptyState, PageRoute, Pill, StateGlyph, Station, Vault } from "../design";
 import { formatAgo, formatHoldEnds, formatSpan, formatTime } from "../format";
 import {
   confirmationText,
@@ -15,7 +15,6 @@ import { type Detail, useHeldDetails } from "../inbox/useHeldDetails";
 import { DecisionButtons, HeldCart, useDecision } from "../run/DecisionPanel";
 import type { RunModel } from "../run/timeline";
 import { useRuns } from "../runs/RunsProvider";
-import { PageHeader } from "./Page";
 
 interface Confirmation {
   runId: string;
@@ -35,68 +34,77 @@ interface HeldProps {
   onFailed: () => void;
 }
 
-function HeldHead({
-  run,
-  title,
-  children,
-}: {
-  run: RunSummary;
-  title: string;
-  children?: React.ReactNode;
-}) {
+// How long a hold has waited, as the board sets it: a number in Besley and its unit at half size.
+// Assistive technology gets the words, "7 hours".
+function HeldFor({ span, since }: { span: string; since: string }) {
+  const [value, ...unit] = span.split(" ");
   return (
-    <header className="held-head">
-      <div className="held-title">
-        <Pill
-          state="escalate"
-          label={run.escalation === "unfinished" ? "Decision not finished" : "Needs your decision"}
-        />
-        <h3 className="t-item">{title}</h3>
-      </div>
-      <div className="held-meta">
-        {children}
-        <span className="t-data">{run.runId}</span>
-      </div>
-    </header>
+    <span className="held-for" title={since}>
+      <span className="visually-hidden">{`Held for ${span}`}</span>
+      <span className="t-meta held-for-label" aria-hidden="true">
+        Held for
+      </span>
+      <span className="amt held-for-span" aria-hidden="true">
+        {value} <span className="held-for-unit">{unit.join(" ")}</span>
+      </span>
+    </span>
   );
 }
 
-// A held purchase that is fully read: the request, the reasons, the cart and the two ways out.
+// The ground the held cart sits on: the page's vault for the oldest hold, its own ground for the rest.
+function CartSurface({ vaulted, children }: { vaulted: boolean; children: React.ReactNode }) {
+  return vaulted ? (
+    <Vault label="The held cart" className="held-cart">
+      {children}
+    </Vault>
+  ) : (
+    <section aria-label="The held cart" className="held-cart held-cart-plain">
+      {children}
+    </section>
+  );
+}
+
+// A held purchase: a station on the route, with what it is, how long it has waited, what was asked
+// and why it was held on one side, and below them the held cart and the two ways out. The oldest hold's
+// cart sits in the page's vault; the rest are on the page's own ground, since a screen has one.
 function HeldDecision({
   run,
   title,
   now,
   model,
+  vaulted,
   onDecided,
   onFailed,
-}: HeldProps & { model: RunModel }) {
+}: HeldProps & { model: RunModel; vaulted: boolean }) {
   const decision = useDecision(run.runId, (result) => onDecided(run, model, result), onFailed);
   const heldFor = model.escalatedAt ? Date.parse(model.escalatedAt) : null;
   const total = model.money.amountCents;
+  const sellers = new Set(model.cart.map((line) => line.payeeKey)).size;
   return (
     <>
-      <HeldHead run={run} title={title}>
-        {heldFor !== null && (
-          <span title={formatTime(model.escalatedAt as string)}>
-            Held for {formatSpan(now - heldFor)}
-          </span>
-        )}
-        {model.holdExpiresAt && (
-          <span title={formatTime(model.holdExpiresAt)}>
-            {formatHoldEnds(model.holdExpiresAt, now)}
-          </span>
-        )}
-      </HeldHead>
-      <div className="held-body">
-        <div className="held-why">
+      <div className="held-top">
+        <div className="held-left">
+          <h2 className="t-section">{title}</h2>
+          {run.escalation === "unfinished" && (
+            <Pill state="escalate" label="Decision not finished" />
+          )}
+          {heldFor !== null && (
+            <HeldFor
+              span={formatSpan(now - heldFor)}
+              since={formatTime(model.escalatedAt as string)}
+            />
+          )}
+          <span className="t-data">{run.runId}</span>
+        </div>
+        <div className="held-right">
           {model.request && (
             <section aria-label="What you asked">
-              <h4 className="held-label">You asked</h4>
-              <q className="run-request">{model.request}</q>
+              <h3 className="visually-hidden">You asked</h3>
+              <q className="t-voice held-ask">{model.request}</q>
             </section>
           )}
           <section aria-label="Why it was held">
-            <h4 className="held-label">Why it was held</h4>
+            <h3 className="t-meta held-label">Why it was held</h3>
             <ul className="held-reasons">
               {model.heldReasons.length === 0 && (
                 <li>The review couldn't be sure the cart matches your request.</li>
@@ -109,49 +117,61 @@ function HeldDecision({
               ))}
             </ul>
           </section>
-        </div>
-        <div className="held-decide">
-          <section className="decision-cart" aria-label="The held cart">
-            <HeldCart cart={model.cart} />
-            {model.cart.length > 1 && total !== null && (
-              <div className="held-total">
-                <span className="t-meta">Held, not charged</span>
-                <span className="money money-sm">{formatMoney(total)}</span>
-              </div>
-            )}
-          </section>
-          <DecisionButtons {...decision} unfinished={model.unfinished} />
+          <Link to={`/runs/${run.runId}`} className="held-run-link">
+            View the full run
+          </Link>
         </div>
       </div>
-      <footer className="held-foot">
-        <Link to={`/runs/${run.runId}`} className={buttonClass("secondary", true)}>
-          View the full run
-        </Link>
-      </footer>
+      <CartSurface vaulted={vaulted}>
+        <div className="held-cart-lines">
+          <p className="t-meta held-cart-label">
+            <span>Held, not charged</span>
+            {model.holdExpiresAt && (
+              <span title={formatTime(model.holdExpiresAt)}>
+                {formatHoldEnds(model.holdExpiresAt, now)}
+              </span>
+            )}
+          </p>
+          <HeldCart cart={model.cart} size={model.cart.length === 1 ? "lg" : "sm"} />
+          {model.cart.length > 1 && total !== null && (
+            <div className="held-total">
+              <span className="held-total-label">Total</span>
+              <Amount cents={total} size="lg" />
+            </div>
+          )}
+        </div>
+        <div className="held-decide">
+          <DecisionButtons {...decision} unfinished={model.unfinished} sellers={sellers} />
+        </div>
+      </CartSurface>
     </>
   );
 }
 
-function HeldItem(props: HeldProps & { detail: Detail }) {
-  const { run, title, detail } = props;
+function HeldItem(props: HeldProps & { detail: Detail; vaulted: boolean }) {
+  const { run, title, detail, vaulted } = props;
   return (
-    <li className="held" aria-label={title}>
+    <li className="held station-section" aria-label={title} data-state="escalate">
+      <span className="station station-ring" aria-hidden="true" />
       {detail.status === "ready" ? (
-        <HeldDecision {...props} model={detail.model} />
+        <HeldDecision {...props} model={detail.model} vaulted={vaulted} />
       ) : (
-        <>
-          <HeldHead run={run} title={title} />
-          <p className="t-meta held-note" role={detail.status === "error" ? "alert" : "status"}>
-            {detail.status === "error"
-              ? "This run couldn't be read, so it can't be decided here yet. It will be tried again."
-              : "Reading the run…"}
-          </p>
-          <footer className="held-foot">
-            <Link to={`/runs/${run.runId}`} className={buttonClass("secondary", true)}>
+        <div className="held-top">
+          <div className="held-left">
+            <h2 className="t-section">{title}</h2>
+            <span className="t-data">{run.runId}</span>
+          </div>
+          <div className="held-right">
+            <p className="t-meta held-note" role={detail.status === "error" ? "alert" : "status"}>
+              {detail.status === "error"
+                ? "This run couldn't be read, so it can't be decided here yet. It will be tried again."
+                : "Reading the run…"}
+            </p>
+            <Link to={`/runs/${run.runId}`} className="held-run-link">
               View the full run
             </Link>
-          </footer>
-        </>
+          </div>
+        </div>
       )}
     </li>
   );
@@ -222,12 +242,10 @@ export function Escalations() {
   );
 
   return (
-    <>
-      <PageHeader
-        title="Escalations"
-        lede="Purchases Chaperone paused because the decision is yours."
-      />
-
+    <PageRoute
+      title="Escalations"
+      lede="Purchases Chaperone paused because the decision is yours. Oldest first."
+    >
       {status === "error" && runs.length === 0 && (
         <EmptyState title="Escalations didn't load." action={reloadButton}>
           The server didn't answer. Check that it's running, then try again.
@@ -243,7 +261,7 @@ export function Escalations() {
       <div className="inbox-confirmations" role="status" aria-live="polite">
         {confirmations.map((c) => (
           <p className="confirm" key={c.runId}>
-            <StateGlyph state={c.outcome === "approve" ? "approve" : "block"} size={20} />
+            <StateGlyph state={c.outcome === "approve" ? "approve" : "block"} size={22} />
             <span className="confirm-text">
               <span className="confirm-what">{c.text}</span>
               <span className="t-meta">{c.title}</span>
@@ -271,39 +289,35 @@ export function Escalations() {
       </div>
 
       {drawn && items.length > 0 && (
-        <section aria-labelledby="waiting-title">
-          <h2 className="t-section inbox-section" id="waiting-title">
-            Waiting for you
-            <span className="t-meta">oldest first</span>
-          </h2>
-          <ul className="held-list">
-            {items.map(({ run, detail }) => (
-              <HeldItem
-                key={run.runId}
-                run={run}
-                title={titleOf(run)}
-                now={now}
-                detail={detail}
-                onDecided={decided}
-                onFailed={refresh}
-              />
-            ))}
-          </ul>
-        </section>
+        <ul className="held-list">
+          {items.map(({ run, detail }, at) => (
+            <HeldItem
+              key={run.runId}
+              run={run}
+              title={titleOf(run)}
+              now={now}
+              detail={detail}
+              vaulted={at === 0}
+              onDecided={decided}
+              onFailed={refresh}
+            />
+          ))}
+        </ul>
       )}
 
       {drawn && items.length === 0 && status !== "error" && (
-        <EmptyState title="Nothing is waiting on you">
-          When a gate can't be sure a cart matches what you asked for, the purchase is held here
-          with the cart and the reason. You approve it or reject it.
+        <EmptyState
+          title="Nothing is waiting on you."
+          label="Held for you right now"
+          action={<Link to="/runs">See every run</Link>}
+        >
+          When Chaperone pauses a purchase for your decision, it waits here, oldest first, with how
+          long it has been held and when the hold ends.
         </EmptyState>
       )}
 
       {recent.length > 0 && (
-        <section aria-labelledby="decided-title" className="inbox-recent">
-          <h2 className="t-section inbox-section" id="decided-title">
-            Recently decided
-          </h2>
+        <Station heading="Recently decided" className="inbox-recent">
           <ul className="decided-list">
             {recent.map((run) => {
               const approved = run.verdict === "approve";
@@ -321,8 +335,8 @@ export function Escalations() {
               );
             })}
           </ul>
-        </section>
+        </Station>
       )}
-    </>
+    </PageRoute>
   );
 }
