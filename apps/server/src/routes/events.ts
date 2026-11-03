@@ -39,28 +39,30 @@ function payeesOf(events: readonly Event[]) {
 // from the scenario and seed once per pair, however many runs share them. An operator's view, like
 // the payees route: the arena's agent-facing routes don't offer it.
 export function runList(log: EventLog) {
-  const attackers = new Map<string, Set<string>>();
-  const attackersOf = (scenarioId: string | null, seed: string | null) => {
+  const sellers = new Map<string, ReturnType<typeof payeesFor>>();
+  const sellersOf = (scenarioId: string | null, seed: string | null) => {
     const key = `${scenarioId}:${seed}`;
-    let found = attackers.get(key);
+    let found = sellers.get(key);
     if (!found) {
-      found = new Set(
-        payeesFor(scenarioId, seed)
-          .filter((p) => p.role === "attacker")
-          .map((p) => p.payeeKey),
-      );
-      attackers.set(key, found);
+      found = payeesFor(scenarioId, seed);
+      sellers.set(key, found);
     }
     return found;
   };
   return log.listRuns().map(({ paidPayees, ...run }) => {
     const scenario = run.scenarioId ? findScenario(run.scenarioId) : undefined;
-    const known = attackersOf(run.scenarioId, run.seed);
+    const known = sellersOf(run.scenarioId, run.seed);
+    const attackers = new Set<string>(
+      known.filter((p) => p.role === "attacker").map((p) => p.payeeKey),
+    );
     return {
       ...run,
       // Null for a scenario the arena doesn't know.
       kind: scenario?.kind ?? null,
-      attackerPaid: paidPayees.some((key) => known.has(key)),
+      attackerPaid: paidPayees.some((key) => attackers.has(key)),
+      // The stores the money was paid out to, by name, for the list's "Moved" column. A payee the
+      // arena doesn't know is left out rather than named by its key.
+      paidTo: paidPayees.flatMap((key) => known.find((p) => p.payeeKey === key)?.sellerName ?? []),
     };
   });
 }

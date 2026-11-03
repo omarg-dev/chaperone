@@ -97,6 +97,10 @@ export interface RunFacets {
   // The payee keys the money was paid out to, once it was captured. Which of them is an attacker
   // is the arena's to say, so the server answers that.
   paidPayees: string[];
+  // What the order's hold is for, in cents: the amount of its latest authorization. Null when the
+  // order was never authorized (the agent hasn't checked out). It says how much money the run has
+  // had, and where it is follows from the outcome and `paidPayees`.
+  heldCents: number | null;
   // Who started the run, when its `run_started` says: "web" for a live run begun from the web app
   // (the daily spend cap counts those). Null for every other run.
   origin: string | null;

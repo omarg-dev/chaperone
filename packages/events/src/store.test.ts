@@ -29,6 +29,7 @@ const noOutcome = {
   seed: null,
   reviews: [],
   paidPayees: [],
+  heldCents: null,
   origin: null,
   payments: null,
 };
