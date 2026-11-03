@@ -7,6 +7,7 @@ import "./styles/fonts.css";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/components.css";
+import "./styles/route.css";
 import "./styles/shell.css";
 import "./styles/timeline.css";
 import "./styles/run.css";

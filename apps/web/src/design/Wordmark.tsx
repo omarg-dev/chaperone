@@ -1,7 +1,7 @@
 import { Mark } from "./Mark";
 
-// The mark and the name, set in Newsreader. The app's top bar links it home.
-export function Wordmark({ size = 26 }: { size?: number }) {
+// The mark and the name, set in Besley. The app's top bar links it home.
+export function Wordmark({ size = 30 }: { size?: number }) {
   return (
     <span className="wordmark">
       <Mark size={size} />
