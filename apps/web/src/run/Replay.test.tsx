@@ -179,7 +179,7 @@ describe("playing a run back", () => {
     readout(20, log.length);
     expect(within(bar()).getByRole("slider")).toHaveAttribute(
       "aria-valuetext",
-      expect.stringMatching(/^Event 20 of 45, /),
+      expect.stringMatching(/^Event 20 of 51, /),
     );
   });
 

@@ -231,6 +231,28 @@ function toTimelineItem(item: RunItem): TimelineItem {
           </Disclosure>
         ),
       };
+    case "gate3_card":
+      return {
+        ...base,
+        kind: "event",
+        tag: "Read the agent's trace and Gate 1's facts",
+        title: item.title,
+        tone: tone(item.verdict),
+        body: (
+          <Disclosure title="How the agent chose">
+            {item.explanation && <p className="tl-explanation">{item.explanation}</p>}
+            <Facts rows={item.rows} />
+            {item.notes.length > 0 && (
+              <ul className="tl-notes">
+                {item.notes.map((note) => (
+                  <li key={note}>{note}</li>
+                ))}
+              </ul>
+            )}
+            <Spend costUsd={item.costUsd} latencyMs={item.latencyMs} />
+          </Disclosure>
+        ),
+      };
     case "gate1_card":
       return {
         ...base,

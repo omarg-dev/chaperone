@@ -95,11 +95,12 @@ describe("the escalation inbox", () => {
     expect(lines.map((li) => within(li).getByText(/^Gate \d$/).textContent)).toEqual([
       "Gate 1",
       "Gate 2",
+      "Gate 3",
     ]);
     expect(lines[0]).toHaveTextContent("the page claims another item has to be bought too");
 
     expect(within(item).getByText("Held for 2 days")).toBeInTheDocument();
-    expect(within(item).getByText("Hold ends in 31 days")).toBeInTheDocument();
+    expect(within(item).getByText("Hold ends in 36 days")).toBeInTheDocument();
     expect(within(item).getByRole("link", { name: "View the full run" })).toHaveAttribute(
       "href",
       `/runs/${idOf(POISONED)}`,
@@ -120,7 +121,7 @@ describe("the escalation inbox", () => {
     expect(
       within(why).getByText("A mouse: the mandate asks for a keyboard and allows no extras"),
     ).toBeInTheDocument();
-    expect(within(why).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(why).getAllByRole("listitem")).toHaveLength(3);
   });
 
   it("never shows the words a seller wrote", async () => {

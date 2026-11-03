@@ -128,7 +128,12 @@ const PAYMENT_WORDS: Record<string, string> = {
   void: "The hold was voided",
 };
 
-const GATE_NAMES: Record<string, string> = { gate0: "Gate 0", gate1: "Gate 1", gate2: "Gate 2" };
+const GATE_NAMES: Record<string, string> = {
+  gate0: "Gate 0",
+  gate1: "Gate 1",
+  gate2: "Gate 2",
+  gate3: "Gate 3",
+};
 
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
@@ -216,6 +221,12 @@ export function describeEvent(event: RunEvent): string {
       return "Gate 2 judged the cart";
     case "gate2/gate2_judgement_failed":
       return "Gate 2's auditor couldn't judge the cart";
+    case "gate3/gate3_started":
+      return "Gate 3 gathered the agent's trace";
+    case "gate3/gate3_judgement":
+      return "Gate 3 judged how the agent chose";
+    case "gate3/gate3_judgement_failed":
+      return "Gate 3's auditor couldn't judge the trace";
   }
   const gate = GATE_NAMES[event.lane];
   if (gate && event.type === "verdict") {
