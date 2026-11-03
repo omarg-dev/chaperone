@@ -118,6 +118,12 @@
   margin-top: 36px;
 }
 
+.station-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
 .station-heading {
   display: flex;
   align-items: baseline;

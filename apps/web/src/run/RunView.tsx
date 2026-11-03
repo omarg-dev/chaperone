@@ -123,31 +123,35 @@ function RunPage({ runId }: { runId: string }) {
   }
   if (status === "error" && model.items.length === 0) {
     return (
-      <EmptyState
-        title="The run didn't load."
-        action={
-          <Button variant="secondary" small onClick={reload}>
-            Try again
-          </Button>
-        }
-      >
-        The server didn't answer. Check that it's running, then try again.
-      </EmptyState>
+      <PageRoute title="Run">
+        <EmptyState
+          title="The run didn't load."
+          action={
+            <Button variant="secondary" small onClick={reload}>
+              Try again
+            </Button>
+          }
+        >
+          The server didn't answer. Check that it's running, then try again.
+        </EmptyState>
+      </PageRoute>
     );
   }
   if (status === "missing") {
     return (
-      <EmptyState
-        title="There's no run with this ID."
-        action={
-          <Link to="/runs" className={buttonClass("secondary", true)}>
-            Back to runs
-          </Link>
-        }
-      >
-        <span className="t-data">{runId}</span> isn't in this server's log. It may have been run
-        somewhere else.
-      </EmptyState>
+      <PageRoute title="Run">
+        <EmptyState
+          title="There's no run with this ID."
+          action={
+            <Link to="/runs" className={buttonClass("secondary", true)}>
+              Back to runs
+            </Link>
+          }
+        >
+          <span className="t-data">{runId}</span> isn't in this server's log. It may have been run
+          somewhere else.
+        </EmptyState>
+      </PageRoute>
     );
   }
 

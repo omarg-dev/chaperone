@@ -56,7 +56,7 @@ describe("navigation", () => {
 
   it("names what each empty page will hold", async () => {
     renderApp("/escalations");
-    expect(await screen.findByText("Nothing is waiting on you")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing is waiting on you.")).toBeInTheDocument();
     renderApp("/dashboard");
     expect(await screen.findByText("This server has no results folder.")).toBeInTheDocument();
   });
@@ -91,5 +91,27 @@ describe("navigation", () => {
     });
     renderApp("/dashboard");
     expect(await screen.findByRole("status", { name: "0 waiting for you" })).toHaveTextContent("0");
+  });
+});
+
+describe("the route line", () => {
+  // Every page is drawn on the route: a spine, a filled title station and one title.
+  it.each([
+    "/runs",
+    "/start",
+    "/start?tab=agent",
+    "/escalations",
+    "/dashboard",
+    "/arena",
+    "/runs/run_nope",
+    "/nowhere",
+  ])("draws %s with PageRoute", async (path) => {
+    const { container } = renderApp(path);
+    await screen.findByRole("heading", { level: 1 });
+    expect(container.querySelectorAll("[data-route]")).toHaveLength(1);
+    expect(container.querySelectorAll(".station-title")).toHaveLength(1);
+    expect(container.querySelectorAll("h1")).toHaveLength(1);
+    // A screen has at most one vault, and an empty or held one is still it.
+    expect(container.querySelectorAll(".vault").length).toBeLessThanOrEqual(1);
   });
 });

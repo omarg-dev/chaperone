@@ -1,24 +1,6 @@
 /* The dashboard: this server's runs, the eval's comparison, and the table of every run. Tokens only. */
 
-/* This server's runs */
-.live {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  margin-bottom: var(--space-7);
-  padding: var(--space-4) var(--space-5);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
-}
-
-.live-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: var(--space-1) var(--space-4);
-}
-
+/* This server's runs: a station whose numbers are Besley, with no box round them. */
 .live-stats {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -31,11 +13,10 @@
 .live-link {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
   padding: var(--space-2) 0;
   color: var(--ink);
   text-decoration: none;
-  border-radius: var(--radius);
 }
 
 .live-link:hover .live-label {
@@ -45,15 +26,15 @@
 
 .live-value {
   font-family: var(--font-display);
-  font-size: var(--text-headline);
-  font-weight: 500;
+  font-size: 2.5rem;
+  font-weight: 800;
   line-height: 1;
   font-variant-numeric: lining-nums tabular-nums;
 }
 
 .live-label {
   font-size: var(--text-meta);
-  font-weight: 600;
+  font-weight: 700;
   color: var(--muted);
 }
 
@@ -73,14 +54,6 @@
   gap: var(--space-4);
 }
 
-.eval-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-3) var(--space-5);
-}
-
 .filter-result select.filter-control {
   max-width: 560px;
 }
@@ -96,11 +69,9 @@
 .fake-banner {
   align-self: flex-start;
   max-width: 100%;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius);
+  padding: 12px 16px;
   background: var(--escalate-tint);
   color: var(--escalate-ink);
-  box-shadow: inset 0 0 0 1px var(--escalate);
   font-size: 14.5px;
   line-height: 1.45;
 }
@@ -134,21 +105,19 @@
 }
 
 .cmp-headline {
-  max-width: 24ch;
-  margin-top: var(--space-4);
+  max-width: 20ch;
+  margin: 8px 0 4px;
   font-family: var(--font-display);
-  font-size: 2.875rem;
-  font-weight: 500;
-  line-height: 1.06;
-  letter-spacing: -0.025em;
+  font-size: 3.25rem;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
 }
 
 /* The comparison: a label column and one column for each setting, each on its own ground. */
 .cmp-wrap {
   overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
 }
 
 .cmp {
@@ -190,8 +159,15 @@
   background: var(--z-cat);
 }
 
+/* The full tree's column is the page's vault: it is where the money is held. */
 .cmp-full {
-  background: var(--z-route);
+  background: var(--vault);
+  color: var(--vault-ink);
+}
+
+.cmp-full .t-meta,
+.cmp-full .cmp-sub {
+  color: var(--vault-muted);
 }
 
 .cmp-name {
@@ -206,7 +182,7 @@
 }
 
 .cmp-name-full {
-  color: var(--z-route-ink);
+  color: var(--vault-ink);
 }
 
 .cmp-attack-label {
@@ -241,17 +217,18 @@
 }
 
 .cmp-big {
-  font-family: var(--font-display);
-  font-size: 4.5rem;
-  font-weight: 500;
-  line-height: 0.9;
-  letter-spacing: -0.03em;
-  font-variant-numeric: lining-nums tabular-nums;
+  font-size: 7.5rem;
+  line-height: 0.95;
   color: var(--ink);
 }
 
+.cmp-full .cmp-big {
+  color: var(--vault-ink);
+}
+
 /* Above zero, the number is the attacker's colour: money reached one. Zero stays neutral. */
-.cmp-big-attacker {
+.cmp-big-attacker,
+.cmp-full .cmp-big-attacker {
   color: var(--attacker);
 }
 
@@ -265,6 +242,18 @@
 
 .dot-calm {
   background: var(--line-strong);
+}
+
+.cmp-full .dot-kept {
+  background: var(--vault-ink);
+}
+
+.cmp-full .dot-calm {
+  background: var(--vault-line);
+}
+
+.cmp-full .dot-out {
+  background: var(--v-attacker);
 }
 
 .dot-out {
@@ -292,9 +281,13 @@
   inset-block: 0;
   inset-inline-start: 0;
   width: 12px;
-  border: 2.5px solid var(--hold);
+  border: 4px solid var(--clasp);
   border-inline-end: 0;
-  border-radius: 12px 0 0 12px;
+  border-radius: 11px 0 0 11px;
+}
+
+.cmp-full .dots-bracket::before {
+  border-color: var(--vault-ink);
 }
 
 .dots-grid {
@@ -316,27 +309,32 @@
 }
 
 .cmp-figure {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 
-.cmp-figure-full {
-  font-weight: 700;
+.cmp-of {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.cmp-full .cmp-of {
+  color: var(--vault-muted);
 }
 
 .cmp-foot {
   margin: 0;
-  padding: var(--space-3) 22px var(--space-4);
-  border-top: 1px solid var(--line);
+  padding: var(--space-3) 0 0;
+  font-weight: 400;
 }
 
 /* The table of every run */
 .grid-section {
-  display: flex;
-  flex-direction: column;
   gap: var(--space-2);
-  margin-top: var(--space-6);
 }
 
 .grid-sub {
@@ -362,6 +360,10 @@
 
   .cmp-headline {
     font-size: 2.125rem;
+  }
+
+  .cmp-big {
+    font-size: 4.5rem;
   }
 }
 

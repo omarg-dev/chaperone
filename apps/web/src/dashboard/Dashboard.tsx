@@ -1,9 +1,8 @@
 import type { ResultsSummary } from "@firewall/eval/view";
 import { useMemo } from "react";
 import { useSearchParams } from "react-router";
-import { Button, EmptyState } from "../design";
+import { Button, EmptyState, PageRoute, Station } from "../design";
 import { formatDate } from "../format";
-import { PageHeader } from "../pages/Page";
 import { useRuns } from "../runs/RunsProvider";
 import { Comparison } from "./Comparison";
 import { LiveStrip } from "./LiveStrip";
@@ -79,13 +78,10 @@ function Results({ name, knownRunIds }: { name: string; knownRunIds: ReadonlySet
       <Provenance results={results} />
       <h2 className="cmp-headline">{headlineOf(results)}</h2>
       <Comparison results={results} />
-      <section className="grid-section" aria-labelledby="runs-title">
-        <h2 id="runs-title" className="t-section">
-          Every run
-        </h2>
+      <Station heading="Every run" className="grid-section">
         <p className="t-meta grid-sub">What each firewall setting did to the money, run by run.</p>
         <ResultsGrid results={results} rows={rows} knownRunIds={knownRunIds} />
-      </section>
+      </Station>
     </>
   );
 }
@@ -128,25 +124,19 @@ export function Dashboard() {
     ) : null;
 
   return (
-    <>
-      <PageHeader
-        title="How it's doing"
-        lede="How often agents are fooled with Chaperone off and on, from the eval, and what this server has seen."
-        aside={
-          <Button variant="secondary" small onClick={reload} disabled={state.status === "loading"}>
-            Refresh
-          </Button>
-        }
-      />
+    <PageRoute
+      title="How it's doing"
+      lede="How often agents are fooled with Chaperone off and on, from the eval, and what this server has seen."
+      aside={
+        <Button variant="secondary" small onClick={reload} disabled={state.status === "loading"}>
+          Refresh
+        </Button>
+      }
+    >
       <LiveStrip />
 
-      <section className="eval" aria-labelledby="eval-title">
-        <div className="eval-head">
-          <h2 id="eval-title" className="t-section">
-            The eval
-          </h2>
-          {picker}
-        </div>
+      <Station heading="The eval" className="eval">
+        {picker}
         {state.status === "loading" && (
           <p className="t-meta" role="status">
             Loading the results…
@@ -171,7 +161,7 @@ export function Dashboard() {
             <Unreadable files={list.unreadable} />
           </>
         )}
-      </section>
-    </>
+      </Station>
+    </PageRoute>
   );
 }

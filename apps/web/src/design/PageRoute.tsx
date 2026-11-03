@@ -75,15 +75,17 @@ export function Station({
       aria-labelledby={headingId}
     >
       <span className="station station-ring" aria-hidden="true" />
-      <h2 className="station-heading t-section" id={headingId}>
-        {step !== undefined && (
-          <span className="station-step t-data" aria-hidden="true">
-            {step}
-          </span>
-        )}
-        <span>{heading}</span>
+      <div className="station-head">
+        <h2 className="station-heading t-section" id={headingId}>
+          {step !== undefined && (
+            <span className="station-step t-data" aria-hidden="true">
+              {step}
+            </span>
+          )}
+          <span>{heading}</span>
+        </h2>
         {note && <span className="station-note t-data">{note}</span>}
-      </h2>
+      </div>
       {children}
     </section>
   );
