@@ -10,6 +10,7 @@ export type {
   CellProps,
   ChartRequest,
   DataGridProps,
+  ExcelRequest,
   GridColumn,
   GridHandle,
   GridSort,

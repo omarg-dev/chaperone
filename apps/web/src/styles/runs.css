@@ -268,3 +268,45 @@
 .runs-none p {
   color: var(--ink-2);
 }
+
+/* The strip under the history: where the money of the runs shown is, in four places. */
+.grid-status {
+  width: 100%;
+}
+
+.money-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-6);
+  margin: 0;
+  padding: var(--space-2) 0;
+}
+
+.money-status-item dt {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 700;
+}
+
+.money-status-item dd {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+/* The button in the history's heading is a button, not the heading's note in the record face. */
+.runs-grid .station-note .btn {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: normal;
+}
+
+/* The strip lines up with the cells above it, which have the same 12px of padding. */
+.data-grid .ag-status-bar {
+  padding-inline: var(--space-3);
+}

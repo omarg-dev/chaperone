@@ -23,9 +23,11 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import {
+  createContext,
   type ReactNode,
   type RefObject,
   useCallback,
+  useContext,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -89,8 +91,19 @@ export interface ChartRequest {
   categoryColId?: string;
 }
 
+// A file of the grid's rows for Excel. A cell of the grid draws a pill or an amount, so the page says
+// what each column holds in a sheet (`cell`), and what to write above the table (`intro`).
+export interface ExcelRequest<Row = unknown> {
+  fileName: string;
+  sheetName: string;
+  intro: string[];
+  cell: (row: Row, colId: string) => string | number | null;
+}
+
 // What a page can do to its grid, through the `handle` prop.
-export interface GridHandle {
+export interface GridHandle<Row = unknown> {
+  // Downloads the rows the grid has (the page filtered them) as an Excel file.
+  exportExcel: (request: ExcelRequest<Row>) => void;
   // Draws a chart from cells of the grid, which follows the grid's data while it is open. False when
   // there was nothing to chart (no cells picked).
   chart: (request: ChartRequest) => boolean;
@@ -128,9 +141,18 @@ export interface DataGridProps<Row> {
   // pick what to chart. The page gets `handle` to draw one, and `onSelectionChange` says whether any cells
   // are picked.
   charts?: boolean;
-  handle?: RefObject<GridHandle | null>;
+  handle?: RefObject<GridHandle<Row> | null>;
   onSelectionChange?: (picked: boolean) => void;
+  // Fills the strip under the table (AG's status bar, an Enterprise feature). The page computes what it
+  // says, in plain functions, so nothing in it is read back from the grid.
+  statusBar?: ReactNode;
 }
+
+// What the status bar draws: AG renders it inside this component's tree, so it reads the page's node
+// from context.
+const StatusContext = createContext<ReactNode>(null);
+const StatusPanel = () => <div className="grid-status">{useContext(StatusContext)}</div>;
+const STATUS_BAR = { statusPanels: [{ statusPanel: StatusPanel, align: "left" as const }] };
 
 interface GridContext<Row> {
   renderDetail: (row: Row) => ReactNode;
@@ -159,6 +181,7 @@ export function DataGrid<Row>({
   charts = false,
   handle,
   onSelectionChange,
+  statusBar,
 }: DataGridProps<Row>) {
   const openId = ENTERPRISE ? (detail?.openId ?? null) : null;
   const grid = useRef<AgGridReact<Row>>(null);
@@ -203,6 +226,23 @@ export function DataGrid<Row>({
   useImperativeHandle(
     handle,
     () => ({
+      exportExcel: ({ fileName, sheetName, intro, cell }) => {
+        const api = grid.current?.api;
+        if (!api || !ENTERPRISE) return;
+        api.exportDataAsExcel({
+          fileName,
+          sheetName,
+          skipRowGroups: true,
+          prependContent: [
+            ...intro.map((line) => ({
+              cells: [{ data: { type: "String" as const, value: line } }],
+            })),
+            { cells: [] },
+          ],
+          processCellCallback: ({ node, column, value }) =>
+            node?.data ? (cell(node.data as Row, column.getColId()) ?? "") : value,
+        });
+      },
       closeChart: () => {
         openChart.current?.destroyChart();
         openChart.current = null;
@@ -291,6 +331,7 @@ export function DataGrid<Row>({
   const grouped = ENTERPRISE && columns.some((column) => column.rowGroup);
 
   const options: GridOptions<Row> = {
+    ...(ENTERPRISE && statusBar ? { statusBar: STATUS_BAR } : {}),
     ...(withCharts && chartTheme
       ? {
           enableCharts: true,
@@ -330,40 +371,43 @@ export function DataGrid<Row>({
   if (rows.length === 0) return <p className="data-grid-empty">{emptyText}</p>;
   return (
     <section className={`data-grid data-grid-${layout}`} aria-label={label}>
-      <AgGridReact<Row>
-        ref={grid}
-        theme={gridTheme}
-        rowData={rows as Row[]}
-        columnDefs={columnDefs}
-        defaultColDef={{ sortable: true, resizable: true, suppressMovable: true }}
-        getRowId={({ data: row }) => rowId(row)}
-        context={{ renderDetail: detail?.render } as unknown as GridContext<Row>}
-        // "auto" draws the whole table, so the page scrolls as a page and a keyboard user isn't caught
-        // in a second scroll area; "scroll" is the grid's own scroll area, drawn as it moves.
-        domLayout={layout === "auto" ? "autoHeight" : "normal"}
-        suppressColumnVirtualisation
-        // The rows are in the page in the order they are on screen, which is the order a screen reader
-        // and the Tab key walk them in.
-        ensureDomOrder
-        // Tab leaves the grid after the cell in focus, instead of walking every cell of a long table.
-        tabToNextCell={() => false}
-        onSortChanged={sortChanged}
-        onCellSelectionChanged={({ api }: CellSelectionChangedEvent<Row>) =>
-          onSelectionChange?.((api.getCellRanges()?.length ?? 0) > 0)
-        }
-        onRowDataUpdated={({ api }: RowDataUpdatedEvent<Row>) => syncOpen(api)}
-        onRowClicked={(event: RowClickedEvent<Row>) => {
-          if (isInteractive(event.event?.target ?? null)) return;
-          if (event.node.group || activateOnClick) activate(event.node, "click");
-        }}
-        onCellKeyDown={(event: CellKeyDownEvent<Row>) => {
-          const key = event.event as KeyboardEvent | null;
-          if (!key || (key.key !== "Enter" && key.key !== " ") || isInteractive(key.target)) return;
-          key.preventDefault();
-          activate(event.node, "key");
-        }}
-        {...options}
-      />
+      <StatusContext.Provider value={statusBar}>
+        <AgGridReact<Row>
+          ref={grid}
+          theme={gridTheme}
+          rowData={rows as Row[]}
+          columnDefs={columnDefs}
+          defaultColDef={{ sortable: true, resizable: true, suppressMovable: true }}
+          getRowId={({ data: row }) => rowId(row)}
+          context={{ renderDetail: detail?.render } as unknown as GridContext<Row>}
+          // "auto" draws the whole table, so the page scrolls as a page and a keyboard user isn't caught
+          // in a second scroll area; "scroll" is the grid's own scroll area, drawn as it moves.
+          domLayout={layout === "auto" ? "autoHeight" : "normal"}
+          suppressColumnVirtualisation
+          // The rows are in the page in the order they are on screen, which is the order a screen reader
+          // and the Tab key walk them in.
+          ensureDomOrder
+          // Tab leaves the grid after the cell in focus, instead of walking every cell of a long table.
+          tabToNextCell={() => false}
+          onSortChanged={sortChanged}
+          onCellSelectionChanged={({ api }: CellSelectionChangedEvent<Row>) =>
+            onSelectionChange?.((api.getCellRanges()?.length ?? 0) > 0)
+          }
+          onRowDataUpdated={({ api }: RowDataUpdatedEvent<Row>) => syncOpen(api)}
+          onRowClicked={(event: RowClickedEvent<Row>) => {
+            if (isInteractive(event.event?.target ?? null)) return;
+            if (event.node.group || activateOnClick) activate(event.node, "click");
+          }}
+          onCellKeyDown={(event: CellKeyDownEvent<Row>) => {
+            const key = event.event as KeyboardEvent | null;
+            if (!key || (key.key !== "Enter" && key.key !== " ") || isInteractive(key.target))
+              return;
+            key.preventDefault();
+            activate(event.node, "key");
+          }}
+          {...options}
+        />
+      </StatusContext.Provider>
     </section>
   );
 }

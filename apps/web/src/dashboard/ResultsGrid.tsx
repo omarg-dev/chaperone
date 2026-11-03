@@ -327,7 +327,7 @@ export function ResultsGrid({
   );
   // Integrated charts: one of the attacks against the settings, or of the cells picked in the table. It
   // is drawn in the page, under the toolbar, and follows the table while it is open.
-  const grid = useRef<GridHandle>(null);
+  const grid = useRef<GridHandle<GridRow>>(null);
   const chartBox = useRef<HTMLDivElement>(null);
   const [chart, setChart] = useState<"attacks" | "picked" | null>(null);
   const [picked, setPicked] = useState(false);

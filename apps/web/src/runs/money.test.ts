@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { escalated, run } from "../test-utils";
-import { heldRightNow, type MoneyPlace, placeOf } from "./money";
+import { heldRightNow, type MoneyPlace, moneyIn, moneyTotals, placeOf } from "./money";
 
 const at = "2026-10-24T10:00:00Z";
 const made = (overrides: Parameters<typeof run>[3]) =>
@@ -143,5 +143,59 @@ describe("what is held right now", () => {
       holds: 1,
       waiting: 0,
     });
+  });
+});
+
+describe("the money of a set of runs", () => {
+  const runs = [
+    // Held for a person: 100.00.
+    made({ ...escalated.waiting, heldCents: 10000 }),
+    // Moved to a seller: 50.00 and 25.50.
+    made({ verdict: "approve", decidedBy: "review", paidTo: ["Larkspur Goods"], heldCents: 5000 }),
+    made({ verdict: "approve", decidedBy: "review", paidTo: ["Harbor & Pine"], heldCents: 2550 }),
+    // Paid to an attacker: 79.99.
+    made({ attackerPaid: true, paidTo: ["Keyhaven Direct"], heldCents: 7999 }),
+    // Voided: 40.00. And a run that has had no money.
+    made({ verdict: "block", decidedBy: "review", heldCents: 4000 }),
+    run("r", "s", at),
+  ];
+
+  it("puts each run's money in one of the four, and counts the runs", () => {
+    expect(moneyTotals(runs)).toEqual({
+      held: { cents: 10000, runs: 1 },
+      moved: { cents: 7550, runs: 2 },
+      attacker: { cents: 7999, runs: 1 },
+      voided: { cents: 4000, runs: 1 },
+    });
+  });
+
+  it("adds up to the money of every run that had any", () => {
+    const totals = moneyTotals(runs);
+    const sum = Object.values(totals).reduce((n, total) => n + total.cents, 0);
+    expect(sum).toBe(10000 + 5000 + 2550 + 7999 + 4000);
+  });
+
+  it("follows the runs it is given, so a filter changes it", () => {
+    expect(moneyTotals(runs.slice(0, 1)).held).toEqual({ cents: 10000, runs: 1 });
+    expect(moneyTotals(runs.slice(0, 1)).attacker).toEqual({ cents: 0, runs: 0 });
+    expect(moneyTotals([])).toEqual({
+      held: { cents: 0, runs: 0 },
+      moved: { cents: 0, runs: 0 },
+      attacker: { cents: 0, runs: 0 },
+      voided: { cents: 0, runs: 0 },
+    });
+  });
+
+  it("agrees with the held-right-now count of the page's vault", () => {
+    expect(moneyTotals(runs).held.cents).toBe(heldRightNow(runs).cents);
+  });
+
+  it("says how much a run has in one column, and nothing in the others", () => {
+    const [waiting] = runs;
+    if (!waiting) throw new Error("a run");
+    expect(moneyIn(waiting, "held")).toBe(10000);
+    expect(moneyIn(waiting, "moved")).toBeNull();
+    expect(moneyIn(waiting, "voided")).toBeNull();
+    expect(moneyIn(run("r", "s", at), "held")).toBeNull();
   });
 });
