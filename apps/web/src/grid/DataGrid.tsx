@@ -4,6 +4,7 @@ import {
   ClientSideRowModelModule,
   type ColDef,
   ColumnApiModule,
+  type GridApi,
   type GridOptions,
   type ICellRendererParams,
   type IHeaderParams,
@@ -11,6 +12,7 @@ import {
   ModuleRegistry,
   RowApiModule,
   type RowClickedEvent,
+  type RowDataUpdatedEvent,
   RowStyleModule,
   ScrollApiModule,
   type SortChangedEvent,
@@ -18,19 +20,19 @@ import {
 } from "ag-grid-community";
 import { AgGridReact } from "ag-grid-react";
 import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import { ENTERPRISE } from "./flag";
 import { gridTheme } from "./theme";
 
-// AG Grid Community, behind one small component. The pages know rows, columns and a label; they
-// don't import AG. There is no AG license (decided Nov 1, docs/PLAN.md), so this uses only what the
-// free packages include, and the day a license arrives the licensed grid, its modules and its theme
-// are swapped in here and in theme.ts, and nothing else moves.
+// AG Grid, behind one small component. The pages know rows, columns and a label; they don't import
+// AG. This file imports only `ag-grid-community`: the Enterprise features (master/detail, row
+// grouping, the status bar, Excel export, integrated charts) are options of the same grid, switched
+// on by the modules `enterprise.ts` and `charts.ts` register, which `index.tsx` loads only when
+// `flag.ts` says Enterprise is on (the hackathon allowance, no license key). With the flag off the
+// props below that need them are ignored.
 //
 // Every page that has a grid shares this file, so the grid is one chunk the Runs page and the
 // dashboard both load. Only the modules the grids use are registered, which keeps that chunk to the
-// client-side row model and the few features below: a feature a page wants that isn't in this list
-// is registered here, deliberately, and nothing licensed ever is (AG's own module list for the
-// community package has no master/detail, row grouping, pivoting, server-side row model, integrated
-// charts or Excel export; `ag-grid-enterprise` isn't a dependency).
+// client-side row model and the few features below.
 ModuleRegistry.registerModules([
   ClientSideRowModelModule,
   // `getColumnState`, which says which column is sorted.
@@ -39,8 +41,9 @@ ModuleRegistry.registerModules([
   RowStyleModule,
   // `cellClass`, which rules off a column.
   CellStyleModule,
-  // `getRowNode` and `ensureNodeVisible`, which find an opened detail and bring it into view.
+  // `getRowNode`, `forEachNode` and `getDisplayedRowAtIndex`, which find the row whose detail is open.
   RowApiModule,
+  // `ensureIndexVisible`, which brings an opened detail into view.
   ScrollApiModule,
   // AG's development checks (it names a module a page needs and didn't register). Left out of the
   // production build, which is why the grid chunk doesn't carry it.
@@ -59,13 +62,6 @@ export interface GridSort {
   colId: string;
   direction: "asc" | "desc";
 }
-
-// A row the grid is asked to show open under another: the same data as the row it belongs to, marked.
-// It is a full-width row (a community feature: one component across the grid instead of cells), and
-// it takes the place master/detail would, which is enterprise-only.
-type Marked<Row> = Row & { __detailOf?: string };
-
-const DETAIL_SUFFIX = "::detail";
 
 export interface DataGridProps<Row> {
   rows: readonly Row[];
@@ -86,7 +82,8 @@ export interface DataGridProps<Row> {
   // on a link or button inside the row is the link's or button's own.
   onRowActivate?: (row: Row, how: "click" | "key") => void;
   activateOnClick?: boolean;
-  // Opens the row with this ID, showing `render(row)` full width under it. One row at a time.
+  // Opens the row with this ID, showing `render(row)` full width under it (AG's master/detail, an
+  // Enterprise feature: with `ENTERPRISE` off a row has no detail). One row at a time.
   detail?: {
     openId: string | null;
     // Tall enough for what `render` draws, which can depend on the row.
@@ -99,11 +96,8 @@ interface GridContext<Row> {
   renderDetail: (row: Row) => ReactNode;
 }
 
-// The component AG draws across the grid for a detail row.
-function DetailRow<Row>({
-  data,
-  context,
-}: ICellRendererParams<Marked<Row>, unknown, GridContext<Row>>) {
+// The component AG draws across the grid for a detail row. A detail row's data is its master's.
+function DetailRow<Row>({ data, context }: ICellRendererParams<Row, unknown, GridContext<Row>>) {
   return data ? <div className="grid-detail">{context.renderDetail(data)}</div> : null;
 }
 
@@ -123,28 +117,32 @@ export function DataGrid<Row>({
   activateOnClick = false,
   detail,
 }: DataGridProps<Row>) {
-  const openId = detail?.openId ?? null;
-  const grid = useRef<AgGridReact<Marked<Row>>>(null);
+  const openId = ENTERPRISE ? (detail?.openId ?? null) : null;
+  const grid = useRef<AgGridReact<Row>>(null);
 
-  // A detail opened near the bottom of the table is scrolled into view, no further than it needs.
+  // The row whose ID the page says is open is the one expanded, and no other: the page owns which.
+  // It is applied again when the rows change, since a row that was filtered away comes back closed.
+  const syncOpen = useCallback((api: GridApi<Row>) => {
+    api.forEachNode((node) => {
+      if (node.master) node.setExpanded(node.id === openRef.current);
+    });
+  }, []);
+  const openRef = useRef(openId);
+  openRef.current = openId;
   useEffect(() => {
+    const api = grid.current?.api;
+    if (!api) return;
+    syncOpen(api);
     if (openId === null) return;
+    // A detail opened near the bottom of the table is scrolled into view, no further than it needs.
     const timer = setTimeout(() => {
-      const api = grid.current?.api;
-      const node = api?.getRowNode(`${openId}${DETAIL_SUFFIX}`);
-      if (api && node) api.ensureNodeVisible(node);
+      if (api.isDestroyed()) return;
+      // The detail is the row right after its master.
+      const at = api.getRowNode(openId)?.rowIndex;
+      if (at != null) api.ensureIndexVisible(at + 1);
     }, 0);
     return () => clearTimeout(timer);
-  }, [openId]);
-
-  const data = useMemo<Marked<Row>[]>(() => {
-    const shown = [...rows] as Marked<Row>[];
-    if (openId === null) return shown;
-    const at = shown.findIndex((row) => rowId(row) === openId);
-    // A row that was filtered away takes its detail with it.
-    if (at >= 0) shown.splice(at + 1, 0, { ...(shown[at] as Marked<Row>), __detailOf: openId });
-    return shown;
-  }, [rows, openId, rowId]);
+  }, [openId, syncOpen]);
 
   // The sort, when the page owns it: each column says whether it is the sorted one.
   const columnDefs = useMemo(
@@ -154,12 +152,12 @@ export function DataGrid<Row>({
         : columns.map((column) => ({
             ...column,
             sort: sort !== null && column.colId === sort.colId ? sort.direction : null,
-          }))) as ColDef<Marked<Row>>[],
+          }))) as ColDef<Row>[],
     [columns, sort],
   );
 
   const sortChanged = useCallback(
-    ({ api }: SortChangedEvent<Marked<Row>>) => {
+    ({ api }: SortChangedEvent<Row>) => {
       const sorted = api.getColumnState().find((state) => state.sort);
       const next: GridSort | null = sorted?.sort
         ? { colId: sorted.colId, direction: sorted.sort }
@@ -171,32 +169,28 @@ export function DataGrid<Row>({
   );
 
   const activate = useCallback(
-    (row: Marked<Row> | undefined, how: "click" | "key") => {
-      if (row && row.__detailOf === undefined) onRowActivate?.(row, how);
+    (node: IRowNode<Row> | null, how: "click" | "key") => {
+      // A detail row and a group row aren't runs: only a row with its own data is activated.
+      if (node?.data && !node.detail && !node.group) onRowActivate?.(node.data, how);
     },
     [onRowActivate],
   );
 
-  const options: GridOptions<Marked<Row>> = {
-    isFullWidthRow: ({ rowNode }) => rowNode.data?.__detailOf !== undefined,
-    fullWidthCellRenderer: DetailRow,
-    getRowHeight: ({ data: row }) => {
-      if (row?.__detailOf === undefined || !detail) return undefined;
-      return typeof detail.height === "number" ? detail.height : detail.height(row);
-    },
-    // The open row's detail sits directly under it whichever way the table is sorted: the detail is a
-    // copy of its row, so it sorts beside it, and this puts it right after.
-    postSortRows: ({ nodes }) => {
-      const at = nodes.findIndex((node) => node.data?.__detailOf !== undefined);
-      const detailNode = nodes[at];
-      const parentId = detailNode?.data?.__detailOf;
-      if (!detailNode || parentId === undefined) return;
-      nodes.splice(at, 1);
-      const parent = nodes.findIndex((node: IRowNode<Marked<Row>>) => node.id === parentId);
-      nodes.splice(parent + 1, 0, detailNode);
-    },
-    getRowClass: ({ data: row }) => {
-      if (row?.__detailOf !== undefined) return "is-detail";
+  const options: GridOptions<Row> = {
+    ...(ENTERPRISE && detail
+      ? {
+          masterDetail: true,
+          detailCellRenderer: DetailRow,
+          // Tall enough for what the page draws, which can depend on the row. A detail's data is its
+          // master's.
+          getRowHeight: ({ node, data: row }) => {
+            if (!node.detail || !row) return undefined;
+            return typeof detail.height === "number" ? detail.height : detail.height(row);
+          },
+        }
+      : {}),
+    getRowClass: ({ node, data: row }) => {
+      if (node.detail) return "is-detail";
       return row && openId !== null && rowId(row) === openId ? "is-open" : undefined;
     },
   };
@@ -204,15 +198,13 @@ export function DataGrid<Row>({
   if (rows.length === 0) return <p className="data-grid-empty">{emptyText}</p>;
   return (
     <section className={`data-grid data-grid-${layout}`} aria-label={label}>
-      <AgGridReact<Marked<Row>>
+      <AgGridReact<Row>
         ref={grid}
         theme={gridTheme}
-        rowData={data}
+        rowData={rows as Row[]}
         columnDefs={columnDefs}
         defaultColDef={{ sortable: true, resizable: true, suppressMovable: true }}
-        getRowId={({ data: row }) =>
-          row.__detailOf === undefined ? rowId(row) : `${row.__detailOf}${DETAIL_SUFFIX}`
-        }
+        getRowId={({ data: row }) => rowId(row)}
         context={{ renderDetail: detail?.render } as unknown as GridContext<Row>}
         // "auto" draws the whole table, so the page scrolls as a page and a keyboard user isn't caught
         // in a second scroll area; "scroll" is the grid's own scroll area, drawn as it moves.
@@ -224,16 +216,17 @@ export function DataGrid<Row>({
         // Tab leaves the grid after the cell in focus, instead of walking every cell of a long table.
         tabToNextCell={() => false}
         onSortChanged={sortChanged}
-        onRowClicked={(event: RowClickedEvent<Marked<Row>>) => {
+        onRowDataUpdated={({ api }: RowDataUpdatedEvent<Row>) => syncOpen(api)}
+        onRowClicked={(event: RowClickedEvent<Row>) => {
           if (activateOnClick && !isInteractive(event.event?.target ?? null)) {
-            activate(event.data, "click");
+            activate(event.node, "click");
           }
         }}
-        onCellKeyDown={(event: CellKeyDownEvent<Marked<Row>>) => {
+        onCellKeyDown={(event: CellKeyDownEvent<Row>) => {
           const key = event.event as KeyboardEvent | null;
           if (!key || (key.key !== "Enter" && key.key !== " ") || isInteractive(key.target)) return;
           key.preventDefault();
-          activate(event.data, "key");
+          activate(event.node, "key");
         }}
         {...options}
       />

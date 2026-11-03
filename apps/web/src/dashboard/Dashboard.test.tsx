@@ -371,6 +371,24 @@ describe("the drill-down under a run", () => {
     expect(await screen.findByRole("region", { name: /under each setting/ })).toBeVisible();
   });
 
+  it("keeps the detail right under its row when the table is sorted", async () => {
+    const user = userEvent.setup();
+    const table = await openTable();
+    // The second seed of the first scenario is the table's second row; sorting by seed, biggest
+    // first, puts it first. The detail goes with it, since it is AG's own master/detail row and not a
+    // copy of the row that sorts on its own.
+    await user.click(within(rowOf(table, 1)).getByText("Wireless keyboard"));
+    await screen.findByRole("region", { name: "Wireless keyboard, seed 2, under each setting" });
+    expect(rowOf(table, 1).classList.contains("is-open")).toBe(true);
+    const seed = within(table).getByText("Seed").closest(".ag-header-cell-label") as HTMLElement;
+    await user.click(seed);
+    await user.click(seed);
+    await waitFor(() => {
+      expect(rowOf(table, 0).classList.contains("is-open")).toBe(true);
+      expect(rowOf(table, 1).classList.contains("is-detail")).toBe(true);
+    });
+  });
+
   it("keeps the other columns, filters and links as they were", async () => {
     const user = userEvent.setup();
     const table = await openTable();
