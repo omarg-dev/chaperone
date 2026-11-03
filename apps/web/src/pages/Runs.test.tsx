@@ -256,7 +256,9 @@ describe("the history's filters", () => {
     mockServer({ runs, scenarios });
     renderApp("/runs");
     await gridDrawn();
-    await user.type(screen.getByRole("searchbox"), "APPROVED");
+    // One input event: keystrokes slower than the 250ms pause (a busy machine) would be two searches.
+    await user.click(screen.getByRole("searchbox"));
+    await user.paste("APPROVED");
     await shownAre(["run_approved"]);
     expect(screen.getByTestId("location")).toHaveTextContent("/runs?q=APPROVED");
   });
@@ -279,7 +281,9 @@ describe("the history's filters", () => {
     mockServer({ runs, scenarios });
     renderApp("/runs");
     await gridDrawn();
-    await user.type(screen.getByRole("searchbox"), "wireless");
+    // One input event: keystrokes slower than the 250ms pause (a busy machine) would be two searches.
+    await user.click(screen.getByRole("searchbox"));
+    await user.paste("wireless");
     await shownAre(["run_paid", "run_blocked"]);
     expect(screen.getByText("Showing 2 of 4 runs")).toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent("/runs?q=wireless");

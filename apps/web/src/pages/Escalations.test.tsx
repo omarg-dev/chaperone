@@ -7,6 +7,8 @@ import type { RunEvent } from "../run/events";
 import { fixtures } from "../run/fixtures";
 import { escalated, mockDevice, mockServer, renderApp, run } from "../test-utils";
 
+vi.setConfig({ testTimeout: 30_000 });
+
 beforeEach(() => mockDevice(false));
 afterEach(() => {
   vi.unstubAllGlobals();

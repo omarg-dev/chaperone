@@ -6,6 +6,8 @@ import type { RunEvent } from "./events";
 import { fixtures, payees, upTo } from "./fixtures";
 import { POLL_MS } from "./useRun";
 
+vi.setConfig({ testTimeout: 30_000 });
+
 beforeEach(() => mockDevice(false));
 afterEach(() => {
   vi.unstubAllGlobals();

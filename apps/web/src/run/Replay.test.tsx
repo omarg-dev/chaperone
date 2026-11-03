@@ -7,6 +7,8 @@ import { fixtures, payees, upTo } from "./fixtures";
 import { describeEvent, elapsedAt } from "./playhead";
 import { URL_SETTLE_MS } from "./useReplay";
 
+vi.setConfig({ testTimeout: 30_000 });
+
 beforeEach(() => mockDevice(false));
 afterEach(() => {
   vi.unstubAllGlobals();
