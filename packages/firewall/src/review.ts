@@ -12,7 +12,9 @@ import {
 import { catalogForRun, runGate0 } from "./gate0.js";
 import { type Gate1Run, runGate1 } from "./gate1.js";
 import { runGate2 } from "./gate2.js";
+import { runGate3 } from "./gate3.js";
 import type { MarketReference } from "./market.js";
+import type { TraceAuditor } from "./trace-auditor.js";
 
 // The review tree, over one run whose agent has checked out. Gate 0 runs first, and a block there
 // ends the review with no model cost. Otherwise Gate 1 reads the pages, then Gate 2 audits the cart
@@ -21,7 +23,9 @@ import type { MarketReference } from "./market.js";
 //
 // The firewall configuration says how much of the tree runs, so the eval can ablate it on the same
 // checkout: `off` reviews nothing, `gate0` runs the policy rules only, `full` runs every gate there
-// is. Gate 3 (the trace auditor) joins `full` after Gate 2, in CONFIG_GATES and in the tree below.
+// is. Gate 3 (the trace auditor) runs last in `full`: it needs Gate 1's facts and not Gate 2's
+// answer, so it could run beside Gate 2, but after it a Gate 2 block ends the review before Gate 3's
+// call is made, and the tree keeps one order for its events.
 //
 // Events, all on the review lane with provenance system and no cost of their own (the gates' events
 // carry the spend, so adding up a run counts each call once):
@@ -42,7 +46,7 @@ export const isFirewallConfig = (value: string): value is FirewallConfig =>
 export const CONFIG_GATES: Record<FirewallConfig, readonly GateName[]> = {
   off: [],
   gate0: ["gate0"],
-  full: ["gate0", "gate1", "gate2"],
+  full: ["gate0", "gate1", "gate2", "gate3"],
 };
 
 export class ReviewInputError extends Error {
@@ -52,10 +56,11 @@ export class ReviewInputError extends Error {
   }
 }
 
-// What Gates 1 and 2 need, which only `full` uses.
+// What Gates 1, 2 and 3 need, which only `full` uses.
 export interface ReviewGates {
   extractor: ListingExtractor;
   auditor: IntentAuditor;
+  traceAuditor: TraceAuditor;
   market: MarketReference;
 }
 
@@ -183,9 +188,17 @@ export async function runReview(runId: string, options: ReviewOptions): Promise<
           outcomes.push(outcomeOf(gate, run.result, run));
           break;
         }
-        default:
-          // Gate 3 is a later step; no configuration lists it yet.
-          throw new ReviewInputError(`${gate} isn't part of the review tree yet`);
+        case "gate3": {
+          if (!gates || !gate1) throw new ReviewInputError("Gate 3 needs Gate 1's facts");
+          const run = await runGate3(runId, catalog, {
+            log,
+            auditor: gates.traceAuditor,
+            gate1,
+            ...clock,
+          });
+          outcomes.push(outcomeOf(gate, run.result, run));
+          break;
+        }
       }
     }
   } catch (error) {

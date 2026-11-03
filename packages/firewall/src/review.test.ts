@@ -19,28 +19,34 @@ async function review(name: string, config: FirewallConfig) {
 }
 
 describe("the review tree", () => {
-  it("runs Gate 0, then Gate 1, then Gate 2, and combines their verdicts", async () => {
+  it("runs Gate 0, then Gate 1, Gate 2 and Gate 3, and combines their verdicts", async () => {
     const { result, lane, events } = await review("honest", "full");
-    expect(result.gates.map((g) => g.gate)).toEqual(["gate0", "gate1", "gate2"]);
+    expect(result.gates.map((g) => g.gate)).toEqual(["gate0", "gate1", "gate2", "gate3"]);
     expect(result.verdict).toBe("approve");
     expect(result.skipped).toEqual([]);
     // The gates wrote to their own lanes in that order.
     const firstOf = (l: string) => events.findIndex((e) => e.lane === l);
     expect(firstOf("gate0")).toBeLessThan(firstOf("gate1"));
     expect(firstOf("gate1")).toBeLessThan(firstOf("gate2"));
+    expect(firstOf("gate2")).toBeLessThan(firstOf("gate3"));
     // Gate 2 was handed Gate 1's verdict.
     const gate2Start = lane("gate2").find((e) => e.type === "gate2_started");
     expect(JSON.stringify(gate2Start?.payload)).toContain(result.gates[1]?.verdictEventId);
+    // And so was Gate 3, which was not handed Gate 2's.
+    const gate3Start = lane("gate3").find((e) => e.type === "gate3_started");
+    expect(JSON.stringify(gate3Start?.payload)).toContain(result.gates[1]?.verdictEventId);
+    expect(JSON.stringify(gate3Start?.payload)).not.toContain(result.gates[2]?.verdictEventId);
   });
 
   it("ends the review at a Gate 0 block, with no model call and no cost", async () => {
     const { result, lane, replaying } = await review("wrong_product", "full");
     expect(result.verdict).toBe("block");
     expect(result.gates.map((g) => g.gate)).toEqual(["gate0"]);
-    expect(result.skipped.map((s) => s.gate)).toEqual(["gate1", "gate2"]);
+    expect(result.skipped.map((s) => s.gate)).toEqual(["gate1", "gate2", "gate3"]);
     expect(result.skipped[0]?.reason).toContain("gate0 blocked");
     expect(lane("gate1")).toEqual([]);
     expect(lane("gate2")).toEqual([]);
+    expect(lane("gate3")).toEqual([]);
     expect(replaying.replay.sent()).toBe(0);
     expect(result.costUsd).toBe(0);
   });
@@ -48,7 +54,7 @@ describe("the review tree", () => {
   it("still runs the model gates after a Gate 0 escalation, and the worst verdict wins", async () => {
     const { result } = await review("unrequested_extra", "full");
     expect(result.gates[0]?.verdict).toBe("escalate");
-    expect(result.gates.map((g) => g.gate)).toEqual(["gate0", "gate1", "gate2"]);
+    expect(result.gates.map((g) => g.gate)).toEqual(["gate0", "gate1", "gate2", "gate3"]);
     expect(result.verdict).toBe("escalate");
   });
 
@@ -82,9 +88,13 @@ describe("the review tree", () => {
     expect(result.costUsd).toBe(payload.costUsd);
   });
 
-  it("lists the gates each configuration runs, with Gate 3 still to come", () => {
+  it("lists the gates each configuration runs", () => {
     expect(FIREWALL_CONFIGS).toEqual(["off", "gate0", "full"]);
-    expect(CONFIG_GATES).toEqual({ off: [], gate0: ["gate0"], full: ["gate0", "gate1", "gate2"] });
+    expect(CONFIG_GATES).toEqual({
+      off: [],
+      gate0: ["gate0"],
+      full: ["gate0", "gate1", "gate2", "gate3"],
+    });
   });
 });
 
@@ -93,7 +103,7 @@ describe("the firewall configurations", () => {
     const { result, lane } = await review("wrong_product", "off");
     expect(result.verdict).toBeNull();
     expect(result.gates).toEqual([]);
-    for (const l of ["gate0", "gate1", "gate2"]) expect(lane(l)).toEqual([]);
+    for (const l of ["gate0", "gate1", "gate2", "gate3"]) expect(lane(l)).toEqual([]);
     expect(lane("review").map((e) => e.type)).toEqual(["review_started", "review_finished"]);
   });
 

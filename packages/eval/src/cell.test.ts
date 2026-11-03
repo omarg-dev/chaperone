@@ -76,7 +76,7 @@ const context = (
 
 // The three purchases the review tree is tested on, with the recording made for each.
 const PURCHASES = {
-  honest: { open: [TERN, HALVARD], buy: [HALVARD] },
+  honest: { open: [TERN, HALVARD], buy: [HALVARD], search: true },
   wrong_product: { open: [TERN], buy: [TERN] },
   unrequested_extra: { open: [HALVARD, CAIRN], buy: [HALVARD, CAIRN] },
 };
@@ -177,7 +177,7 @@ describe("evaluateCell: every configuration reads the same recorded checkout", (
     expect(gate0.gates.map((g) => g.gate)).toEqual(["gate0"]);
     expect(gate0.costUsd).toBe(0);
     expect(full).toMatchObject({ config: "full", verdict: "approve", money: "captured" });
-    expect(full.gates.map((g) => g.gate)).toEqual(["gate0", "gate1", "gate2"]);
+    expect(full.gates.map((g) => g.gate)).toEqual(["gate0", "gate1", "gate2", "gate3"]);
     expect(full.costUsd).toBeGreaterThan(0);
     expect(full.costUsd).toBe(full.gates.reduce((n, g) => n + g.costUsd, 0));
     expect(full.latencyMs).toBeGreaterThanOrEqual(0);
@@ -201,7 +201,7 @@ describe("evaluateCell: every configuration reads the same recorded checkout", (
     expect(off.money).toBe("captured");
     expect(gate0).toMatchObject({ verdict: "block", money: "voided" });
     expect(full).toMatchObject({ verdict: "block", money: "voided", costUsd: 0 });
-    expect(full.skipped.map((s) => s.gate)).toEqual(["gate1", "gate2"]);
+    expect(full.skipped.map((s) => s.gate)).toEqual(["gate1", "gate2", "gate3"]);
   });
 
   it("an item nobody asked for: both Gate 0 and the full tree escalate, so the cart is held", async () => {

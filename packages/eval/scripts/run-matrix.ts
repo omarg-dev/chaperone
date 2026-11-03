@@ -37,6 +37,7 @@ import {
   createChannel3Market,
   createExtractor,
   createIntentAuditor,
+  createTraceAuditor,
   EXTRACTOR_MODEL,
   extractionVocabulary,
 } from "@firewall/firewall";
@@ -200,6 +201,7 @@ try {
     gates: (catalog) => ({
       extractor: createExtractor({ client, vocabulary: extractionVocabulary(catalog) }),
       auditor: createIntentAuditor({ client }),
+      traceAuditor: createTraceAuditor({ client }),
       market: createChannel3Market(channel3ConfigFromEnv()),
     }),
   });

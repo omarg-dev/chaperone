@@ -41,7 +41,7 @@ const recordings: RecordedResponse[] = readdirSync(FIXTURES).map((name) =>
 
 // What the gates' recording of an honest purchase was made on: the agent looks at both keyboards
 // and buys the right one.
-const honestShopper = () => shopping({ open: [TERN, HALVARD], buy: [HALVARD] });
+const honestShopper = () => shopping({ open: [TERN, HALVARD], buy: [HALVARD], search: true });
 
 // The real builder, answering each scenario's request from its recording.
 function recordedBuilder(newMandateId = () => "md_gate2case"): MandateBuilder {
@@ -566,6 +566,7 @@ describe("starting the run", () => {
         "gate0:verdict",
         "gate1:verdict",
         "gate2:verdict",
+        "gate3:verdict",
         "review:review_finished",
         "review:enforced",
         "agent:run_finished",
