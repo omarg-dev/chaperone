@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2, escalation item</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Besley:ital,wght@0,400..900;1,400..900&amp;family=Archivo:ital,wght@0,100..900;1,100..900&amp;family=Fragment+Mono&amp;display=swap">
+<style>
+body{margin:0}
+.c2{--bg:#F3F1F4;--surface:#FFFFFF;--sunk:#EBE7EC;--ink:#170F1B;--ink-2:#463B4A;--muted:#64586A;--line:#E0D9DF;--line-strong:#C3B9C2;--on-ink:#FFFFFF;--focus:#4A2348;--hold:#4A2348;--hold-tint:#F1E8F0;--spine:#4A2348;--vault:#2B1530;--vault-2:#3D2243;--vault-ink:#F4E6F0;--vault-muted:#C9B1C4;--vault-line:#5C3D5F;--v-approve:#6CCBAF;--v-escalate:#E7B55A;--v-block:#E2DCE3;--approve:#1F6A55;--approve-ink:#185443;--escalate:#8A5700;--escalate-ink:#6E4600;--block:#2F2A31;background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.c2.dark{--bg:#120E14;--surface:#1A151D;--sunk:#0D0A0F;--ink:#F3EDF2;--ink-2:#CEC3CD;--muted:#A396A5;--line:#2B2330;--line-strong:#453A49;--on-ink:#120E14;--focus:#D2AACB;--hold:#D2AACB;--hold-tint:#2B202C;--spine:#D2AACB;--vault:#2C1732;--vault-2:#3C2243;--vault-line:#5A3C5E;--approve:#6CCBAF;--approve-ink:#8ADBC2;--escalate:#E7B55A;--escalate-ink:#F0C774;--block:#E2DCE3;color-scheme:dark}
+.c2 *{box-sizing:border-box}
+.dsp{font-family:'Besley',Georgia,serif;font-weight:700;letter-spacing:-.012em;line-height:1.02}
+.voice{font-family:'Besley',Georgia,serif;font-style:italic;font-weight:400}
+.amt{font-family:'Besley',Georgia,serif;font-weight:800;font-variant-numeric:tabular-nums lining-nums;line-height:1;white-space:nowrap}
+.amt .c{font-size:.5em;position:relative;top:-.72em;margin-left:.03em}
+.mono{font-family:'Fragment Mono',ui-monospace,monospace;font-size:12.5px}
+.lbl{font-size:12.5px;font-weight:700;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:32px;padding:0 48px;height:72px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.navl{color:var(--ink-2);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:8px;min-height:44px}
+.navl.on{color:var(--ink)}
+.navl.on::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--spine)}
+.cnt{font-size:12.5px;font-weight:800;color:var(--escalate-ink)}
+.pg{position:relative;padding:44px 48px 64px 112px}
+.pg::before{content:"";position:absolute;left:68px;top:74px;bottom:0;width:3px;background:var(--spine)}
+.sec{position:relative}
+.stn{position:absolute;left:-51.5px;top:5px;width:18px;height:18px;border-radius:50%;border:3.5px solid var(--spine);background:var(--bg)}
+.stn::after{content:"";position:absolute;left:14.5px;top:4px;width:26px;height:3px;background:var(--spine)}
+.stn.on{left:-54.5px;top:18px;width:24px;height:24px;border:0;background:var(--spine)}
+.stn.on::after{left:24px;top:10.5px;width:24px}
+.sh{margin:0;font-size:20px;font-weight:800;display:flex;align-items:baseline;gap:12px}
+.vault{position:relative;background:var(--vault);color:var(--vault-ink);margin-left:-64px;padding:24px 32px 28px 64px}
+.vault::before{content:"";position:absolute;left:20px;top:0;bottom:0;width:3px;background:var(--vault-ink)}
+.vault>.stn{left:12.5px;top:27px;border-color:var(--vault-ink);background:var(--vault)}
+.vault>.stn::after{background:var(--vault-ink);width:30px}
+.btn{min-height:60px;padding:8px 22px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font:inherit;font-weight:700;border-radius:2px;display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;cursor:pointer;text-align:left}
+.btn small{font-size:13px;font-weight:500;opacity:.8}
+.vault .btn{border-color:var(--vault-ink);color:var(--vault-ink)}
+.vault .btn.pri{background:var(--vault-ink);color:var(--vault)}
+.btn:focus-visible,a:focus-visible,.navl:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.g>*{display:none}
+.g.paid{color:var(--approve)}.g.paid .bs,.g.paid .ln,.g.paid .dx{display:inline}
+.g.void{color:var(--block)}.g.void .bc,.g.void .vd{display:inline}
+.g.wait{color:var(--v-escalate)}.g.wait .bo,.g.wait .dh{display:inline}
+.line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:baseline;padding:10px 0;border-top:1px solid var(--vault-line)}
+.done{display:grid;grid-template-columns:28px 160px minmax(0,1fr) 220px 120px;gap:12px;align-items:center;min-height:52px;border-top:1px solid var(--line)}
+</style>
+</helmet>
+<div class="{{theme}}" style="min-height:820px">
+  <nav class="nav" aria-label="Main">
+    <a href="#" class="navl" style="gap:10px;color:var(--ink)"><svg width="30" height="30" viewBox="0 0 48 48" aria-hidden="true" style="color:var(--hold)"><path d="M32 8 H19 A11 11 0 0 0 8 19 V29 A11 11 0 0 0 19 40 H32" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"></path><circle cx="21.5" cy="24" r="5.5" fill="currentColor"></circle></svg><span class="dsp" style="font-size:24px">Chaperone</span></a>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;flex:1">
+      <a href="#" class="navl">Runs</a>
+      <a href="#" class="navl on" aria-current="page">Escalations <span class="cnt">2</span></a>
+      <a href="#" class="navl">Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="pg">
+    <div class="sec"><span class="stn on" aria-hidden="true"></span><h1 class="dsp" style="margin:0;font-size:64px">Escalations</h1><p style="margin:12px 0 0;font-size:17px;color:var(--ink-2)">Purchases Chaperone paused because the decision is yours. Oldest first.</p></div>
+
+    <article style="margin-top:44px;display:flex;flex-direction:column;gap:0" aria-label="Tactile mechanical keyboard under $120, held for 7 hours">
+      <div class="sec" style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:32px;padding-bottom:28px">
+        <span class="stn" aria-hidden="true"></span>
+        <div style="grid-column:span 4;display:flex;flex-direction:column;gap:6px;min-width:0">
+          <h2 class="sh">Tactile mechanical keyboard under $120</h2>
+          <span class="lbl" style="margin-top:12px;color:var(--escalate-ink)">Held for</span>
+          <span class="amt" style="font-size:68px" title="Escalated 2 Nov 2026, 03:14 UTC">7 <span style="font-size:.5em">hours</span></span>
+          <span class="mono" style="color:var(--muted);margin-top:10px">run_mvw114tx4ed470b3</span>
+        </div>
+        <div style="grid-column:span 8;display:flex;flex-direction:column;gap:16px;min-width:0">
+          <p class="voice" style="margin:0;font-size:24px;line-height:1.3;color:var(--ink-2)">“Buy me a mid-range mechanical keyboard with tactile switches, under $120.”</p>
+          <div>
+            <span class="lbl">Why it was held</span>
+            <div style="display:grid;grid-template-columns:72px minmax(0,1fr);gap:0 14px;margin-top:6px">
+              <span style="font-weight:800;color:var(--escalate-ink);padding:10px 0;border-top:1px solid var(--line)">Gate 0</span><span style="padding:10px 0;border-top:1px solid var(--line)">A mouse: the mandate asks for a keyboard and allows no extras</span>
+              <span style="font-weight:800;color:var(--escalate-ink);padding:10px 0;border-top:1px solid var(--line)">Gate 2</span><span style="padding:10px 0;border-top:1px solid var(--line)">Line 2 (Cairn): the auditor judged it the wrong product; the catalog doesn't confirm that</span>
+            </div>
+          </div>
+          <a href="#" style="color:var(--hold);font-weight:700;min-height:44px;display:inline-flex;align-items:center">View the full run</a>
+        </div>
+      </div>
+
+      <section class="vault" style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:32px;align-items:end" aria-label="The held cart">
+        <span class="stn" aria-hidden="true"></span>
+        <div style="grid-column:span 6;display:flex;flex-direction:column;min-width:0">
+          <span class="lbl" style="color:var(--vault-muted);padding-bottom:8px">Held, not charged · hold ends in 28 days</span>
+          <div class="line"><span><b>Halvard TKL</b> <span style="color:var(--vault-muted);font-size:13.5px">Larkspur Goods</span></span><span class="amt" style="font-size:22px">$109<span class="c">.99</span></span></div>
+          <div class="line"><span><b>Cairn</b> <span style="color:var(--vault-muted);font-size:13.5px">Northgate Supply</span></span><span class="amt" style="font-size:22px">$18<span class="c">.99</span></span></div>
+          <div class="line" style="border-top:2px solid var(--vault-ink);padding-top:14px"><span style="font-weight:800">Total</span><span class="amt" style="font-size:56px">$128<span class="c">.98</span></span></div>
+        </div>
+        <div style="grid-column:span 6;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;min-width:0">
+          <button class="btn pri">Reject and release hold<small>Nobody is paid</small></button>
+          <button class="btn">Approve and pay<small>Both sellers are paid</small></button>
+        </div>
+      </section>
+    </article>
+
+    <section class="sec" style="margin-top:44px;display:flex;flex-direction:column;gap:10px" aria-label="Recently decided">
+      <span class="stn" aria-hidden="true"></span>
+      <h2 class="sh">Recently decided</h2>
+      <div style="border-bottom:1px solid var(--line)">
+        <div class="done"><svg class="g paid" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path class="bs" d="M11 4.5H8.5A4 4 0 0 0 4.5 8.5v7A4 4 0 0 0 8.5 19.5H11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path><path class="ln" d="M12 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><circle class="dx" cx="19.5" cy="12" r="2.6" fill="currentColor"></circle></svg><b>Approved</b><span>Tactile mechanical keyboard under $120</span><span class="mono" style="color:var(--muted)">run_mvw114xb69d490bd</span><span style="color:var(--muted);text-align:right">1 day ago</span></div>
+        <div class="done"><svg class="g void" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect class="bc" x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2.4"></rect><path class="vd" d="M9 12h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path></svg><b>Rejected</b><span>Tactile mechanical keyboard under $120</span><span class="mono" style="color:var(--muted)">run_mvw114ys958c2b88</span><span style="color:var(--muted);text-align:right">2 days ago</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: (this.props.mode ?? 'light') === 'dark' ? 'c2 dark' : 'c2' };
+  }
+}
+</script>
+</body>
+</html>

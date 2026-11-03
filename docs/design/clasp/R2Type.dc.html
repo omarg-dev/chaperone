@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Display face candidates</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Besley:ital,wght@0,400..900;1,400..900&amp;family=Funnel+Display:wght@300..800&amp;family=Schibsted+Grotesk:ital,wght@0,400..900;1,400..900&amp;family=Archivo:ital,wght@0,100..900;1,100..900&amp;family=Fragment+Mono&amp;display=swap">
+<style>
+body{margin:0}
+.tb *{box-sizing:border-box}
+.tb{background:#F3F1F4;color:#170F1B;font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.45;width:1440px;min-height:1060px;padding:48px 56px 56px;display:flex;flex-direction:column;gap:32px}
+.mono{font-family:'Fragment Mono',ui-monospace,monospace;font-size:12px;color:#64586A}
+.lbl{font-size:12.5px;font-weight:700;color:#64586A}
+.col{display:flex;flex-direction:column;gap:22px;padding:28px 28px 32px;background:#FFFFFF;border-top:3px solid #4A2348;min-width:0}
+.col.rec{outline:3px solid #4A2348;outline-offset:-3px}
+.c{font-size:.5em;position:relative;top:-.72em;margin-left:.03em}
+.tn{font-variant-numeric:tabular-nums lining-nums}
+.fig{display:grid;grid-template-columns:auto auto;justify-content:start;gap:4px 28px;font-size:22px}
+.fig span:nth-child(even){text-align:right}
+.besley{font-family:'Besley',Georgia,serif}
+.funnel{font-family:'Funnel Display',system-ui,sans-serif}
+.schib{font-family:'Schibsted Grotesk',system-ui,sans-serif}
+</style>
+</helmet>
+<div class="tb">
+  <header style="display:flex;justify-content:space-between;align-items:end;gap:24px">
+    <div><span class="lbl">Round 2 · display face</span><h1 style="margin:6px 0 0;font-size:34px;font-weight:800">Three faces at their own proportions</h1></div>
+    <p style="margin:0;max-width:56ch;color:#463B4A">Each sets the run view headline, the held amount and the dashboard rate. Amounts use the round-two number treatment: whole part full size, the fraction raised at half size. Interface text stays Archivo at normal width; records stay Fragment Mono.</p>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;flex:1">
+
+    <section class="col rec" aria-label="Besley, recommended">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px"><span class="besley" style="font-size:34px;font-weight:700">Besley</span><span style="background:#4A2348;color:#FFFFFF;font-size:12.5px;font-weight:700;padding:3px 8px">Recommended</span></div>
+      <span class="mono">Clarendon revival · Google Fonts, @fontsource-variable/besley · 400 to 900 with italics · tnum</span>
+      <span class="besley" style="font-size:46px;font-weight:700;line-height:1.02;letter-spacing:-.012em">We've paused this purchase.</span>
+      <span class="besley tn" style="font-size:112px;font-weight:800;line-height:.95;letter-spacing:-.01em">$109<span class="c">.99</span></span>
+      <span class="besley tn" style="font-size:72px;font-weight:800;line-height:1;color:#B3261E">68<span class="c">.8%</span></span>
+      <div class="fig besley tn" style="font-weight:700"><span>Halvard TKL</span><span>109.99</span><span>Cairn</span><span>18.99</span><span style="border-top:2px solid #170F1B;padding-top:4px">Held</span><span style="border-top:2px solid #170F1B;padding-top:4px">128.98</span></div>
+      <span class="besley" style="font-size:20px;font-style:italic">“Buy me a mid-range mechanical keyboard with tactile switches, under $120.”</span>
+      <p style="margin:0;font-size:13.5px;color:#463B4A">The face of cheques, banknotes and receipt totals: money's own vernacular. Heavy bracketed serifs echo the mark's rounded corners, the figures are sturdy, and its italic carries the person's words, so it replaces Newsreader too.</p>
+    </section>
+
+    <section class="col" aria-label="Funnel Display">
+      <span class="funnel" style="font-size:34px;font-weight:700">Funnel Display</span>
+      <span class="mono">Neo-grotesk with cut terminals · Google Fonts, @fontsource-variable/funnel-display · 300 to 800 · tnum · no italic</span>
+      <span class="funnel" style="font-size:46px;font-weight:700;line-height:1.02;letter-spacing:-.02em">We've paused this purchase.</span>
+      <span class="funnel tn" style="font-size:112px;font-weight:800;line-height:.95;letter-spacing:-.03em">$109<span class="c">.99</span></span>
+      <span class="funnel tn" style="font-size:72px;font-weight:800;line-height:1;color:#B3261E">68<span class="c">.8%</span></span>
+      <div class="fig funnel tn" style="font-weight:700"><span>Halvard TKL</span><span>109.99</span><span>Cairn</span><span>18.99</span><span style="border-top:2px solid #170F1B;padding-top:4px">Held</span><span style="border-top:2px solid #170F1B;padding-top:4px">128.98</span></div>
+      <span style="font-size:20px;font-style:italic;font-family:'Archivo',sans-serif">“Buy me a mid-range mechanical keyboard with tactile switches, under $120.”</span>
+      <p style="margin:0;font-size:13.5px;color:#463B4A">Modern and distinctive at large sizes, with sliced joins that feel engineered. It has no italic, so the person's voice needs a second face (shown in Archivo italic), and up close it reads as one more tech sans.</p>
+    </section>
+
+    <section class="col" aria-label="Schibsted Grotesk">
+      <span class="schib" style="font-size:34px;font-weight:700">Schibsted Grotesk</span>
+      <span class="mono">Newspaper grotesk · Google Fonts, @fontsource-variable/schibsted-grotesk · 400 to 900 with italics · tnum</span>
+      <span class="schib" style="font-size:46px;font-weight:700;line-height:1.02;letter-spacing:-.02em">We've paused this purchase.</span>
+      <span class="schib tn" style="font-size:112px;font-weight:800;line-height:.95;letter-spacing:-.03em">$109<span class="c">.99</span></span>
+      <span class="schib tn" style="font-size:72px;font-weight:800;line-height:1;color:#B3261E">68<span class="c">.8%</span></span>
+      <div class="fig schib tn" style="font-weight:700"><span>Halvard TKL</span><span>109.99</span><span>Cairn</span><span>18.99</span><span style="border-top:2px solid #170F1B;padding-top:4px">Held</span><span style="border-top:2px solid #170F1B;padding-top:4px">128.98</span></div>
+      <span class="schib" style="font-size:20px;font-style:italic">“Buy me a mid-range mechanical keyboard with tactile switches, under $120.”</span>
+      <p style="margin:0;font-size:13.5px;color:#463B4A">Built for headlines, with a confident editorial voice and a real italic. The safest of the three, which is also its problem: next to Archivo it is two grotesks, and the screens lose the contrast that makes amounts stand out.</p>
+    </section>
+  </div>
+
+  <p style="margin:0;font-size:14px;color:#463B4A"><b>Pairing:</b> Besley 700 to 800 for titles, verdict sentences, money and rates, and Besley italic for what the person said · Archivo 400 to 700 at normal width for the interface · Fragment Mono for run IDs, times and hashes. Three families, down from four in round one.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

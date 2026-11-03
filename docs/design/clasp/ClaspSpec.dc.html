@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clasp system</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&amp;family=Newsreader:ital,opsz,wght@1,6..72,400&amp;family=Fragment+Mono&amp;display=swap">
+<style>
+body{margin:0}
+.ca{--bg:#F3F1F4;--surface:#FFFFFF;--sunk:#EBE7EC;--ink:#170F1B;--ink-2:#463B4A;--muted:#64586A;--line:#E0D9DF;--line-strong:#C3B9C2;--on-ink:#FFFFFF;--focus:#4A2348;--hold:#4A2348;--hold-tint:#F1E8F0;--clasp:#3A1838;--vault:#2B1530;--vault-2:#371D3D;--vault-ink:#F4E6F0;--vault-muted:#C3A9BE;--vault-line:#5C3D5F;--v-approve:#6CCBAF;--v-escalate:#E7B55A;--v-attacker:#FF7B6E;--v-block:#E2DCE3;--approve:#1F6A55;--approve-tint:#E2F0E9;--approve-ink:#185443;--escalate:#8A5700;--escalate-tint:#F7EBD6;--escalate-ink:#6E4600;--block:#2F2A31;--block-tint:#E9E6EA;--attacker:#B3261E;--attacker-tint:#FBE9E7;--on-attacker:#FFFFFF;--z-cat:#EEF3F9;--z-cat-ink:#2B4A6B;--z-cat-line:#D3DFEC;--z-seller:#EFEAE4;--z-seller-ink:#5C4F42;--hatch:rgba(110,92,74,.22);background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.ca.dark{--bg:#120E14;--surface:#1A151D;--sunk:#0D0A0F;--ink:#F3EDF2;--ink-2:#CEC3CD;--muted:#A396A5;--line:#2B2330;--line-strong:#453A49;--on-ink:#120E14;--focus:#D2AACB;--hold:#D2AACB;--hold-tint:#2B202C;--clasp:#E2BFDA;--vault:#26132B;--vault-2:#331B39;--vault-line:#553858;--approve:#6CCBAF;--approve-tint:#16271F;--approve-ink:#8ADBC2;--escalate:#E7B55A;--escalate-tint:#30271A;--escalate-ink:#F0C774;--block:#E2DCE3;--block-tint:#2A242C;--attacker:#FF7B6E;--attacker-tint:#3A1E1D;--on-attacker:#120E14;--z-cat:#0F161E;--z-cat-ink:#A9C3E0;--z-cat-line:#22303F;--z-seller:#1D1A16;--z-seller-ink:#CDBFAE;--hatch:rgba(190,172,150,.14)}
+.ca *{box-sizing:border-box}
+.xx{font-stretch:125%;font-weight:800;letter-spacing:-.03em;line-height:.95}
+.voice{font-family:'Newsreader',Georgia,serif;font-style:italic;font-weight:400}
+.mono{font-family:'Fragment Mono',ui-monospace,monospace;font-size:12.5px}
+.tn{font-variant-numeric:tabular-nums}
+.lbl{font-size:12.5px;font-weight:700;font-stretch:112%;color:var(--muted)}
+.h2{margin:0;font-size:26px;font-weight:800;font-stretch:125%;letter-spacing:-.02em}
+.hatch{background-color:var(--z-seller);background-image:repeating-linear-gradient(135deg,var(--hatch) 0 1px,transparent 1px 7px)}
+.clasp{position:relative;padding:18px 18px 18px 44px}
+.clasp>.arm{position:absolute;left:0;top:0;bottom:0;width:30px;border:5px solid var(--clasp);border-right:0;border-radius:14px 0 0 14px;pointer-events:none}
+.clasp.shut>.arm{width:100%;border-right:5px solid var(--clasp);border-radius:14px}
+.g>*{display:none}
+.g.held{color:var(--hold)}.g.held .bo,.g.held .di{display:inline}
+.g.wait{color:var(--escalate)}.g.wait .bo,.g.wait .dh{display:inline}
+.g.paid{color:var(--approve)}.g.paid .bs,.g.paid .ln,.g.paid .dx{display:inline}
+.g.void{color:var(--block)}.g.void .bc,.g.void .vd{display:inline}
+.g.rel{color:var(--muted)}.g.rel .br{display:inline}
+.g.atk{color:var(--attacker)}.g.atk .bs,.g.atk .ln,.g.atk .dxa{display:inline}
+.g.off{color:var(--ink-2)}.g.off .ln,.g.off .dx{display:inline}
+.g.none{color:var(--muted)}.g.none .bd,.g.none .di{display:inline}
+.sw{display:flex;flex-direction:column;gap:6px;min-width:0}
+.sw b{display:block;height:56px;border:1px solid var(--line)}
+@keyframes armShut{0%,25%{width:30px}45%,80%{width:100%}100%{width:30px}}
+@keyframes tokenOut{0%,25%{transform:translateX(0);opacity:1}50%{transform:translateX(220px);opacity:1}70%,100%{transform:translateX(220px);opacity:0}}
+@keyframes strike{0%,30%{transform:scaleX(0)}45%,80%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+.m-shut{animation:armShut 4s cubic-bezier(.2,.8,.2,1) infinite}
+.m-strike{transform-origin:left;animation:strike 4s cubic-bezier(.2,.8,.2,1) infinite}
+.m-out{animation:tokenOut 4s cubic-bezier(.2,.7,.1,1) infinite}
+@media (prefers-reduced-motion:reduce){.m-shut,.m-strike,.m-out{animation:none}}
+</style>
+</helmet>
+<div class="{{theme}}" style="min-height:1180px;padding:56px max(16px,4.4%) 72px;display:flex;flex-direction:column;gap:56px">
+
+  <header style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:end">
+    <div style="grid-column:span 7;min-width:0">
+      <div class="lbl">Direction A · system</div>
+      <h1 class="xx" style="margin:8px 0 0;font-size:96px">Clasp</h1>
+    </div>
+    <p style="grid-column:span 5;margin:0;font-size:17px;color:var(--ink-2);max-width:46ch">Signature: the Hold mark is the only container. Cards go. Anything Chaperone is holding sits inside a heavy rounded bracket built on the mark's rule, the money inside it as a token. Open means held, shut means voided, empty means the money left.</p>
+  </header>
+
+  <section style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px">
+    <div style="grid-column:span 7;display:flex;flex-direction:column;gap:20px;min-width:0">
+      <h2 class="h2">The clasp, three states</h2>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="clasp" style="height:132px;display:flex;flex-direction:column;justify-content:center"><span class="arm" aria-hidden="true"></span><span class="lbl" style="color:var(--hold)">Held</span><span class="xx tn" style="font-size:36px">$109.99</span></div>
+          <span style="font-size:13px;color:var(--ink-2)">Open. The money is in it.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="clasp shut" style="height:132px;display:flex;flex-direction:column;justify-content:center"><span class="arm" aria-hidden="true"></span><span class="lbl">Voided</span><span class="xx tn" style="font-size:36px;color:var(--muted);text-decoration:line-through;text-decoration-thickness:4px">$128.98</span></div>
+          <span style="font-size:13px;color:var(--ink-2)">Shut. Nobody was paid.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="clasp" style="height:132px;display:flex;align-items:center;gap:12px;padding-right:0"><span class="arm" aria-hidden="true"></span><span class="lbl" style="color:var(--approve-ink)">Captured</span><span aria-hidden="true" style="flex:1;height:3px;background:var(--approve)"></span><span class="xx tn" style="font-size:28px;color:var(--approve-ink)">$109.99</span></div>
+          <span style="font-size:13px;color:var(--ink-2)">Empty. It went to the seller.</span>
+        </div>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--muted);max-width:70ch">Built from the mark: stroke 5px, corner radius 14px (the mark's radius-to-stroke ratio), arms 30px, content inset 44px. Only held things get one. Everything else is grouped by space and a 1px rule.</p>
+    </div>
+
+    <div style="grid-column:span 5;display:flex;flex-direction:column;gap:20px;min-width:0">
+      <h2 class="h2">Where the money is</h2>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">The mark becomes a glyph for every outcome. It reads in greyscale: the dot's place and the bracket's shape carry it, colour only confirms.</p>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 20px">
+        <sc-for list="{{glyphs}}" as="s" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;gap:10px;min-height:32px">
+            <svg class="g {{s.g}}" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path class="bo" d="M15 4.5H9.5A5 5 0 0 0 4.5 9.5v5A5 5 0 0 0 9.5 19.5H15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path><path class="bs" d="M11 4.5H8.5A4 4 0 0 0 4.5 8.5v7A4 4 0 0 0 8.5 19.5H11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path><path class="bd" d="M15 4.5H9.5A5 5 0 0 0 4.5 9.5v5A5 5 0 0 0 9.5 19.5H15" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 2.5"></path><rect class="bc" x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2.4"></rect><rect class="br" x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 2.5"></rect><circle class="di" cx="10.8" cy="12" r="2.8" fill="currentColor"></circle><circle class="dh" cx="10.8" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="2"></circle><path class="ln" d="M12 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><circle class="dx" cx="19.5" cy="12" r="2.6" fill="currentColor"></circle><circle class="dxa" cx="19" cy="12" r="3.8" fill="currentColor"></circle><path class="vd" d="M9 12h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path></svg>
+            <span style="font-size:14px;font-weight:650">{{s.label}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px">
+    <div style="grid-column:span 6;display:flex;flex-direction:column;gap:16px;min-width:0">
+      <h2 class="h2">Type</h2>
+      <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--line);padding-top:16px">
+        <div style="display:flex;align-items:baseline;gap:20px;flex-wrap:wrap"><span class="xx tn" style="font-size:72px">68.8%</span><span class="mono" style="color:var(--muted)">Archivo 125 wide, 800 · money, rates, page titles</span></div>
+        <div style="display:flex;align-items:baseline;gap:20px;flex-wrap:wrap"><span style="font-size:22px;font-weight:650">Reject and release hold</span><span class="mono" style="color:var(--muted)">Archivo 100, 400 to 650 · the interface</span></div>
+        <div style="display:flex;align-items:baseline;gap:20px;flex-wrap:wrap"><span class="voice" style="font-size:24px">“Buy me a mid-range mechanical keyboard”</span><span class="mono" style="color:var(--muted)">Newsreader italic · only the person's own words</span></div>
+        <div style="display:flex;align-items:baseline;gap:20px;flex-wrap:wrap"><span class="mono" style="font-size:15px">run_mvsqmklead52bf77 · sha256 ffd84b5a</span><span class="mono" style="color:var(--muted)">Fragment Mono · records</span></div>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--muted)">One family carries the voice and the work by its width axis. Serif italic is a rule, not decoration: it means a person said this.</p>
+    </div>
+
+    <div style="grid-column:span 6;display:flex;flex-direction:column;gap:16px;min-width:0">
+      <h2 class="h2">The motion moment: the clasp</h2>
+      <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+        <div style="background:var(--vault);color:var(--vault-ink);padding:18px;min-height:150px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+          <span class="lbl" style="color:var(--vault-muted)">Block, void the hold</span>
+          <div style="position:relative;height:80px;padding-left:40px;display:flex;align-items:center">
+            <span class="m-shut" aria-hidden="true" style="position:absolute;left:0;top:0;bottom:0;width:30px;border:5px solid var(--vault-ink);border-right:0;border-radius:14px"></span>
+            <span class="xx tn" style="position:relative;font-size:30px">$128.98<span class="m-strike" aria-hidden="true" style="position:absolute;left:0;right:0;top:50%;height:4px;background:var(--v-block)"></span></span>
+          </div>
+        </div>
+        <div style="background:var(--vault);color:var(--vault-ink);padding:18px;min-height:150px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+          <span class="lbl" style="color:var(--vault-muted)">Approve, capture and pay</span>
+          <div style="position:relative;height:80px;padding-left:40px;display:flex;align-items:center">
+            <span aria-hidden="true" style="position:absolute;left:0;top:0;bottom:0;width:30px;border:5px solid var(--vault-ink);border-right:0;border-radius:14px 0 0 14px"></span>
+            <span class="m-out xx tn" style="font-size:30px;color:var(--v-approve)">$109.99</span>
+          </div>
+        </div>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">At the review's last station: block draws the right arm down in 320ms and strikes the amount; approve leaves the clasp open and slides the token to the seller exit in 500ms, both on cubic-bezier(.2,.8,.2,1). Escalate holds still with one amber ring pulse. Replay plays the same moment at its event; reduced motion shows the end state.</p>
+    </div>
+  </section>
+
+  <section style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px">
+    <div style="grid-column:span 7;display:flex;flex-direction:column;gap:16px;min-width:0">
+      <h2 class="h2">Palette, light and dark</h2>
+      <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:12px">
+        <sc-for list="{{swatches}}" as="c" hint-placeholder-count="14">
+          <div class="sw"><b style="background:{{c.light}}"></b><b style="background:{{c.dark}};margin-top:-6px"></b><span style="font-size:12.5px;font-weight:700">{{c.name}}</span><span class="mono" style="font-size:11px;color:var(--muted)">{{c.hexes}}</span></div>
+        </sc-for>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--muted)">Kept: aubergine and mauve hold, the five states, attacker red, the three zone grounds. New: clasp (a deeper aubergine for the bracket stroke) and vault, the route turned into a dark aubergine channel in both themes. Radius drops to two values: 14px on the clasp, 2px on everything else.</p>
+    </div>
+    <div style="grid-column:span 5;display:flex;flex-direction:column;gap:16px;min-width:0">
+      <h2 class="h2">AG Grid, through its params</h2>
+      <div class="mono" style="background:var(--surface);border:1px solid var(--line);padding:16px 18px;line-height:1.75;font-size:12px;overflow-x:auto;white-space:pre">backgroundColor        var(--bg)
+foregroundColor        var(--ink)
+headerBackgroundColor  var(--bg)
+headerTextColor        var(--muted)
+headerFontFamily       var(--font-ui)  /* 112% wide */
+headerRowBorder        2px solid var(--ink)
+rowBorder              1px solid var(--line)
+columnBorder           none
+wrapperBorder          none
+wrapperBorderRadius    0
+rowHeight              64
+rowHoverColor          var(--sunk)
+selectedRowBackgroundColor var(--hold-tint)
+accentColor            var(--hold)
+cellHorizontalPadding  var(--space-4)</div>
+      <p style="margin:0;font-size:13.5px;color:var(--muted)">The money cell uses a cell class for Archivo wide; the glyph is a cell renderer from the same SVG as StateGlyph.</p>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      theme: (this.props.mode ?? 'light') === 'dark' ? 'ca dark' : 'ca',
+      glyphs: [
+        { g: 'held', label: 'Held, under review' },
+        { g: 'wait', label: 'Held for a person' },
+        { g: 'paid', label: 'Captured, seller paid' },
+        { g: 'void', label: 'Blocked, hold voided' },
+        { g: 'rel', label: 'Hold released' },
+        { g: 'atk', label: 'Paid attacker' },
+        { g: 'off', label: 'Firewall off, nobody held it' },
+        { g: 'none', label: 'Not reviewed yet' }
+      ],
+      swatches: [
+        { name: 'bg', light: '#F3F1F4', dark: '#120E14', hexes: 'F3F1F4 / 120E14' },
+        { name: 'surface', light: '#FFFFFF', dark: '#1A151D', hexes: 'FFFFFF / 1A151D' },
+        { name: 'ink', light: '#170F1B', dark: '#F3EDF2', hexes: '170F1B / F3EDF2' },
+        { name: 'hold', light: '#4A2348', dark: '#D2AACB', hexes: '4A2348 / D2AACB' },
+        { name: 'clasp', light: '#3A1838', dark: '#E2BFDA', hexes: '3A1838 / E2BFDA' },
+        { name: 'vault', light: '#2B1530', dark: '#26132B', hexes: '2B1530 / 26132B' },
+        { name: 'vault-ink', light: '#F4E6F0', dark: '#F4E6F0', hexes: 'F4E6F0' },
+        { name: 'approve', light: '#1F6A55', dark: '#6CCBAF', hexes: '1F6A55 / 6CCBAF' },
+        { name: 'escalate', light: '#8A5700', dark: '#E7B55A', hexes: '8A5700 / E7B55A' },
+        { name: 'block', light: '#2F2A31', dark: '#E2DCE3', hexes: '2F2A31 / E2DCE3' },
+        { name: 'attacker', light: '#B3261E', dark: '#FF7B6E', hexes: 'B3261E / FF7B6E' },
+        { name: 'z-cat', light: '#EEF3F9', dark: '#0F161E', hexes: 'EEF3F9 / 0F161E' },
+        { name: 'z-seller', light: '#EFEAE4', dark: '#1D1A16', hexes: 'EFEAE4 / 1D1A16' },
+        { name: 'hatch', light: '#D9CFC4', dark: '#3A352E', hexes: 'rgba hatch' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

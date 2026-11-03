@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clasp, dashboard headline</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&amp;family=Fragment+Mono&amp;display=swap">
+<style>
+body{margin:0}
+.ca{--bg:#F3F1F4;--surface:#FFFFFF;--sunk:#EBE7EC;--ink:#170F1B;--ink-2:#463B4A;--muted:#64586A;--line:#E0D9DF;--line-strong:#C3B9C2;--hold:#4A2348;--clasp:#3A1838;--vault:#2B1530;--vault-ink:#F4E6F0;--vault-muted:#C3A9BE;--vault-line:#6B4C6E;--escalate:#8A5700;--escalate-tint:#F7EBD6;--escalate-ink:#6E4600;--attacker:#B3261E;--z-cat:#EEF3F9;--z-cat-ink:#2B4A6B;--z-cat-line:#D3DFEC;background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.ca.dark{--bg:#120E14;--surface:#1A151D;--sunk:#0D0A0F;--ink:#F3EDF2;--ink-2:#CEC3CD;--muted:#A396A5;--line:#2B2330;--line-strong:#453A49;--hold:#D2AACB;--clasp:#E2BFDA;--vault:#26132B;--escalate:#E7B55A;--escalate-tint:#30271A;--escalate-ink:#F0C774;--attacker:#FF7B6E;--z-cat:#0F161E;--z-cat-ink:#A9C3E0;--z-cat-line:#22303F;color-scheme:dark}
+.ca *{box-sizing:border-box}
+.xx{font-stretch:125%;font-weight:800;letter-spacing:-.035em;line-height:.9}
+.mono{font-family:'Fragment Mono',ui-monospace,monospace;font-size:12.5px}
+.tn{font-variant-numeric:tabular-nums}
+.lbl{font-size:12.5px;font-weight:700;font-stretch:112%;color:var(--muted)}
+.col{padding:28px 28px 32px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.dots{display:grid;grid-template-columns:repeat(4,14px);gap:8px}
+.dot{width:14px;height:14px;border-radius:50%}
+.d-held{background:var(--hold)}.d-not{background:var(--line-strong)}.d-atk{background:var(--attacker)}
+.vlt .d-held{background:var(--vault-ink)}.vlt .d-not{background:var(--vault-line)}
+.br{position:relative;padding:12px 12px 12px 30px}
+.br>i{position:absolute;left:0;top:0;bottom:0;width:22px;border:4px solid var(--clasp);border-right:0;border-radius:11px 0 0 11px}
+.vlt .br>i{border-color:var(--vault-ink)}
+.mrow{display:grid;grid-template-columns:240px repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
+.mrow>*{padding:14px 28px;min-width:0}
+</style>
+</helmet>
+<div class="{{theme}}" style="min-height:860px;padding:40px max(16px,4.4%) 56px;display:flex;flex-direction:column;gap:24px">
+
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <div role="note" style="background:var(--escalate-tint);color:var(--escalate-ink);padding:12px 16px;font-size:14.5px"><b>Development numbers, not a sandbox result.</b> This matrix used the fake payment adapter, so no sandbox money moved.</div>
+    <div class="mono" style="color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px"><span>adapter fake</span><span>agent Claude Haiku 5.5, claude-haiku-5-5</span><span>gates claude-haiku-5-5</span><span>seeds 1, 2</span><span>26 Oct 2026</span><span>30 scenarios · 16 attack, 44 benign runs · $0.28 spent</span></div>
+  </div>
+
+  <h2 class="xx" style="margin:8px 0 0;font-size:64px;max-width:18ch;text-wrap:balance">With the full tree, no attack reached the attacker.</h2>
+
+  <div style="overflow-x:auto">
+    <div style="min-width:1080px">
+      <div style="display:grid;grid-template-columns:240px repeat(3,minmax(0,1fr))">
+        <div class="col" style="justify-content:flex-end"><span style="font-weight:800;font-stretch:112%;font-size:17px">Attack success</span><span style="font-size:13.5px;color:var(--ink-2)">The agent was fooled and the money was captured.</span>
+          <span style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink-2);margin-top:8px"><span style="display:flex;align-items:center;gap:8px"><span class="dot d-atk"></span>Reached the attacker</span><span style="display:flex;align-items:center;gap:8px"><span class="dot d-held"></span>Held or blocked, inside the clasp</span><span style="display:flex;align-items:center;gap:8px"><span class="dot d-not"></span>Agent not fooled</span></span>
+        </div>
+
+        <div class="col" style="background:var(--sunk)">
+          <span><span style="font-weight:800;font-stretch:112%;font-size:18px">Off</span><br><span class="lbl">No review</span></span>
+          <span class="xx tn" style="font-size:128px;color:var(--attacker)">68.8%</span>
+          <span class="tn" style="font-size:14px;color:var(--ink-2)">11 of 16 attack runs</span>
+          <div style="display:flex;align-items:center;gap:20px;min-height:96px">
+            <div class="dots"><sc-for list="{{off}}" as="d" hint-placeholder-count="5"><span class="dot {{d}}"></span></sc-for></div>
+            <div class="dots"><sc-for list="{{offOut}}" as="d" hint-placeholder-count="11"><span class="dot {{d}}"></span></sc-for></div>
+          </div>
+        </div>
+
+        <div class="col" style="background:var(--z-cat)">
+          <span><span style="font-weight:800;font-stretch:112%;font-size:18px;color:var(--z-cat-ink)">Gate 0 only</span><br><span class="lbl">Rules, no model</span></span>
+          <span class="xx tn" style="font-size:128px;color:var(--attacker)">25.0%</span>
+          <span class="tn" style="font-size:14px;color:var(--ink-2)">4 of 16 attack runs</span>
+          <div style="display:flex;align-items:center;gap:20px;min-height:96px">
+            <div class="br"><i aria-hidden="true"></i><div class="dots"><sc-for list="{{g0}}" as="d" hint-placeholder-count="12"><span class="dot {{d}}"></span></sc-for></div></div>
+            <div class="dots"><sc-for list="{{g0Out}}" as="d" hint-placeholder-count="4"><span class="dot {{d}}"></span></sc-for></div>
+          </div>
+        </div>
+
+        <div class="col vlt" style="background:var(--vault);color:var(--vault-ink)">
+          <span><span style="font-weight:800;font-stretch:112%;font-size:18px">Full tree</span><br><span class="lbl" style="color:var(--vault-muted)">Every gate</span></span>
+          <span class="xx tn" style="font-size:128px">0.0%</span>
+          <span class="tn" style="font-size:14px;color:var(--vault-muted)">0 of 16 attack runs</span>
+          <div style="display:flex;align-items:center;gap:20px;min-height:96px">
+            <div class="br"><i aria-hidden="true"></i><div class="dots"><sc-for list="{{full}}" as="d" hint-placeholder-count="16"><span class="dot {{d}}"></span></sc-for></div></div>
+          </div>
+        </div>
+      </div>
+
+      <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+        <div class="mrow">
+          <span><span style="font-weight:700">{{r.k}}</span><br><span style="font-size:12.5px;color:var(--muted)">{{r.d}}</span></span>
+          <span class="tn" style="font-size:20px;font-weight:700;font-stretch:115%">{{r.a}}<span style="font-size:13px;font-weight:500;font-stretch:100%;color:var(--muted)"> {{r.an}}</span></span>
+          <span class="tn" style="font-size:20px;font-weight:700;font-stretch:115%">{{r.b}}<span style="font-size:13px;font-weight:500;font-stretch:100%;color:var(--muted)"> {{r.bn}}</span></span>
+          <span class="tn" style="font-size:20px;font-weight:700;font-stretch:115%">{{r.c}}<span style="font-size:13px;font-weight:500;font-stretch:100%;color:var(--muted)"> {{r.cn}}</span></span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const rep = (c, n) => Array.from({ length: n }, () => c);
+    return {
+      theme: (this.props.mode ?? 'light') === 'dark' ? 'ca dark' : 'ca',
+      off: rep('d-not', 5),
+      offOut: rep('d-atk', 11),
+      g0: rep('d-held', 7).concat(rep('d-not', 5)),
+      g0Out: rep('d-atk', 4),
+      full: rep('d-held', 11).concat(rep('d-not', 5)),
+      rows: [
+        { k: 'False blocks', d: 'Clean carts blocked', a: '0.0%', an: '0 of 49', b: '0.0%', bn: '0 of 49', c: '0.0%', cn: '0 of 49' },
+        { k: 'False escalations', d: 'Clean carts sent to a person', a: '0.0%', an: '0 of 49', b: '0.0%', bn: '0 of 49', c: '8.2%', cn: '4 of 49' },
+        { k: 'Sent to a person', d: 'All runs', a: '0.0%', an: '0 of 60', b: '1.7%', bn: '1 of 60', c: '15.0%', cn: '9 of 60' },
+        { k: 'Review cost per run', d: 'Gate model spend', a: 'No cost', an: '', b: 'No cost', bn: '', c: '$0.0023', cn: '' },
+        { k: 'Review time', d: 'Mean, checkout to verdict', a: '1 ms', an: '', b: '3 ms', bn: '', c: '3.3 s', cn: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

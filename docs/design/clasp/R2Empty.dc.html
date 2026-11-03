@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2, empty state</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Besley:ital,wght@0,400..900;1,400..900&amp;family=Archivo:ital,wght@0,100..900;1,100..900&amp;family=Fragment+Mono&amp;display=swap">
+<style>
+body{margin:0}
+.c2{--bg:#F3F1F4;--sunk:#EBE7EC;--ink:#170F1B;--ink-2:#463B4A;--muted:#64586A;--line:#E0D9DF;--line-strong:#C3B9C2;--focus:#4A2348;--hold:#4A2348;--spine:#4A2348;--vault:#2B1530;--vault-ink:#F4E6F0;--vault-muted:#C9B1C4;--vault-line:#6B4C6E;background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.c2.dark{--bg:#120E14;--sunk:#0D0A0F;--ink:#F3EDF2;--ink-2:#CEC3CD;--muted:#A396A5;--line:#2B2330;--line-strong:#453A49;--focus:#D2AACB;--hold:#D2AACB;--spine:#D2AACB;--vault:#2C1732;color-scheme:dark}
+.c2 *{box-sizing:border-box}
+.dsp{font-family:'Besley',Georgia,serif;font-weight:700;letter-spacing:-.012em;line-height:1.04}
+.lbl{font-size:12.5px;font-weight:700;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:32px;padding:0 48px;height:72px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.navl{color:var(--ink-2);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:8px;min-height:44px}
+.navl.on{color:var(--ink)}
+.navl.on::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--spine)}
+.navl:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.pg{position:relative;padding:44px 48px 64px 112px;min-height:688px}
+.pg::before{content:"";position:absolute;left:68px;top:74px;height:390px;width:3px;background:var(--spine)}
+.pg::after{content:"";position:absolute;left:68px;top:464px;bottom:0;border-left:3px dashed var(--line-strong)}
+.sec{position:relative}
+.stn{position:absolute;left:-51.5px;top:5px;width:18px;height:18px;border-radius:50%;border:3.5px solid var(--spine);background:var(--bg)}
+.stn.on{left:-54.5px;top:18px;width:24px;height:24px;border:0;background:var(--spine)}
+.stn.on::after{content:"";position:absolute;left:24px;top:10.5px;width:24px;height:3px;background:var(--spine)}
+.vault{position:relative;background:var(--vault);color:var(--vault-ink);margin-left:-64px;padding:40px 40px 44px 64px}
+.vault::before{content:"";position:absolute;left:20px;top:0;bottom:0;width:3px;background:var(--vault-ink)}
+.vault>.stn{left:12.5px;top:47px;border-color:var(--vault-ink);background:var(--vault)}
+.vault>.stn::after{content:"";position:absolute;left:14.5px;top:4px;width:30px;height:3px;background:var(--vault-ink)}
+</style>
+</helmet>
+<div class="{{theme}}" style="min-height:760px">
+  <nav class="nav" aria-label="Main">
+    <span aria-label="Logo covered for the test" role="img" style="width:168px;height:36px;background:var(--sunk);border:1.5px dashed var(--line-strong);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--muted)">Logo covered</span>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;flex:1">
+      <a href="#" class="navl">Runs</a>
+      <a href="#" class="navl on" aria-current="page">Escalations</a>
+      <a href="#" class="navl">Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="pg">
+    <div class="sec"><span class="stn on" aria-hidden="true"></span><h1 class="dsp" style="margin:0;font-size:64px">Escalations</h1><p style="margin:12px 0 0;font-size:17px;color:var(--ink-2)">Purchases Chaperone paused because the decision is yours.</p></div>
+
+    <section class="vault" style="margin-top:48px;display:flex;flex-direction:column;gap:14px;max-width:980px" aria-label="Nothing is held">
+      <span class="stn" aria-hidden="true"></span>
+      <span class="lbl" style="color:var(--vault-muted)">Held for you right now</span>
+      <p class="dsp" style="margin:0;font-size:44px">Nothing is waiting on you.</p>
+      <p style="margin:0;font-size:16px;color:var(--vault-muted);max-width:56ch">When Chaperone pauses a purchase for your decision, it waits here, oldest first, with how long it has been held and when the hold ends.</p>
+      <a href="#" style="color:var(--vault-ink);font-weight:700;min-height:44px;display:inline-flex;align-items:center;text-underline-offset:4px">See every run</a>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { theme: (this.props.mode ?? 'light') === 'dark' ? 'c2 dark' : 'c2' };
+  }
+}
+</script>
+</body>
+</html>
