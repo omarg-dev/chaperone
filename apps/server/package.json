@@ -6,7 +6,9 @@
     "dev": "tsx watch --env-file-if-exists=../../.env src/index.ts",
     "check": "tsc --noEmit -p .",
     "build": "node build.mjs",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "export-runs": "tsx --env-file-if-exists=../../.env src/cli-main.ts export-runs",
+    "import-runs": "tsx --env-file-if-exists=../../.env src/cli-main.ts import-runs"
   },
   "dependencies": {
     "@firewall/agent": "workspace:*",
