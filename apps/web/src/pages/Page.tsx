@@ -13,7 +13,7 @@ export function PageHeader({
   return (
     <header className="page-header">
       <div>
-        <h1 className="t-page-title">{title}</h1>
+        <h1 className="t-display">{title}</h1>
         {lede && <p className="page-lede">{lede}</p>}
       </div>
       {aside}

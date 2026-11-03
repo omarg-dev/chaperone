@@ -14,7 +14,7 @@
   margin: 0;
   padding: var(--space-6) var(--space-5);
   border: 1px dashed var(--line-strong);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   color: var(--muted);
 }
 
@@ -68,7 +68,7 @@
   align-items: center;
   justify-content: center;
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   background: var(--surface);
 }
 

@@ -1,5 +1,7 @@
-/* Self-hosted from npm packages, so the hosted demo needs no request to a font service. */
-@import "@fontsource-variable/newsreader/opsz.css";
-@import "@fontsource-variable/newsreader/opsz-italic.css";
-@import "@fontsource-variable/host-grotesk/index.css";
+/* Self-hosted from npm packages, so the hosted demo needs no request to a font service. Besley is
+   variable (weight 400 to 900, with its italic), Archivo is its weight axis only, at its normal
+   width, and Fragment Mono is the one weight records need. */
+@import "@fontsource-variable/besley/wght.css";
+@import "@fontsource-variable/besley/wght-italic.css";
+@import "@fontsource-variable/archivo/wght.css";
 @import "@fontsource/fragment-mono/latin-400.css";

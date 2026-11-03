@@ -10,7 +10,7 @@
 
 .tl-scroll {
   overflow-x: auto;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   border: 1px solid var(--line);
   background: var(--bg);
 }
@@ -156,7 +156,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 8px 12px;
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   background: var(--surface);
   box-shadow: inset 0 0 0 1px var(--z-cat-line);
 }

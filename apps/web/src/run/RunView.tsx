@@ -182,7 +182,7 @@ function RunPage({ runId }: { runId: string }) {
           ) : (
             headline.badge && <span className="badge run-badge">{headline.badge}</span>
           )}
-          <h1 className="t-page-title">{headline.title}</h1>
+          <h1 className="t-headline">{headline.title}</h1>
           {headline.lede && <p className="run-lede">{headline.lede}</p>}
         </div>
         <MoneyBlock model={model} />

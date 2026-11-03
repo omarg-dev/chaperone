@@ -6,7 +6,7 @@
   gap: var(--space-2);
   min-height: 48px;
   padding: 0 var(--space-5);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   border: 1px solid var(--ink);
   background: var(--ink);
   color: var(--on-ink);
@@ -51,7 +51,7 @@
   gap: 6px;
   height: 26px;
   padding: 0 10px 0 6px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   font-size: 12.5px;
   font-weight: 700;
   white-space: nowrap;
@@ -86,7 +86,7 @@
 /* Zones: the catalog is plain, the route is tinted, seller text sits behind a hatch. */
 .zone {
   padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
 }
 
 .zone-label {
@@ -139,7 +139,7 @@
   align-items: center;
   height: 22px;
   padding: 0 7px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius);
   font-size: 11.5px;
   font-weight: 700;
 }
@@ -217,7 +217,7 @@
 
 /* Money is Newsreader, wherever it appears. */
 .money {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-weight: 500;
   font-variant-numeric: lining-nums tabular-nums;
   letter-spacing: -0.01em;
@@ -232,7 +232,7 @@
 }
 
 .money-lg {
-  font-size: var(--text-money);
+  font-size: var(--text-headline);
 }
 
 .money-xl {
@@ -251,7 +251,7 @@
 }
 
 .empty-title {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 1.75rem;
   font-weight: 500;
   line-height: 1.2;
@@ -266,7 +266,7 @@
   align-items: center;
   padding: 2px 7px;
   border: 1px dashed var(--line-strong);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius);
   font-size: 11px;
   font-weight: 600;
   color: var(--muted);
@@ -299,7 +299,7 @@
 }
 
 .wordmark-name {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 23px;
   font-weight: 500;
   letter-spacing: -0.02em;
