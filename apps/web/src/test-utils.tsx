@@ -138,6 +138,8 @@ export const run = (
       | "reviews"
       | "kind"
       | "attackerPaid"
+      | "heldCents"
+      | "paidTo"
       | "seed"
       | "origin"
       | "payments"
@@ -159,6 +161,8 @@ export const run = (
   reviews: [],
   kind: null,
   attackerPaid: false,
+  heldCents: null,
+  paidTo: [],
   origin: null,
   payments: null,
   ...outcome,

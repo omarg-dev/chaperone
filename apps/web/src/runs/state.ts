@@ -1,24 +1,12 @@
 import { needsPerson } from "@firewall/events/outcome";
 import type { RunSummary } from "../api";
-import type { GateState } from "../design";
+import type { MoneyState } from "../design";
 
 // A run is held for a person while its escalation needs one: nobody has decided and the platform's
 // hold is open (waiting), or a person decided and the hold is still open (unfinished). It follows
 // the money, not the verdict: an escalation whose hold was released without a decision is not held.
 // The rule is `needsPerson` in @firewall/events, the same one the run view's model uses.
 export const isHeldForPerson = (run: RunSummary) => needsPerson(run.escalation);
-
-// The pill for a run's state, or null when there is no verdict to show. Money that reached an
-// attacker comes first, as it does in the run view: however the run got there, that is the state.
-// A released hold has no verdict to show (the review escalated and nobody decided), and an
-// unfinished decision is still the person's to carry out, whatever they chose.
-export function pillStateOf(run: RunSummary): GateState | null {
-  if (run.attackerPaid) return "attacker";
-  if (run.reviewFailed) return "held";
-  if (run.escalation === "released") return null;
-  if (run.escalation === "unfinished") return "escalate";
-  return run.verdict;
-}
 
 // How a run ended, in the ways the history can be filtered by, and one for a run that hasn't been
 // reviewed. Each run is exactly one, in the run view's order of precedence.
@@ -72,10 +60,16 @@ export const configLabel = (config: string) =>
 // The configuration the run's outcome comes from: the last review it went through.
 export const configOf = (run: RunSummary): string | null => run.reviews.at(-1) ?? null;
 
-// What to say in the verdict column when there is no pill.
-export function noVerdictText(run: RunSummary): string {
-  if (run.escalation === "released") return "Hold released";
-  return run.decidedBy === "no_review" ? "Firewall off" : "No review yet";
+// What the outcome says under itself: who decided it, when that is worth saying. A review's own
+// verdict says nothing more here, since the run view has the gates.
+export function outcomeNote(run: RunSummary): string | null {
+  if (run.escalation === "unfinished") return "Decision not finished";
+  if (run.escalation === "released") return "Nobody decided";
+  if (run.decidedBy === "person")
+    return run.verdict === "block" ? "You rejected it" : "You decided";
+  if (run.decidedBy === "no_review") return "Nobody reviewed it";
+  if (run.reviewFailed) return "A gate broke";
+  return null;
 }
 
 // Which money a run moved, said quietly beside it: the fake is practice money.
@@ -96,3 +90,30 @@ const OUTCOME_RANK: Record<RunOutcome, number> = {
   not_reviewed: 7,
 };
 export const outcomeRank = (run: RunSummary): number => OUTCOME_RANK[outcomeOf(run)];
+
+// The money-state glyph for each outcome: the run's state drawn on the bracket. A broken review leaves
+// the order held, so it is the held glyph; a run nobody has reviewed yet is the dashed one.
+export const MONEY_OF_OUTCOME: Record<RunOutcome, MoneyState> = {
+  approved: "captured",
+  blocked: "voided",
+  held: "person",
+  released: "released",
+  attacker_paid: "attacker",
+  firewall_off: "off",
+  review_failed: "held",
+  not_reviewed: "none",
+};
+
+export const moneyStateOf = (run: RunSummary): MoneyState => MONEY_OF_OUTCOME[outcomeOf(run)];
+
+// The order the outcome chips are drawn in: what needs an eye first, then how the rest ended.
+export const OUTCOME_CHIP_ORDER: readonly RunOutcome[] = [
+  "held",
+  "attacker_paid",
+  "review_failed",
+  "blocked",
+  "approved",
+  "released",
+  "firewall_off",
+  "not_reviewed",
+];

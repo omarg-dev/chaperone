@@ -1,4 +1,12 @@
-export { Amount, amountParts, formatMoney, Rate, rateParts } from "./Amount";
+export {
+  Amount,
+  type AmountSize,
+  type AmountTone,
+  amountParts,
+  formatMoney,
+  Rate,
+  rateParts,
+} from "./Amount";
 export { Button, buttonClass } from "./Button";
 export { Disclosure } from "./Disclosure";
 export { EmptyState } from "./EmptyState";

@@ -27,6 +27,11 @@ const gridDrawn = async () => {
 };
 // The grid redraws a moment after its rows change, so what is shown is waited for.
 const shownAre = (ids: string[]) => waitFor(() => expect(shownIds()).toEqual(ids));
+// The outcome filter is a group of radio buttons, each named with its glyph's word and its count.
+const outcomeGroup = () => screen.getByRole("group", { name: "Outcome" });
+const chosenOutcome = () => within(outcomeGroup()).getByRole("radio", { checked: true });
+const chooseOutcome = (user: ReturnType<typeof userEvent.setup>, name: RegExp) =>
+  user.click(within(outcomeGroup()).getByRole("radio", { name }));
 const header = (name: string) => screen.getByRole("columnheader", { name: new RegExp(name) });
 // A click on a column's label, which sorts by it.
 const sortBy = (name: string) =>
@@ -68,24 +73,28 @@ describe("the Runs page", () => {
     const rows = rowsShown();
 
     const [first, second, third, fourth, fifth, sixth] = rows as HTMLElement[];
-    expect(within(first as HTMLElement).getByText("sc_a01 · run_new")).toBeInTheDocument();
+    // The scenario's ID is under its title, and the run's own ID is a column of its own.
+    expect(within(first as HTMLElement).getByText("sc_a01")).toBeInTheDocument();
+    expect(within(first as HTMLElement).getByRole("link", { name: "run_new" })).toHaveAttribute(
+      "href",
+      "/runs/run_new",
+    );
     // The viewer's own time zone (the tests run in Riyadh), day first, with the zone named.
     expect(within(first as HTMLElement).getByText("24 Oct 2026, 14:03 GMT+3")).toBeInTheDocument();
-    expect(
-      within(first as HTMLElement).getByRole("img", { name: "Verdict: Block" }),
-    ).toBeInTheDocument();
-    expect(
-      within(second as HTMLElement).getByRole("img", { name: "Verdict: Approve" }),
-    ).toBeInTheDocument();
+    // Each outcome is a glyph and a word, and the cell says which outcome it is.
+    const outcomeOf = (row: HTMLElement) => row.querySelector("[data-outcome]");
+    expect(outcomeOf(first as HTMLElement)).toHaveAttribute("data-outcome", "blocked");
+    expect(within(first as HTMLElement).getByText("Blocked")).toBeInTheDocument();
+    expect(outcomeOf(second as HTMLElement)).toHaveAttribute("data-outcome", "approved");
+    expect(within(second as HTMLElement).getByText("Approved")).toBeInTheDocument();
+    expect(outcomeOf(third as HTMLElement)).toHaveAttribute("data-outcome", "firewall_off");
     expect(within(third as HTMLElement).getByText("Firewall off")).toBeInTheDocument();
-    expect(within(fourth as HTMLElement).getByText("No review yet")).toBeInTheDocument();
-    expect(
-      within(fifth as HTMLElement).getByRole("img", { name: "Verdict: Approve" }),
-    ).toBeInTheDocument();
+    expect(within(third as HTMLElement).getByText("Nobody reviewed it")).toBeInTheDocument();
+    expect(within(fourth as HTMLElement).getByText("Not reviewed yet")).toBeInTheDocument();
+    expect(outcomeOf(fifth as HTMLElement)).toHaveAttribute("data-outcome", "approved");
     expect(within(fifth as HTMLElement).getByText("You decided")).toBeInTheDocument();
-    expect(
-      within(sixth as HTMLElement).getByRole("img", { name: "Verdict: Held" }),
-    ).toBeInTheDocument();
+    expect(outcomeOf(sixth as HTMLElement)).toHaveAttribute("data-outcome", "review_failed");
+    expect(within(sixth as HTMLElement).getByText("Review failed")).toBeInTheDocument();
     expect(
       within(first as HTMLElement).getByRole("link", { name: "Mechanical keyboard, wired" }),
     ).toHaveAttribute("href", "/runs/run_new");
@@ -180,7 +189,7 @@ describe("the history's filters", () => {
     renderApp("/runs?outcome=blocked&kind=attack");
     await gridDrawn();
     await shownAre(["run_blocked"]);
-    expect(screen.getByLabelText("Outcome")).toHaveValue("blocked");
+    expect(chosenOutcome()).toHaveAccessibleName(/Blocked/);
     expect(screen.getByLabelText("Kind")).toHaveValue("attack");
     expect(screen.getByText("Showing 1 of 4 runs")).toBeInTheDocument();
   });
@@ -207,15 +216,16 @@ describe("the history's filters", () => {
     renderApp("/runs");
     await gridDrawn();
 
-    await user.selectOptions(screen.getByLabelText("Outcome"), "Held for a person");
+    await chooseOutcome(user, /^Held for a person/);
     await shownAre(["run_held", "run_unfinished"]);
     expect(within(rowOf("run_unfinished")).getByText("Decision not finished")).toBeInTheDocument();
     expect(screen.getByTestId("location")).toHaveTextContent("/runs?outcome=held");
 
-    await user.selectOptions(screen.getByLabelText("Outcome"), "Hold released");
+    await chooseOutcome(user, /^Hold released/);
     await shownAre(["run_released"]);
     const released = rowOf("run_released");
     expect(within(released).getByText("Hold released")).toBeInTheDocument();
+    expect(within(released).getByText("Nobody decided")).toBeInTheDocument();
     expect(within(released).queryByRole("img", { name: /Verdict/ })).toBeNull();
   });
 
@@ -226,11 +236,11 @@ describe("the history's filters", () => {
     await gridDrawn();
     await waitFor(() => expect(shownIds()).toHaveLength(4));
 
-    await user.selectOptions(screen.getByLabelText("Outcome"), "Paid attacker");
+    await chooseOutcome(user, /^Paid attacker/);
     await shownAre(["run_paid"]);
     expect(screen.getByTestId("location")).toHaveTextContent("/runs?outcome=attacker_paid");
 
-    await user.selectOptions(screen.getByLabelText("Outcome"), "Any outcome");
+    await chooseOutcome(user, /^All/);
     await user.selectOptions(screen.getByLabelText("Firewall"), "Full");
     await shownAre(["run_blocked", "run_approved", "run_held"]);
     await user.selectOptions(screen.getByLabelText("Scenario"), "Tactile keyboard under $120");
@@ -341,7 +351,7 @@ describe("the history's sort", () => {
     await gridDrawn();
     await shownAre(["run_new", "run_paid", "run_held", "run_old"]);
     expect(header("Started")).toHaveAttribute("aria-sort", "descending");
-    expect(header("Verdict")).toHaveAttribute("aria-sort", "none");
+    expect(header("Outcome")).toHaveAttribute("aria-sort", "none");
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent(/^\/runs$/));
   });
 
@@ -350,15 +360,15 @@ describe("the history's sort", () => {
     renderApp("/runs");
     await gridDrawn();
 
-    sortBy("Verdict");
+    sortBy("Outcome");
     // Money that reached an attacker first, then what is waiting for a person.
     await shownAre(["run_paid", "run_held", "run_old", "run_new"]);
     await waitFor(() =>
       expect(screen.getByTestId("location")).toHaveTextContent("/runs?sort=verdict"),
     );
-    expect(header("Verdict")).toHaveAttribute("aria-sort", "ascending");
+    expect(header("Outcome")).toHaveAttribute("aria-sort", "ascending");
 
-    sortBy("Verdict");
+    sortBy("Outcome");
     await shownAre(["run_new", "run_old", "run_held", "run_paid"]);
     await waitFor(() =>
       expect(screen.getByTestId("location")).toHaveTextContent("/runs?sort=-verdict"),
@@ -383,7 +393,7 @@ describe("the history's sort", () => {
     renderApp("/runs");
     await gridDrawn();
     await shownAre(["run_new", "run_paid", "run_held", "run_old"]);
-    header("Verdict").focus();
+    header("Outcome").focus();
     await user.keyboard("{Enter}");
     await shownAre(["run_paid", "run_held", "run_old", "run_new"]);
     await waitFor(() =>
@@ -409,5 +419,101 @@ describe("the history's sort", () => {
     await waitFor(() =>
       expect(screen.getByTestId("location")).toHaveTextContent("/runs?sort=verdict"),
     );
+  });
+});
+
+describe("where the money is", () => {
+  const runs = [
+    run("run_held", "sc_b01", "2026-10-24T11:03:00Z", {
+      kind: "benign",
+      ...escalated.waiting,
+      reviews: ["full"],
+      heldCents: 10999,
+    }),
+    run("run_paid", "sc_a01", "2026-10-24T11:02:00Z", {
+      kind: "attack",
+      decidedBy: "no_review",
+      attackerPaid: true,
+      reviews: ["off"],
+      heldCents: 7999,
+      paidTo: ["Keyhaven Direct"],
+    }),
+    run("run_blocked", "sc_a01", "2026-10-24T11:01:00Z", {
+      kind: "attack",
+      verdict: "block",
+      decidedBy: "review",
+      reviews: ["full"],
+      heldCents: 13900,
+    }),
+    run("run_approved", "sc_b01", "2026-10-24T11:00:00Z", {
+      kind: "benign",
+      verdict: "approve",
+      decidedBy: "review",
+      reviews: ["full"],
+      heldCents: 22900,
+      paidTo: ["Copperline Outfitters"],
+    }),
+    run("run_early", "sc_b01", "2026-10-24T10:59:00Z"),
+  ];
+
+  it("holds the held money in the page's one vault, and says what waits on the person", async () => {
+    mockServer({ runs });
+    renderApp("/runs");
+    const vault = await screen.findByRole("region", { name: "Held right now" });
+    expect(vault).toHaveClass("vault");
+    expect(within(vault).getByText("$109.99")).toBeInTheDocument();
+    expect(within(vault).getByRole("link", { name: "1 run waiting on you" })).toHaveAttribute(
+      "href",
+      "/escalations",
+    );
+    expect(within(vault).getByText(/Nothing is charged until you decide/)).toBeInTheDocument();
+    expect(document.querySelectorAll(".vault")).toHaveLength(1);
+  });
+
+  it("writes each run's amount once, in the column that says where its money is", async () => {
+    mockServer({ runs });
+    renderApp("/runs");
+    await gridDrawn();
+    const cell = (runId: string, column: string) =>
+      rowOf(runId).querySelector(`[col-id="${column}"]`) as HTMLElement;
+    // One amount per run, in one of the three columns, with what it is under it.
+    const amountsIn = (runId: string) =>
+      ["held", "moved", "voided"].filter((column) => cell(runId, column).textContent !== "");
+    expect(amountsIn("run_held")).toEqual(["held"]);
+    expect(cell("run_held", "held")).toHaveTextContent("$109.99waiting on you");
+    expect(amountsIn("run_paid")).toEqual(["moved"]);
+    expect(cell("run_paid", "moved")).toHaveTextContent("$79.99to Keyhaven Direct");
+    expect(amountsIn("run_blocked")).toEqual(["voided"]);
+    expect(cell("run_blocked", "voided")).toHaveTextContent("$139.00voided");
+    expect(amountsIn("run_approved")).toEqual(["moved"]);
+    expect(cell("run_approved", "moved")).toHaveTextContent("$229.00to Copperline Outfitters");
+    // A run that has had no money has no amount anywhere.
+    expect(amountsIn("run_early")).toEqual([]);
+  });
+
+  it("strikes voided money through, and paints only an attacker's money red", async () => {
+    mockServer({ runs });
+    renderApp("/runs");
+    await gridDrawn();
+    const amount = (runId: string, column: string) =>
+      rowOf(runId).querySelector(`[col-id="${column}"] .amt`) as HTMLElement;
+    expect(amount("run_blocked", "voided")).toHaveClass("amt-voided");
+    expect(amount("run_paid", "moved")).toHaveClass("amt-attacker");
+    expect(amount("run_approved", "moved")).not.toHaveClass("amt-attacker", "amt-voided");
+    expect(amount("run_held", "held")).not.toHaveClass("amt-attacker", "amt-voided");
+  });
+
+  it("counts the outcomes in chips that say what choosing one would show", async () => {
+    const user = userEvent.setup();
+    mockServer({ runs });
+    renderApp("/runs");
+    await gridDrawn();
+    expect(within(outcomeGroup()).getByRole("radio", { name: /^All 5/ })).toBeChecked();
+    expect(within(outcomeGroup()).getByRole("radio", { name: /^Blocked 1/ })).toBeInTheDocument();
+    // An outcome no run has isn't offered.
+    expect(within(outcomeGroup()).queryByRole("radio", { name: /^Hold released/ })).toBeNull();
+    await user.selectOptions(screen.getByLabelText("Kind"), "Attack");
+    expect(within(outcomeGroup()).getByRole("radio", { name: /^All 2/ })).toBeInTheDocument();
+    expect(within(outcomeGroup()).queryByRole("radio", { name: /^Approved/ })).toBeNull();
   });
 });

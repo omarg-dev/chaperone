@@ -7,7 +7,7 @@
 
 /* A long history: the grid fits the window and draws only the rows in view as it scrolls. */
 .data-grid-scroll {
-  height: clamp(360px, calc(100dvh - 21rem), 800px);
+  height: clamp(360px, calc(100dvh - 12rem), 800px);
 }
 
 .data-grid-empty {
@@ -33,17 +33,23 @@
   white-space: nowrap;
 }
 
+/* A scenario's title may take two lines: it is the thing a person is looking for. */
+.cell-stack .run-title:first-child .run-link {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+
 .cell-title,
 .cell-stack .run-link {
   font-size: var(--text-body);
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .cell-stack .run-link {
-  overflow: hidden;
   min-width: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 /* The row whose detail is open, and the detail under it. */
@@ -67,9 +73,25 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--surface);
+  border-top: 2px solid var(--ink);
+}
+
+/* The money columns are ruled off from the rest, and their amounts sit at their right edge. */
+.data-grid .ag-cell.col-money,
+.data-grid .ag-header-cell.col-money {
+  border-inline-start: 1px solid var(--line);
+  justify-content: flex-end;
+  text-align: end;
+}
+
+.data-grid .ag-header-cell.col-money .ag-header-cell-comp-wrapper {
+  justify-content: flex-end;
+}
+
+/* The page's own ink for the sorted column's name. */
+.data-grid .ag-header-cell[aria-sort="ascending"],
+.data-grid .ag-header-cell[aria-sort="descending"] {
+  color: var(--ink);
 }
 
 .data-grid-auto.data-grid-loading {

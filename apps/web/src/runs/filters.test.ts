@@ -6,6 +6,7 @@ import {
   filtersToParams,
   isFiltered,
   NO_FILTERS,
+  outcomeCounts,
   parseFilters,
 } from "./filters";
 
@@ -135,5 +136,42 @@ describe("applying the filters", () => {
   it("combines them", () => {
     expect(ids({ kind: "attack", config: "full" })).toEqual(["run_cd34"]);
     expect(ids({ kind: "benign", outcome: "blocked" })).toEqual([]);
+  });
+});
+
+describe("the outcome chips' counts", () => {
+  const runs = [
+    run("a", "sc_a01", at, {
+      kind: "attack",
+      verdict: "block",
+      decidedBy: "review",
+      reviews: ["full"],
+    }),
+    run("b", "sc_a01", at, {
+      kind: "attack",
+      attackerPaid: true,
+      decidedBy: "no_review",
+      reviews: ["off"],
+    }),
+    run("c", "sc_b01", at, {
+      kind: "benign",
+      verdict: "approve",
+      decidedBy: "review",
+      reviews: ["full"],
+    }),
+    run("d", "sc_b01", at, { kind: "benign", ...escalated.waiting, reviews: ["full"] }),
+  ];
+
+  it("counts each outcome among all the runs, and all of them", () => {
+    const { all, byOutcome } = outcomeCounts(runs, NO_FILTERS);
+    expect(all).toBe(4);
+    expect(byOutcome).toMatchObject({ blocked: 1, attacker_paid: 1, approved: 1, held: 1 });
+    expect(Object.values(byOutcome).reduce((a, b) => a + b, 0)).toBe(4);
+  });
+
+  it("says what choosing a chip would show: the other filters apply, its own does not", () => {
+    const { all, byOutcome } = outcomeCounts(runs, filter({ kind: "benign", outcome: "approved" }));
+    expect(all).toBe(2);
+    expect(byOutcome).toMatchObject({ approved: 1, held: 1, blocked: 0, attacker_paid: 0 });
   });
 });

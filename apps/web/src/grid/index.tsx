@@ -5,7 +5,7 @@ import type { DataGridProps } from "./DataGrid";
 // is loaded when a page first draws one: the Runs page, which is where people land, shows its filters
 // and its count at once while the grid arrives, and the dashboard and the Runs page share the one
 // chunk. Only types are imported from `./DataGrid` here, so nothing but this file reaches it.
-export type { CellProps, DataGridProps, GridColumn, GridSort } from "./DataGrid";
+export type { CellProps, DataGridProps, GridColumn, GridSort, HeaderProps } from "./DataGrid";
 
 const Grid = lazy(() => import("./DataGrid").then((module) => ({ default: module.DataGrid })));
 

@@ -9,6 +9,7 @@ import "./styles/base.css";
 import "./styles/components.css";
 import "./styles/route.css";
 import "./styles/shell.css";
+import "./styles/runs.css";
 import "./styles/timeline.css";
 import "./styles/run.css";
 import "./styles/inbox.css";

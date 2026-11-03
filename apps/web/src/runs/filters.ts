@@ -91,3 +91,16 @@ const searchable = (run: RunSummary, titles: Record<string, string>) =>
     .filter(Boolean)
     .join("\n")
     .toLowerCase();
+
+// How many runs each outcome has among those that pass every other filter, so a chip says what
+// choosing it would show. `all` is the same set, whatever its outcome.
+export function outcomeCounts(
+  runs: readonly RunSummary[],
+  filters: Filters,
+  titles: Record<string, string> = {},
+): { all: number; byOutcome: Record<RunOutcome, number> } {
+  const byOutcome = Object.fromEntries(OUTCOMES.map((o) => [o, 0])) as Record<RunOutcome, number>;
+  const others = applyFilters(runs, { ...filters, outcome: null }, titles);
+  for (const run of others) byOutcome[outcomeOf(run)] += 1;
+  return { all: others.length, byOutcome };
+}

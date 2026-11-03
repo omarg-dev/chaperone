@@ -34,6 +34,11 @@ export interface RunSummary {
   kind: "attack" | "benign" | null;
   // Money was paid out to one of the scenario's attackers.
   attackerPaid: boolean;
+  // What the order's hold is for, in cents: how much money the run has had. Null until the agent has
+  // checked out. Where it is follows from the outcome (see `placeOf` in runs/money.ts).
+  heldCents: number | null;
+  // The stores the money was paid out to, by name, once it was captured.
+  paidTo: string[];
   // "web" for a live run started from the Start a run page; null for the eval's and the command
   // line's.
   origin: string | null;

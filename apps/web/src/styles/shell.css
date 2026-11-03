@@ -2,15 +2,16 @@
   min-height: 100vh;
 }
 
+/* The top bar: the wordmark, where you can go, and the one filled button. */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 10;
   display: flex;
   align-items: center;
-  gap: var(--space-6);
-  min-height: 64px;
-  padding: 0 var(--space-6);
+  gap: 32px;
+  height: 72px;
+  padding: 0 max(48px, calc((100% - 1440px) / 2 + 48px));
   background: var(--bg);
   border-bottom: 1px solid var(--line);
 }
@@ -24,7 +25,7 @@
 .topbar-nav {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 28px;
   flex: 1;
   min-width: 0;
 }
@@ -39,30 +40,39 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  min-height: 38px;
-  padding: 0 12px;
-  border-radius: 9px;
+  min-height: 44px;
   color: var(--ink-2);
-  font-size: 14px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
 }
 
 .nav-link:hover {
-  background: var(--sunk);
   color: var(--ink);
 }
 
+/* Where you are is a dot of the route's colour, not a fill. */
 .nav-link.active {
-  background: var(--surface);
   color: var(--ink);
-  font-weight: 600;
-  box-shadow: 0 0 0 1px var(--line);
 }
 
-.nav-link-soon:not(.active) {
+.nav-link.active::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--spine);
+}
+
+.nav-soon {
+  font-size: 12px;
+  font-weight: 500;
   color: var(--muted);
+}
+
+.topbar-start.btn {
+  min-height: 44px;
 }
 
 .theme-switch {
@@ -70,7 +80,7 @@
   margin: 0;
   border: 0;
   padding: 2px;
-  border-radius: 9px;
+  border-radius: var(--radius);
   background: var(--sunk);
   box-shadow: inset 0 0 0 1px var(--line);
 }
@@ -81,7 +91,7 @@
   justify-content: center;
   width: 32px;
   height: 30px;
-  border-radius: 7px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--muted);
   cursor: pointer;
@@ -102,132 +112,11 @@
   box-shadow: 0 0 0 1px var(--line-strong);
 }
 
-.page {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: var(--space-6) var(--space-6) var(--space-8);
-}
-
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-5);
-  margin-bottom: var(--space-5);
-}
-
-.page-lede {
-  margin-top: var(--space-2);
-  max-width: 60ch;
-  color: var(--ink-2);
-}
-
-.run-title {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.run-config {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  height: 100%;
-  min-width: 0;
-  font-size: 13.5px;
-  font-weight: 600;
-}
-
-.run-config .t-meta {
-  font-weight: 400;
-}
-
-/* The history's filters. */
-.filters {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: var(--space-3) var(--space-4);
-  margin-bottom: var(--space-3);
-}
-
-.filter {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-.filter-search {
-  flex: 1 1 160px;
-}
-
-.filter select.filter-control {
-  max-width: 230px;
-}
-
-.filter-label {
-  font-size: var(--text-meta);
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.filter-control {
-  min-height: 40px;
-  max-width: 100%;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--ink);
-  font: inherit;
-  font-size: 14.5px;
-}
-
-.filter-control::placeholder {
-  color: var(--muted);
-}
-
-.filter-clear {
-  display: flex;
-  align-items: center;
-  min-height: 40px;
-}
-
-.run-count {
-  margin-bottom: var(--space-3);
-}
-
-.run-link {
-  color: var(--ink);
-  text-decoration: none;
-}
-
-.run-link:hover {
-  color: var(--hold);
-  text-decoration: underline;
-}
-
-.run-time {
-  font-variant-numeric: tabular-nums;
-}
-
-.verdict-cell {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.empty-id {
-  display: block;
-  margin-top: var(--space-2);
-}
-
 @media (max-width: 760px) {
   .topbar {
     flex-wrap: wrap;
     gap: var(--space-2) var(--space-4);
+    height: auto;
     padding: var(--space-3) var(--space-4);
   }
 
@@ -240,13 +129,4 @@
   .topbar-end {
     margin-inline-start: auto;
   }
-
-  .page {
-    padding-inline: var(--space-4);
-  }
-}
-
-/* The run's money, said quietly beside its title in the list. */
-.run-money-kind {
-  white-space: nowrap;
 }
