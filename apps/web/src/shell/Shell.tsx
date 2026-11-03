@@ -40,7 +40,7 @@ export function Shell() {
             to="/start"
             className={({ isActive }) =>
               isActive
-                ? "nav-link topbar-start-here"
+                ? "nav-link active topbar-start-here"
                 : `${buttonClass("primary", true)} topbar-start`
             }
           >

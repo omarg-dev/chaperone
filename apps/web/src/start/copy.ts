@@ -26,3 +26,12 @@ export const MONEY_NOTES = {
 } as const;
 
 export const dollars = (usd: number) => `$${usd.toFixed(2)}`;
+
+// "$120.00 each" as the amount in cents and what follows it, or null when the value isn't a price.
+// The mandate's price ceiling is drawn as an amount, with its fraction raised.
+export function ceilingOf(value: string): { cents: number; rest: string } | null {
+  const found = /^\$([\d,]+)\.(\d{2})\b(.*)$/.exec(value);
+  if (!found) return null;
+  const whole = Number((found[1] as string).replace(/,/g, ""));
+  return { cents: whole * 100 + Number(found[2]), rest: (found[3] as string).trim() };
+}

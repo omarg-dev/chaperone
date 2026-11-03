@@ -6,6 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LiveStatus, MandateRow, MandateView } from "../api";
 import { loadGrid, mockDevice, mockServer, renderApp, run } from "../test-utils";
+import { ceilingOf } from "./copy";
 import { SDK_EXAMPLE } from "./snippet";
 
 // The repo's root, from this file (a path, since the DOM's URL isn't the one fs reads).
@@ -125,6 +126,16 @@ describe("choosing a task", () => {
     const page = document.querySelector(".start") as HTMLElement;
     expect(page.textContent?.toLowerCase()).not.toContain("attack");
     expect(page.textContent?.toLowerCase()).not.toContain("benign");
+  });
+
+  it("holds the run step back, in the page's one vault, until the mandate is locked", async () => {
+    flow();
+    renderApp("/start");
+    const vault = await screen.findByRole("region", { name: "Run" });
+    expect(vault).toHaveClass("vault");
+    expect(within(vault).getByRole("button", { name: "Start the run" })).toBeDisabled();
+    expect(within(vault).getByText("Lock the mandate first.")).toBeVisible();
+    expect(document.querySelectorAll(".vault")).toHaveLength(1);
   });
 
   it("shows the three steps, with the first current", async () => {
@@ -263,8 +274,11 @@ describe("setting the mandate", () => {
   it("locks on confirm: the terms stay in view, can't be changed, and the third step opens", async () => {
     const { calls } = await drafted();
     await userEvent.click(screen.getByRole("button", { name: "Lock this mandate" }));
-    expect(await screen.findByText("Locked.")).toBeVisible();
-    expect(screen.getByText("sha256:abcdef0…")).toBeVisible();
+    // The clasp shuts around the hash: the seal says who locked it and the hash, in groups.
+    expect(
+      await screen.findByRole("img", { name: "Seal: locked by you, sha256 abcdef01 23456789" }),
+    ).toBeVisible();
+    expect(screen.getByText("The mandate, locked")).toBeVisible();
     expect(posts(calls).at(-1)).toMatchObject({ body: { action: "confirm" } });
     expect(screen.queryByRole("button", { name: /^Change/ })).toBeNull();
     expect(screen.queryByRole("button", { name: "Lock this mandate" })).toBeNull();
@@ -497,5 +511,24 @@ describe("getting to the page", () => {
     expect(within(rows[1] as HTMLElement).getByText("Sandbox")).toBeVisible();
     expect(within(rows[2] as HTMLElement).queryByText(/Practice money|Sandbox/)).toBeNull();
     expect(screen.getAllByRole("link", { name: "Start a run" })).toHaveLength(1);
+  });
+});
+
+describe("the price ceiling", () => {
+  it("is read as an amount in cents, with what follows it", () => {
+    expect(ceilingOf("$120.00 each")).toEqual({ cents: 12000, rest: "each" });
+    expect(ceilingOf("$99.50 each")).toEqual({ cents: 9950, rest: "each" });
+    expect(ceilingOf("$1,250.00")).toEqual({ cents: 125000, rest: "" });
+    expect(ceilingOf("no ceiling yet")).toBeNull();
+  });
+
+  it("is drawn as an amount with its fraction raised, and is still read as the server wrote it", async () => {
+    flow();
+    renderApp("/start");
+    await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
+    const terms = within(await screen.findByRole("list", { name: "The mandate's terms" }));
+    const ceiling = terms.getByText("$120.00 each").closest("li") as HTMLElement;
+    expect(ceiling.querySelector(".amt-c")).toHaveTextContent(".00");
   });
 });
