@@ -124,7 +124,7 @@ export async function backUp(
 ): Promise<{ file: string; kept: number; removed: number }> {
   const source = join(dataDir, "events.db");
   const folder = join(dataDir, "backups");
-  mkdirSync(folder, { recursive: true });
+  mkdirSync(folder, { recursive: true, mode: 0o750 });
   const stamp = now.toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
   const file = join(folder, `events-${stamp}.db`);
 
