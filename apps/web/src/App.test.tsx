@@ -1,8 +1,9 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { escalated, mockDevice, mockServer, renderApp, run } from "./test-utils";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { escalated, loadDashboard, mockDevice, mockServer, renderApp, run } from "./test-utils";
 
+beforeAll(loadDashboard, 60_000);
 beforeEach(() => {
   mockDevice(false);
   mockServer();
@@ -12,7 +13,7 @@ afterEach(() => vi.unstubAllGlobals());
 const headings = {
   "/runs": "Runs",
   "/escalations": "Escalations",
-  "/dashboard": "Dashboard",
+  "/dashboard": "How it's doing",
   "/arena": "Arena",
 };
 
@@ -32,7 +33,8 @@ describe("navigation", () => {
     renderApp(path);
     expect(await screen.findByRole("heading", { level: 1, name: heading })).toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Main" });
-    expect(within(nav).getByRole("link", { name: new RegExp(heading) })).toHaveAttribute(
+    const link = path === "/dashboard" ? "Dashboard" : heading;
+    expect(within(nav).getByRole("link", { name: new RegExp(link) })).toHaveAttribute(
       "aria-current",
       "page",
     );
@@ -43,7 +45,9 @@ describe("navigation", () => {
     renderApp();
     const nav = screen.getByRole("navigation", { name: "Main" });
     await user.click(within(nav).getByRole("link", { name: /Dashboard/ }));
-    expect(screen.getByRole("heading", { level: 1, name: "Dashboard" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "How it's doing" }),
+    ).toBeInTheDocument();
     await user.click(within(nav).getByRole("link", { name: /Arena/ }));
     expect(
       screen.getByRole("heading", { name: "The arena arrives in version 1.3." }),
@@ -54,7 +58,7 @@ describe("navigation", () => {
     renderApp("/escalations");
     expect(await screen.findByText("Nothing is waiting on you")).toBeInTheDocument();
     renderApp("/dashboard");
-    expect(await screen.findByText("No numbers to show yet.")).toBeInTheDocument();
+    expect(await screen.findByText("This server has no results folder.")).toBeInTheDocument();
   });
 
   it("has a page for a run, and one for an address that isn't a page", async () => {

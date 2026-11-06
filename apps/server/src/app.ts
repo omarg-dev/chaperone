@@ -4,6 +4,7 @@ import type { PaymentAdapter } from "@firewall/payments";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import { arenaRoutes } from "./routes/arena.js";
+import { evalRoutes } from "./routes/eval.js";
 import { eventRoutes } from "./routes/events.js";
 import { version } from "./version.js";
 import { webHandler } from "./web.js";
@@ -15,6 +16,9 @@ export interface AppDependencies {
   // production). Unset, the decision route answers 503 with `paymentsUnavailable`.
   payments?: PaymentAdapter;
   paymentsUnavailable?: string;
+  // The folder of the eval's results files (`RESULTS_DIR`), served read-only. Unset, the server has
+  // none to serve and `/eval/results` says so (an empty list, not available).
+  resultsDir?: string;
   // The built web app's folder. Unset (or missing), the server is the API alone.
   webDir?: string;
 }
@@ -27,7 +31,14 @@ const SHOP_STATUS: Record<ShopError["code"], ContentfulStatusCode> = {
 };
 
 // The HTTP app without a listening socket, so tests can call it directly.
-export function createApp({ log, arena, payments, paymentsUnavailable, webDir }: AppDependencies) {
+export function createApp({
+  log,
+  arena,
+  payments,
+  paymentsUnavailable,
+  resultsDir,
+  webDir,
+}: AppDependencies) {
   const app = new Hono();
 
   // Polled by the Docker HEALTHCHECK and by the deploy workflow after a release.
@@ -40,6 +51,8 @@ export function createApp({ log, arena, payments, paymentsUnavailable, webDir }:
       ...(paymentsUnavailable && { paymentsUnavailable }),
     }),
   );
+
+  app.route("/eval", evalRoutes(resultsDir ?? null));
 
   if (webDir) app.notFound(webHandler(webDir));
 

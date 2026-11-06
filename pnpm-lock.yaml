@@ -26,6 +26,9 @@ importers:
       '@firewall/arena':
         specifier: workspace:*
         version: link:../../packages/arena
+      '@firewall/eval':
+        specifier: workspace:*
+        version: link:../../packages/eval
       '@firewall/events':
         specifier: workspace:*
         version: link:../../packages/events
@@ -63,6 +66,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@firewall/eval':
+        specifier: workspace:*
+        version: link:../../packages/eval
       '@firewall/events':
         specifier: workspace:*
         version: link:../../packages/events
@@ -75,6 +81,12 @@ importers:
       '@fontsource/fragment-mono':
         specifier: 5.3.0
         version: 5.3.0
+      ag-grid-community:
+        specifier: 36.2.0
+        version: 36.2.0
+      ag-grid-react:
+        specifier: 36.2.0
+        version: 36.2.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -176,6 +188,9 @@ importers:
       '@firewall/sdk':
         specifier: workspace:*
         version: link:../sdk
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
     devDependencies:
       ai:
         specifier: 7.0.134
@@ -1315,6 +1330,21 @@ packages:
   '@workflow/serde@4.1.0':
     resolution: {integrity: sha512-pav4F2BoirECWR7Nf1TKt+2eETcBj7jj4cBefQ8VXQCA6NPkaKeLfj/zMgi+3zYV5ZIBT4GuUiphsj0/b9hPQQ==}
 
+  ag-charts-types@14.2.0:
+    resolution: {integrity: sha512-4pDV6/4zbzPN7t607Gr1o6DO9RhmPafQGr+hIpTJBaerbaMoC+WOO3v/wkxFbvCNrHKOexEKSfNTH7PaAR4UzA==}
+
+  ag-grid-community@36.2.0:
+    resolution: {integrity: sha512-tK0Toj7t0fV/OMLPnDc0xlYKAqDbnCT3iJodYSn2TJ541caU8jPdYwWhMdW+AP2+pUNwFiJVgc04eJNfvBPsWw==}
+
+  ag-grid-react@36.2.0:
+    resolution: {integrity: sha512-7dsaR4Ga8/bJAOov7XJqxsDc1JAjUU5Bmh9+s4U9+/TKIdSsaVo53SuZb2yEFSB1elv3eh6aZP8a1fqGZehXwA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+      react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
+  ag-stack@36.2.0:
+    resolution: {integrity: sha512-f3XT2htFs9dUPcHni2z9ak69QNta5ODEpooHuuNvbjN98JkokpEqRQ9YLQHQJFdCcgi9Ybs/j3zkkvmNRamIPg==}
+
   agent-base@6.0.2:
     resolution: {integrity: sha512-RZNwNclF7+MS/8bDg70amg32dyeZGZxiDuQmZxKLAlQjr3jGyLx+4Kkk58UO7D2QdgFIQCovuSuZESne6RG6XQ==}
     engines: {node: '>= 6.0.0'}
@@ -1763,6 +1793,10 @@ packages:
   lodash.flatmap@4.5.0:
     resolution: {integrity: sha512-/OcpcAGWlrZyoHGeHh3cAoa6nGdX6QYtmzNP84Jqol6UEQQ2gIaU3H+0eICcjcKGl0/XF8LWOujNn9lffsnaOg==}
 
+  loose-envify@1.4.0:
+    resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
+    hasBin: true
+
   lru-cache@11.5.3:
     resolution: {integrity: sha512-U4N8FgzmWxc8k1VH8Kr6lQg18U7Fjvby6wXHVRX/ZZ7IwWbRMgrRbP0Wrb5q5NVinryp4SQampHKdvtecItxUg==}
     engines: {node: 20 || >=22}
@@ -1805,6 +1839,10 @@ packages:
     resolution: {integrity: sha512-VijLXbi3UACN69I0JVXJsX4tjACjNoQDgv2gTF6sx2wWEi8tkSg2eX8p5gSIFi8z2+DL3oHmY6OyKce38SDolg==}
     engines: {node: ^18 || ^20 || >= 21}
 
+  object-assign@4.1.1:
+    resolution: {integrity: sha512-rJgTQnkUnH1sFw8yT6VSU3zD3sWmu6sZhIseY8VX+GRu3P6F7Fu+JNDoXfklElbLJSnc3FUQHVe4cU5hj+BcUg==}
+    engines: {node: '>=0.10.0'}
+
   obug@3.0.0:
     resolution: {integrity: sha512-5vvB5+W7ePv+p3uqxi+RcW1XAzLW0/hxt3/4X4Lc4qHudzOhmBiBwOY6DRob4WnanAEGvNcLjF+KNOufrUoEQw==}
     engines: {node: '>=12.20.0'}
@@ -1827,6 +1865,9 @@ packages:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
 
+  prop-types@15.8.1:
+    resolution: {integrity: sha512-oj87CgZICdulUohogVAR7AjlC0327U4el4L6eAvOqCeudMDVU0NThNaV+b9Df4dXgSP1gXMTnPdhfe/2qDH5cg==}
+
   proxy-from-env@2.1.0:
     resolution: {integrity: sha512-cJ+oHTW1VAEa8cJslgmUZrc+sjRKgAKl3Zyse6+PV38hZe/V6Z14TbCuXcan9F9ghlz4QrFr2c92TNF82UkYHA==}
     engines: {node: '>=10'}
@@ -1839,6 +1880,9 @@ packages:
     resolution: {integrity: sha512-JDk8dgif51OjFoDE70+OT9ICyYr+69HlmihNwp1+Nsfbna3t5sIiCa9ZJktDmQ4/1b/rn26hIAR2uYXDMr5r0Q==}
     peerDependencies:
       react: ^19.3.0
+
+  react-is@16.13.1:
+    resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
   react-is@17.0.2:
     resolution: {integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==}
@@ -2817,6 +2861,22 @@ snapshots:
 
   '@workflow/serde@4.1.0': {}
 
+  ag-charts-types@14.2.0: {}
+
+  ag-grid-community@36.2.0:
+    dependencies:
+      ag-charts-types: 14.2.0
+      ag-stack: 36.2.0
+
+  ag-grid-react@36.2.0(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+    dependencies:
+      ag-grid-community: 36.2.0
+      prop-types: 15.8.1
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+
+  ag-stack@36.2.0: {}
+
   agent-base@6.0.2:
     dependencies:
       debug: 4.4.3
@@ -3218,6 +3278,10 @@ snapshots:
 
   lodash.flatmap@4.5.0: {}
 
+  loose-envify@1.4.0:
+    dependencies:
+      js-tokens: 4.0.0
+
   lru-cache@11.5.3: {}
 
   lz-string@1.5.0: {}
@@ -3244,6 +3308,8 @@ snapshots:
 
   node-addon-api@8.9.2: {}
 
+  object-assign@4.1.1: {}
+
   obug@3.0.0: {}
 
   parse5@8.0.1:
@@ -3266,6 +3332,12 @@ snapshots:
       ansi-styles: 5.2.0
       react-is: 17.0.2
 
+  prop-types@15.8.1:
+    dependencies:
+      loose-envify: 1.4.0
+      object-assign: 4.1.1
+      react-is: 16.13.1
+
   proxy-from-env@2.1.0: {}
 
   punycode@2.3.1: {}
@@ -3274,6 +3346,8 @@ snapshots:
     dependencies:
       react: 19.3.0
       scheduler: 0.28.0
+
+  react-is@16.13.1: {}
 
   react-is@17.0.2: {}
 

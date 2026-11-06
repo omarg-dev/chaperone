@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   formatAgo,
   formatCost,
+  formatDate,
+  formatDuration,
   formatElapsed,
   formatHoldEnds,
+  formatPercent,
   formatSpan,
   formatTime,
 } from "./format";
@@ -74,5 +77,31 @@ describe("formatAgo and formatHoldEnds", () => {
     expect(formatHoldEnds("2026-10-30T17:30:00Z", now)).toBe("Hold ends in 5 hours");
     expect(formatHoldEnds("2026-10-30T11:00:00Z", now)).toBe("The hold has ended");
     expect(formatHoldEnds("", now)).toBe("");
+  });
+});
+
+describe("formatPercent", () => {
+  it("writes a rate with one decimal, and n/a for a rate with nothing to divide", () => {
+    expect(formatPercent(0.6875)).toBe("68.8%");
+    expect(formatPercent(0)).toBe("0.0%");
+    expect(formatPercent(1)).toBe("100.0%");
+    expect(formatPercent(null)).toBe("n/a");
+  });
+});
+
+describe("formatDuration", () => {
+  it("writes milliseconds under a second and seconds above", () => {
+    expect(formatDuration(1)).toBe("1 ms");
+    expect(formatDuration(840.4)).toBe("840 ms");
+    expect(formatDuration(3344.7)).toBe("3.3 s");
+    expect(formatDuration(null)).toBe("n/a");
+  });
+});
+
+describe("formatDate", () => {
+  it("writes a calendar date day first, whatever the viewer's zone", () => {
+    expect(formatDate("2026-10-26")).toBe("26 Oct 2026");
+    expect(formatDate("2026-01-03")).toBe("3 Jan 2026");
+    expect(formatDate("soon")).toBe("soon");
   });
 });

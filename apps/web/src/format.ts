@@ -61,3 +61,28 @@ export function formatHoldEnds(expiresAt: string, now: number): string {
   if (Number.isNaN(ends)) return "";
   return ends <= now ? "The hold has ended" : `Hold ends in ${formatSpan(ends - now)}`;
 }
+
+// A rate the eval computed, as a percentage with one decimal: "68.8%". A rate with nothing to divide
+// is null, and says so rather than reading as zero.
+export const formatPercent = (rate: number | null): string =>
+  rate === null ? "n/a" : `${(rate * 100).toFixed(1)}%`;
+
+// A time in milliseconds: "1 ms", "840 ms", "3.3 s". Null (no review was timed) says n/a.
+export function formatDuration(ms: number | null): string {
+  if (ms === null) return "n/a";
+  return ms < 1000 ? `${Math.round(ms)} ms` : `${(ms / 1000).toFixed(1)} s`;
+}
+
+// A date the eval wrote (YYYY-MM-DD), day first: "26 Oct 2026". It is a calendar date, not an
+// instant, so it is read as one and never moved by the viewer's time zone.
+export function formatDate(date: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return date;
+  const [, year, month, day] = match;
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(Date.UTC(Number(year), Number(month) - 1, Number(day))));
+}

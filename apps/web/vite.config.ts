@@ -15,6 +15,7 @@ export default defineConfig({
       "/health": target,
       "/events": { target, bypass: apiOnly },
       "/arena": { target, bypass: apiOnly },
+      "/eval": { target, bypass: apiOnly },
     },
   },
 });

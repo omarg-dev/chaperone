@@ -2,21 +2,6 @@ import { Link } from "react-router";
 import { buttonClass, EmptyState } from "../design";
 import { PageHeader } from "./Page";
 
-export function Dashboard() {
-  return (
-    <>
-      <PageHeader
-        title="Dashboard"
-        lede="How often agents are fooled, with Chaperone off and on."
-      />
-      <EmptyState title="No numbers to show yet.">
-        This page will chart attack success, false blocks, cost and delay for each configuration,
-        from the eval's runs.
-      </EmptyState>
-    </>
-  );
-}
-
 export function Arena() {
   return (
     <>
