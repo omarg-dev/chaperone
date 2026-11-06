@@ -191,7 +191,8 @@ How the $5 stretches:
 - [ ] Get a Gemini API key from a Google Cloud project with billing turned off.
 - [ ] Add OpenAI API credit (the ChatGPT subscription doesn't cover the API), or drop that column.
 - [ ] Claim the $50 Render credits.
-- [ ] Create a Channel3 developer account and apply the hackathon code; add the key as a network secret for `api.trychannel3.com` (header `x-api-key`), or as `FIREWALL_CHANNEL3_API_KEY`, and allow `api.trychannel3.com` in the network settings. Then record Gate 2's fixtures with real market prices (`pnpm --filter @firewall/firewall record-gate2-fixtures`).
+- [x] Create a Channel3 developer account and apply the hackathon code; add the key as a network secret for `api.trychannel3.com`. Done Nov 6; a request with `x-api-key: proxy-injected` gets a 200, so the cloud session runs with `FIREWALL_CHANNEL3_API_KEY=proxy-injected`. The first sandbox matrix ran without it, so its market reference was unavailable.
+- [ ] Record Gate 2's fixtures with real market prices (`pnpm --filter @firewall/firewall record-gate2-fixtures`).
 - [x] Install the APIMatic Context Plugin in Claude Code.
 - [ ] Ask AG Grid and Bryntum on the hackathon Discord for licenses that last until Dec 15, and don't start either 45-day trial before Oct 25.
 - [ ] Ask on the Discord whether any sponsor offers model API credits.
