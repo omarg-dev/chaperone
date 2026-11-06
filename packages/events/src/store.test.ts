@@ -29,6 +29,8 @@ const noOutcome = {
   seed: null,
   reviews: [],
   paidPayees: [],
+  origin: null,
+  payments: null,
 };
 
 const base: NewEvent = { runId: "run_a", lane: "agent", type: "tool_call", provenance: "system" };

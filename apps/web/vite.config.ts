@@ -16,6 +16,7 @@ export default defineConfig({
       "/events": { target, bypass: apiOnly },
       "/arena": { target, bypass: apiOnly },
       "/eval": { target, bypass: apiOnly },
+      "/live": { target, bypass: apiOnly },
     },
   },
 });

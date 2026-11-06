@@ -7,6 +7,7 @@ import { openEventLog } from "@firewall/events";
 import {
   acceptsDraftAsIs,
   arenaVocabulary,
+  lockMandate,
   type MandateBuilder,
   type MandateDraft,
 } from "@firewall/mandate";
@@ -466,6 +467,47 @@ describe("the mandate", () => {
     expect(locked).toMatchObject({ lane: "mandate", provenance: "system" });
     expect(locked?.payload).toMatchObject({ source: "supplied" });
     expect(locked?.seq).toBeLessThan(events.find((e) => e.type === "checkout")?.seq ?? 0);
+  });
+
+  it("a mandate the person already locked in this run is not written a second time", async () => {
+    const mandate = sc01Mandate();
+    const run = arena.start("sc_b01", "gate2-1");
+    log.append({
+      runId: run.runId,
+      scenarioId: "sc_b01",
+      lane: "mandate",
+      type: "mandate_locked",
+      provenance: "system",
+      parentId: log.listRun(run.runId)[0]?.eventId ?? null,
+      payload: { mandate },
+    });
+    const firewall = createFirewall({
+      log,
+      source: arenaSource({ arena, log, runId: run.runId }),
+      payments: fake,
+      vaultId: "FAKE-WALLET",
+      config: "gate0",
+      mandate,
+    });
+    await expect(firewall.ready()).resolves.toEqual(mandate);
+    expect(log.listRun(run.runId).filter((e) => e.type === "mandate_locked")).toHaveLength(1);
+    // A different mandate is a different confirmation, and is written.
+    const other = lockMandate(
+      { ...SC_B01_DRAFT, quantity: 2 },
+      {
+        vocabulary: arenaVocabulary(),
+        confirmedAt: "2026-10-23T09:00:00.000Z",
+      },
+    );
+    await createFirewall({
+      log,
+      source: arenaSource({ arena, log, runId: run.runId }),
+      payments: fake,
+      vaultId: "FAKE-WALLET",
+      config: "gate0",
+      mandate: other,
+    }).ready();
+    expect(log.listRun(run.runId).filter((e) => e.type === "mandate_locked")).toHaveLength(2);
   });
 
   it("a mandate altered after locking is refused", async () => {

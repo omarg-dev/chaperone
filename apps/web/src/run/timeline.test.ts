@@ -575,3 +575,58 @@ describe("what an escalated run says about being held", () => {
     expect(build([...fixtures.escalated, released]).holdExpiresAt).toBeNull();
   });
 });
+
+// Runs started from the web app: the person drafts and locks the mandate in the run, then the agent
+// shops. These are real logs too (the same recorder, in the server's order of things).
+describe("a run started from the web app", () => {
+  it("says which money it moved, and is the same run view as any other once the agent shops", () => {
+    const run = build(fixtures.webApproved);
+    expect(run.payments).toBe("fake");
+    expect(run.headline).toMatchObject({ outcome: "approved", pill: { state: "approve" } });
+    expect(run.terms.map((t) => t.label)).toContain("Budget");
+    expect(run.live).toBe(false);
+    // One lock, ahead of everything the agent did.
+    const at = (type: string) => fixtures.webApproved.findIndex((e) => e.type === type);
+    expect(at("mandate_locked")).toBeLessThan(at("agent_started"));
+    expect(fixtures.webApproved.filter((e) => e.type === "mandate_locked")).toHaveLength(1);
+  });
+
+  it("says nothing about money for a run that didn't record its adapter", () => {
+    expect(build(fixtures.approved).payments).toBeNull();
+  });
+
+  it("stops at a rejected mandate: no agent ran, nothing moved, and nobody polls for more", () => {
+    const run = build(fixtures.webMandateRejected);
+    expect(run.headline).toMatchObject({
+      outcome: "no_agent",
+      pill: null,
+      badge: "No run",
+      title: "You rejected the mandate, so no agent ran.",
+    });
+    expect(run.live).toBe(false);
+    expect(run.money.state).toBe("none");
+    const steps = of(run.items, "step").map((s) => s.title);
+    expect(steps).toContain("Rejected");
+    expect(of(run.items, "step").find((s) => s.title === "Rejected")?.quote).toBe(
+      "Not what I meant",
+    );
+  });
+
+  it("waits for a mandate nobody has confirmed, without following it for ever", () => {
+    const run = build(fixtures.webMandateWaiting);
+    expect(run.headline).toMatchObject({
+      outcome: "mandate_waiting",
+      badge: "Not confirmed",
+      title: "This mandate is waiting for you.",
+    });
+    expect(run.live).toBe(false);
+    expect(run.terms).toEqual([]);
+  });
+
+  it("is followed as in progress once the mandate is locked and before the agent's events arrive", () => {
+    const locked = upTo(fixtures.webApproved, "mandate", "mandate_locked");
+    const run = build(locked, Date.parse(locked.at(-1)?.ts ?? "") + 1000);
+    expect(run.live).toBe(true);
+    expect(run.headline).toMatchObject({ outcome: "in_progress" });
+  });
+});

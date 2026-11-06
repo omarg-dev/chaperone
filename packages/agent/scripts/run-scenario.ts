@@ -21,29 +21,14 @@
 import { parseArgs } from "node:util";
 import { createArenaService, findScenario } from "@firewall/arena";
 import { type Event, openEventLog } from "@firewall/events";
-import {
-  CONFIG_GATES,
-  channel3ConfigFromEnv,
-  createChannel3Market,
-  createExtractor,
-  createIntentAuditor,
-  decideEscalation,
-  extractionVocabulary,
-  isFirewallConfig,
-} from "@firewall/firewall";
-import {
-  arenaVocabulary,
-  createAnthropicClient,
-  createMandateBuilder,
-  anthropicConfigFromEnv as gateConfigFromEnv,
-} from "@firewall/mandate";
+import { CONFIG_GATES, decideEscalation, isFirewallConfig } from "@firewall/firewall";
 import { createFakePaymentAdapter, type PaymentAdapter } from "@firewall/payments";
 import { approveAsBuyer, buyerLoginFromEnv } from "@firewall/payments/buyer";
 import {
-  anthropicConfigFromEnv,
-  createColumnModel,
   DEFAULT_LIMITS,
   HAIKU_COLUMN,
+  type LiveModels,
+  liveModelsFromEnv,
   runWithFirewall,
 } from "../src/index.js";
 import { dollars, eventLogPath, fail, RETURN_URL, sandboxAdapter } from "./common.js";
@@ -79,11 +64,11 @@ if (values.decide !== undefined && values.decide !== "approve" && values.decide 
 const maxUsd = Number(values["max-usd"]);
 if (!Number.isFinite(maxUsd) || maxUsd <= 0) fail(`--max-usd must be a positive number`);
 
-let agentConfig: ReturnType<typeof anthropicConfigFromEnv>;
-let gatesConfig: ReturnType<typeof gateConfigFromEnv>;
+// The agent's model, the mandate builder and the gates, from the app's own settings: the same ones
+// the web app's live runs use.
+let models: LiveModels;
 try {
-  agentConfig = anthropicConfigFromEnv();
-  gatesConfig = gateConfigFromEnv();
+  models = liveModelsFromEnv();
 } catch (error) {
   fail((error as Error).message);
 }
@@ -154,25 +139,19 @@ try {
   );
   console.log(`Request: "${scenario.request}"`);
 
-  // The mandate builder and the gates share one client, built from the app's own settings.
-  const client = createAnthropicClient(gatesConfig);
   const result = await runWithFirewall({
     arena,
     log,
     payments: adapter,
     vaultId,
-    column: HAIKU_COLUMN,
-    model: createColumnModel(HAIKU_COLUMN, agentConfig),
+    column: models.column,
+    model: models.model,
     scenarioId: scenario.scenarioId,
     seed: values.seed,
     limits: { maxUsd },
-    builder: createMandateBuilder({ client, vocabulary: arenaVocabulary() }),
+    builder: models.builder,
     firewall,
-    gates: (catalog) => ({
-      extractor: createExtractor({ client, vocabulary: extractionVocabulary(catalog) }),
-      auditor: createIntentAuditor({ client }),
-      market: createChannel3Market(channel3ConfigFromEnv()),
-    }),
+    gates: models.gates,
   });
   const { agent, review } = result;
   let { enforcement } = result;

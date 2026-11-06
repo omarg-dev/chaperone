@@ -23,6 +23,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@firewall/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
       '@firewall/arena':
         specifier: workspace:*
         version: link:../../packages/arena
@@ -35,6 +38,9 @@ importers:
       '@firewall/firewall':
         specifier: workspace:*
         version: link:../../packages/firewall
+      '@firewall/mandate':
+        specifier: workspace:*
+        version: link:../../packages/mandate
       '@firewall/payments':
         specifier: workspace:*
         version: link:../../packages/payments
@@ -57,6 +63,9 @@ importers:
       '@firewall/web':
         specifier: workspace:*
         version: link:../web
+      ai:
+        specifier: 7.0.134
+        version: 7.0.134(zod@4.6.7)
       esbuild:
         specifier: 0.28.2
         version: 0.28.2

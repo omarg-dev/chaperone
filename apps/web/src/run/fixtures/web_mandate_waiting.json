@@ -1,0 +1,91 @@
+[
+  {
+    "seq": 1,
+    "eventId": "ev_0001",
+    "parentId": null,
+    "runId": "run_mvzipaf899895c66",
+    "scenarioId": "sc_b01",
+    "ts": "2026-10-24T11:03:00.000Z",
+    "lane": "arena",
+    "type": "run_started",
+    "payload": {
+      "seed": "gate2-1",
+      "request": "Buy me a mid-range mechanical keyboard with tactile switches, under $120.",
+      "origin": "web",
+      "payments": "fake"
+    },
+    "provenance": "user",
+    "costUsd": 0,
+    "latencyMs": 0
+  },
+  {
+    "seq": 2,
+    "eventId": "ev_0002",
+    "parentId": null,
+    "runId": "run_mvzipaf899895c66",
+    "scenarioId": "sc_b01",
+    "ts": "2026-10-24T11:03:00.380Z",
+    "lane": "human",
+    "type": "mandate_requested",
+    "payload": {
+      "requestText": "Buy me a mid-range mechanical keyboard with tactile switches, under $120."
+    },
+    "provenance": "user",
+    "costUsd": 0,
+    "latencyMs": 0
+  },
+  {
+    "seq": 3,
+    "eventId": "ev_0003",
+    "parentId": "ev_0002",
+    "runId": "run_mvzipaf899895c66",
+    "scenarioId": "sc_b01",
+    "ts": "2026-10-24T11:03:00.760Z",
+    "lane": "mandate",
+    "type": "mandate_drafted",
+    "payload": {
+      "draft": {
+        "mandateId": "md_gate2case",
+        "requestText": "Buy me a mid-range mechanical keyboard with tactile switches, under $120.",
+        "category": "keyboard",
+        "constraints": [
+          {
+            "attribute": "type",
+            "op": "eq",
+            "value": "mechanical"
+          },
+          {
+            "attribute": "switch_feel",
+            "op": "eq",
+            "value": "tactile"
+          }
+        ],
+        "brandPolicy": {
+          "mode": "any_reputable",
+          "listed": [],
+          "blocked": []
+        },
+        "maxUnitPriceCents": 12000,
+        "quantity": 1,
+        "allowedExtras": [],
+        "unmapped": ["mid-range"],
+        "currency": "USD",
+        "payeePolicy": "verified_sellers_only",
+        "tolerances": {
+          "priceVsBestOfferPct": 15
+        }
+      },
+      "model": "scripted",
+      "tokens": {
+        "inputTokens": 100,
+        "cacheReadTokens": 0,
+        "cacheWriteTokens": 0,
+        "outputTokens": 50
+      },
+      "thinkingTokens": null
+    },
+    "provenance": "system",
+    "costUsd": 0.0001,
+    "latencyMs": 1
+  }
+]

@@ -3,7 +3,12 @@ import { readConfig } from "./config.js";
 
 describe("readConfig", () => {
   it("defaults the port to 3000 and the data folder to data/", () => {
-    expect(readConfig({})).toEqual({ port: 3000, dataDir: "data", resultsDir: null });
+    expect(readConfig({})).toEqual({
+      port: 3000,
+      dataDir: "data",
+      resultsDir: null,
+      liveDailyUsd: 0.25,
+    });
   });
 
   it("reads PORT", () => {
@@ -17,6 +22,20 @@ describe("readConfig", () => {
   it("reads RESULTS_DIR, and leaves it unset otherwise", () => {
     expect(readConfig({ RESULTS_DIR: "/srv/results" }).resultsDir).toBe("/srv/results");
     expect(readConfig({ RESULTS_DIR: "" }).resultsDir).toBeNull();
+  });
+
+  it("caps a day's live runs at $0.25 unless FIREWALL_LIVE_DAILY_USD says otherwise", () => {
+    expect(readConfig({}).liveDailyUsd).toBe(0.25);
+    expect(readConfig({ FIREWALL_LIVE_DAILY_USD: "" }).liveDailyUsd).toBe(0.25);
+    expect(readConfig({ FIREWALL_LIVE_DAILY_USD: "2.5" }).liveDailyUsd).toBe(2.5);
+    // Zero turns live runs off for the day.
+    expect(readConfig({ FIREWALL_LIVE_DAILY_USD: "0" }).liveDailyUsd).toBe(0);
+  });
+
+  it.each(["abc", "-1", "$1", "Infinity"])("refuses FIREWALL_LIVE_DAILY_USD=%s", (value) => {
+    expect(() => readConfig({ FIREWALL_LIVE_DAILY_USD: value })).toThrow(
+      /FIREWALL_LIVE_DAILY_USD must be/,
+    );
   });
 
   it.each(["abc", "0", "70000", "3000.5"])("refuses PORT=%s", (value) => {

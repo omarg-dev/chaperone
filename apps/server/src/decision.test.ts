@@ -36,7 +36,7 @@ const appWith = (payments?: PaymentAdapter, paymentsUnavailable?: string) =>
   createApp({
     log,
     arena: createArenaService({ log }),
-    ...(payments && { payments }),
+    ...(payments && { payments: { name: "fake", adapter: payments, vaultId: "FAKE-WALLET" } }),
     ...(paymentsUnavailable && { paymentsUnavailable }),
   });
 
@@ -50,7 +50,7 @@ async function heldRun(verdict: "escalate" | "approve" = "escalate") {
     lane: "arena",
     type: "run_started",
     provenance: "user",
-    payload: { seed: "1", request: "Buy me a keyboard." },
+    payload: { seed: "1", request: "Buy me a keyboard.", payments: "fake" },
   });
   const payments = recordPayments(fake, log, () => ({
     runId,

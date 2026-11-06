@@ -10,6 +10,9 @@ import escalatedRejected from "./escalated_rejected.json";
 import escalatedReleased from "./escalated_released.json";
 import escalatedUnfinished from "./escalated_unfinished.json";
 import extraItem from "./extra_item.json";
+import webApproved from "./web_approved.json";
+import webMandateRejected from "./web_mandate_rejected.json";
+import webMandateWaiting from "./web_mandate_waiting.json";
 
 const as = (log: unknown) => log as RunEvent[];
 
@@ -23,6 +26,10 @@ export const fixtures = {
   escalatedReleased: as(escalatedReleased),
   escalatedUnfinished: as(escalatedUnfinished),
   extraItem: as(extraItem),
+  // Runs started from the web app: the whole run, and runs that stopped at the mandate.
+  webApproved: as(webApproved),
+  webMandateRejected: as(webMandateRejected),
+  webMandateWaiting: as(webMandateWaiting),
 };
 
 // What GET /events/runs/:runId/payees answers for the arena's sellers (the first four are honest,

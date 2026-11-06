@@ -6,6 +6,7 @@ import { Runs } from "./pages/Runs";
 import { RunView } from "./run/RunView";
 import { RunsProvider } from "./runs/RunsProvider";
 import { Shell } from "./shell/Shell";
+import { Start } from "./start/Start";
 
 // The dashboard carries the data grid, which is most of the app's weight, so it loads when someone
 // opens the page and the run view and the lists don't wait for it.
@@ -19,6 +20,7 @@ export function App() {
       <Routes>
         <Route element={<Shell />}>
           <Route index element={<Navigate to="/runs" replace />} />
+          <Route path="start" element={<Start />} />
           <Route path="runs" element={<Runs />} />
           <Route path="runs/:runId" element={<RunView />} />
           <Route path="escalations" element={<Escalations />} />

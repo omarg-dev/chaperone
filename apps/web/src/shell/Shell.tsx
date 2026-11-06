@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useMatch } from "react-router";
-import { Wordmark } from "../design";
+import { buttonClass, Wordmark } from "../design";
 import { useRuns } from "../runs/RunsProvider";
 import { ThemeSwitch } from "../theme/ThemeSwitch";
 
@@ -65,6 +65,9 @@ export function Shell() {
           </NavLink>
         </nav>
         <div className="topbar-end">
+          <NavLink to="/start" className={`${buttonClass("primary", true)} topbar-start`}>
+            Start a run
+          </NavLink>
           <ThemeSwitch />
         </div>
       </header>

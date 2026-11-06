@@ -9,10 +9,13 @@ import {
   acceptsDraftAsIs,
   buildMandate,
   type Decision,
+  draftMandate,
   lockedMandateOf,
+  mandateProgressOf,
   type Person,
   type SessionContext,
   scriptedPerson,
+  stepMandate,
 } from "./session.js";
 import {
   builderAnswering,
@@ -237,5 +240,114 @@ describe("lockedMandateOf", () => {
         : e,
     );
     expect(() => lockedMandateOf(events)).toThrow(/was altered.*hash mismatch/);
+  });
+});
+
+// The web app's way in: the same decisions, one request at a time, with nothing held between them
+// but the event log.
+describe("taking the mandate one decision at a time", () => {
+  async function drafted() {
+    const { builder } = builderAnswering(messageWith(JSON.stringify(tactileTerms)));
+    return draftMandate(context, builder, REQUEST);
+  }
+  const progress = () => mandateProgressOf(log.listRun("run_m1"));
+
+  it("reads where a mandate stands from the log alone", async () => {
+    expect(progress()).toEqual({ status: "none" });
+    const { draftEvent, requestEvent } = await drafted();
+    expect(progress()).toEqual({
+      status: "drafted",
+      draft: tactileDraft,
+      versionId: draftEvent.eventId,
+      requestEventId: requestEvent.eventId,
+    });
+  });
+
+  it("writes the same events as the terminal flow, edit by edit, and ends at a lock a gate can find", async () => {
+    await drafted();
+    const decisions: Decision[] = [
+      { kind: "edit", edit: { field: "maxUnitPriceCents", value: 10000 } },
+      { kind: "edit", edit: { field: "quantity", value: 2 } },
+      { kind: "accept" },
+    ];
+    for (const decision of decisions) {
+      const now = progress();
+      if (now.status !== "drafted") throw new Error("expected a draft");
+      const step = stepMandate(context, now, decision);
+      if (decision.kind === "edit") expect(step.outcome).toBe("open");
+    }
+    const events = log.listRun("run_m1");
+    expect(shape(events)).toEqual([
+      ["mandate_requested", "human", "user"],
+      ["mandate_drafted", "mandate", "system"],
+      ["mandate_edited", "human", "user"],
+      ["mandate_edited", "human", "user"],
+      ["mandate_confirmed", "human", "user"],
+      ["mandate_locked", "mandate", "system"],
+    ]);
+    const [, draftEvent, firstEdit, secondEdit, confirmed] = events as Event[];
+    expect(firstEdit?.parentId).toBe(draftEvent?.eventId);
+    expect(secondEdit?.parentId).toBe(firstEdit?.eventId);
+    expect(confirmed?.parentId).toBe(secondEdit?.eventId);
+    expect(lockedMandateOf(events)).toMatchObject({ maxUnitPriceCents: 10000, quantity: 2 });
+    const done = progress();
+    expect(done.status).toBe("locked");
+    expect(done.status === "locked" && done.mandate.hash).toBe(lockedMandateOf(events).hash);
+  });
+
+  it("says why an edit didn't fit and leaves the draft where it was", async () => {
+    const { draftEvent } = await drafted();
+    const now = progress();
+    if (now.status !== "drafted") throw new Error("expected a draft");
+    const step = stepMandate(context, now, {
+      kind: "edit",
+      edit: { field: "constraints", value: [{ attribute: "dpi", op: "gte", value: 800 }] },
+    });
+    expect(step).toMatchObject({ outcome: "open", versionId: draftEvent.eventId });
+    expect(step.outcome === "open" && step.problems.join()).toMatch(/keyboard has no attribute/);
+    expect(progress()).toMatchObject({ status: "drafted", versionId: draftEvent.eventId });
+    expect(log.listRun("run_m1").at(-1)).toMatchObject({ type: "mandate_edit_failed" });
+  });
+
+  it("refuses to lock a draft with no price ceiling, and says so", async () => {
+    const { builder } = builderAnswering(
+      messageWith(JSON.stringify({ ...tactileTerms, maxUnitPriceCents: null })),
+    );
+    await draftMandate(context, builder, REQUEST);
+    const now = progress();
+    if (now.status !== "drafted") throw new Error("expected a draft");
+    const step = stepMandate(context, now, { kind: "accept" });
+    expect(step.outcome === "open" && step.problems.join()).toMatch(/price ceiling/);
+    expect(log.listRun("run_m1").at(-1)).toMatchObject({ type: "mandate_confirm_failed" });
+    expect(progress().status).toBe("drafted");
+  });
+
+  it("ends at a rejection that locks nothing", async () => {
+    await drafted();
+    const now = progress();
+    if (now.status !== "drafted") throw new Error("expected a draft");
+    stepMandate(context, now, { kind: "reject", reason: " not what I meant " });
+    expect(progress()).toEqual({ status: "rejected", reason: "not what I meant" });
+  });
+
+  it("is not fooled by a lock that was altered afterwards", async () => {
+    await drafted();
+    const now = progress();
+    if (now.status !== "drafted") throw new Error("expected a draft");
+    stepMandate(context, now, { kind: "accept" });
+    const altered = log.listRun("run_m1").map((e) =>
+      e.type === "mandate_locked"
+        ? {
+            ...e,
+            payload: {
+              mandate: {
+                ...(e.payload as { mandate: Record<string, unknown> }).mandate,
+                maxUnitPriceCents: 99900,
+              },
+            },
+          }
+        : e,
+    );
+    expect(mandateProgressOf(altered).status).toBe("drafted");
   });
 });

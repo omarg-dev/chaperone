@@ -1,15 +1,16 @@
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { type LiveModels, liveModelsFromEnv } from "@firewall/agent";
 import { createArenaService } from "@firewall/arena";
 import { openEventLog } from "@firewall/events";
-import { createSandboxPaymentAdapter, sandboxConfigFromEnv } from "@firewall/payments";
 import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 import { readConfig } from "./config.js";
+import { paymentSetupFromEnv } from "./payments.js";
 import { version } from "./version.js";
 
-const { port, dataDir, resultsDir: configuredResults } = readConfig(process.env);
+const { port, dataDir, resultsDir: configuredResults, liveDailyUsd } = readConfig(process.env);
 
 // The bundled build ships the event log's migrations next to itself (see build.mjs). Run from
 // source, there's no such folder and the events package finds its own.
@@ -33,16 +34,19 @@ const webDir = [bundledWeb, builtWeb].find((dir) => existsSync(join(dir, "index.
 // RESULTS_DIR points at some.
 const resultsDir = configuredResults ?? fileURLToPath(new URL("../../../results", import.meta.url));
 
-// A person's decision on an escalated run is carried out on the sandbox, so it needs the sandbox
-// variables (.env.example). Without them the server runs as before and the decision route says
-// what's missing; the rest of the app doesn't need them.
-let payments: ReturnType<typeof createSandboxPaymentAdapter> | undefined;
-let paymentsUnavailable: string | undefined;
+// The one payment adapter: the sandbox's when its variables are set, otherwise a single fake the
+// server owns, so practice runs can be decided from the web app too. A live run from the web app
+// and a decision on it go through this same instance (createApp hands it to both).
+const { setup: payments, note: paymentsNote } = paymentSetupFromEnv(process.env);
+if (paymentsNote) console.warn(paymentsNote);
+
+// Live runs need the app's own model key (FIREWALL_ANTHROPIC_API_KEY). Without it they are off,
+// the page says so, and replays and everything else work as before.
+let models: LiveModels | null = null;
 try {
-  payments = createSandboxPaymentAdapter(sandboxConfigFromEnv(process.env));
+  models = liveModelsFromEnv(process.env);
 } catch (error) {
-  paymentsUnavailable = `Deciding a held purchase from the web app is off. ${error instanceof Error ? error.message : error}`;
-  console.warn(paymentsUnavailable);
+  console.warn(`Live runs are off. ${error instanceof Error ? error.message : error}`);
 }
 
 const server = serve(
@@ -50,8 +54,8 @@ const server = serve(
     fetch: createApp({
       log,
       arena,
-      ...(payments && { payments }),
-      ...(paymentsUnavailable && { paymentsUnavailable }),
+      payments,
+      live: { models, capUsd: liveDailyUsd },
       resultsDir,
       ...(webDir && { webDir }),
     }).fetch,

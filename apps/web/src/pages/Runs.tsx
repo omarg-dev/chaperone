@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import type { RunSummary } from "../api";
-import { Button, EmptyState, Pill } from "../design";
+import { Button, buttonClass, EmptyState, Pill } from "../design";
 import { formatTime } from "../format";
 import {
   applyFilters,
@@ -22,6 +22,7 @@ import {
   noVerdictText,
   OUTCOME_LABELS,
   OUTCOMES,
+  paymentsLabel,
   pillStateOf,
 } from "../runs/state";
 import { PageHeader } from "./Page";
@@ -154,9 +155,16 @@ export function Runs() {
       )}
 
       {status === "ready" && runs.length === 0 && (
-        <EmptyState title="No runs yet.">
+        <EmptyState
+          title="No runs yet."
+          action={
+            <Link to="/start" className={buttonClass("primary")}>
+              Start a run
+            </Link>
+          }
+        >
           When a shopping agent tries a purchase, it shows up here with its scenario, when it
-          started and what Chaperone decided.
+          started and what Chaperone decided. You can start one yourself.
         </EmptyState>
       )}
 
@@ -257,6 +265,9 @@ export function Runs() {
                       {title ?? run.scenarioId ?? "No scenario"}
                     </Link>
                     {run.kind === "attack" && <span className="badge">Attack</span>}
+                    {run.payments && (
+                      <span className="run-money-kind t-meta">{paymentsLabel(run.payments)}</span>
+                    )}
                   </span>
                   <span className="t-data">
                     {title && run.scenarioId ? `${run.scenarioId} · ` : ""}

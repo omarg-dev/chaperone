@@ -2,6 +2,7 @@ import type { Event, EventLog } from "@firewall/events";
 import { type DraftResult, MandateBuildError, type MandateBuilder } from "./builder.js";
 import {
   applyEdit,
+  draftSchema,
   type LockedMandate,
   lockMandate,
   type MandateDraft,
@@ -126,6 +127,87 @@ export type Confirmation =
   | { outcome: "locked"; mandate: LockedMandate; event: Event }
   | { outcome: "rejected"; reason: string | null; event: Event };
 
+// One version of the draft: the terms as they stand, and the event that holds them. An edit or the
+// confirmation points back at that event.
+export interface DraftVersion {
+  draft: MandateDraft;
+  versionId: string;
+}
+
+// What one decision did: the draft is still open (an edit went through, or one didn't and
+// `problems` says why), or the person's last word was written.
+export type Step = ({ outcome: "open" } & DraftVersion & { problems: string[] }) | Confirmation;
+
+// Carries out one decision on a draft and writes what it did. Synchronous, so a caller that reads
+// the draft's version from the log and steps it in one go can't be interleaved with another
+// decision on the same draft. `confirmMandate` (a person at a terminal) and the web app's
+// mandate route (a person in a browser) both go through it, so the events are the same either way.
+export function stepMandate(
+  context: SessionContext,
+  version: DraftVersion,
+  decision: Decision,
+): Step {
+  const { log, runId, scenarioId = null, vocabulary } = context;
+  const clock = context.clock ?? (() => new Date());
+  const { draft, versionId } = version;
+  const human = (type: string, payload: unknown, parentId = versionId) =>
+    log.append({ runId, scenarioId, parentId, lane: "human", type, provenance: "user", payload });
+
+  if (decision.kind === "edit") {
+    const { field, value } = decision.edit;
+    try {
+      const applied = applyEdit(draft, decision.edit, vocabulary);
+      const event = human("mandate_edited", {
+        mandateId: draft.mandateId,
+        field,
+        from: applied.from,
+        to: applied.to,
+        dropped: applied.dropped,
+        draft: applied.draft,
+      });
+      return { outcome: "open", draft: applied.draft, versionId: event.eventId, problems: [] };
+    } catch (error) {
+      if (!(error instanceof MandateError)) throw error;
+      human("mandate_edit_failed", {
+        mandateId: draft.mandateId,
+        field,
+        value,
+        ...reasons(error),
+      });
+      return { outcome: "open", ...version, problems: problemsOf(error) };
+    }
+  }
+
+  if (decision.kind === "reject") {
+    const reason = decision.reason?.trim() || null;
+    const event = human("mandate_rejected", { mandateId: draft.mandateId, reason });
+    return { outcome: "rejected", reason, event };
+  }
+
+  let mandate: LockedMandate;
+  try {
+    mandate = lockMandate(draft, { vocabulary, confirmedAt: clock().toISOString() });
+  } catch (error) {
+    if (!(error instanceof MandateError)) throw error;
+    human("mandate_confirm_failed", { mandateId: draft.mandateId, ...reasons(error) });
+    return { outcome: "open", ...version, problems: problemsOf(error) };
+  }
+  const confirmed = human("mandate_confirmed", { mandateId: draft.mandateId, draft });
+  const event = log.append({
+    runId,
+    scenarioId,
+    parentId: confirmed.eventId,
+    lane: "mandate",
+    type: "mandate_locked",
+    provenance: "system",
+    payload: { mandate },
+  });
+  return { outcome: "locked", mandate, event };
+}
+
+const problemsOf = (error: MandateError) =>
+  error.problems.length > 0 ? error.problems : [error.message];
+
 export interface ConfirmOptions {
   draft: MandateDraft;
   // The event that holds the draft (mandate_drafted). Edits and the confirmation point back at it.
@@ -140,76 +222,56 @@ export async function confirmMandate(
   context: SessionContext,
   options: ConfirmOptions,
 ): Promise<Confirmation> {
-  const { log, runId, scenarioId = null, vocabulary } = context;
-  const clock = context.clock ?? (() => new Date());
   const maxDecisions = options.maxDecisions ?? 50;
-  let draft = options.draft;
-  // The event holding the current version of the draft.
-  let versionId = options.draftEventId;
+  let version: DraftVersion = { draft: options.draft, versionId: options.draftEventId };
   let problems: string[] = [];
 
-  const human = (type: string, payload: unknown, parentId = versionId) =>
-    log.append({ runId, scenarioId, parentId, lane: "human", type, provenance: "user", payload });
-
   for (let round = 0; round < maxDecisions; round++) {
-    const decision = await options.person.review(draft, problems);
-    problems = [];
-
-    if (decision.kind === "edit") {
-      const { field, value } = decision.edit;
-      try {
-        const applied = applyEdit(draft, decision.edit, vocabulary);
-        const event = human("mandate_edited", {
-          mandateId: draft.mandateId,
-          field,
-          from: applied.from,
-          to: applied.to,
-          dropped: applied.dropped,
-          draft: applied.draft,
-        });
-        draft = applied.draft;
-        versionId = event.eventId;
-      } catch (error) {
-        if (!(error instanceof MandateError)) throw error;
-        human("mandate_edit_failed", {
-          mandateId: draft.mandateId,
-          field,
-          value,
-          ...reasons(error),
-        });
-        problems = error.problems.length > 0 ? error.problems : [error.message];
-      }
-      continue;
-    }
-
-    if (decision.kind === "reject") {
-      const reason = decision.reason?.trim() || null;
-      const event = human("mandate_rejected", { mandateId: draft.mandateId, reason });
-      return { outcome: "rejected", reason, event };
-    }
-
-    let mandate: LockedMandate;
-    try {
-      mandate = lockMandate(draft, { vocabulary, confirmedAt: clock().toISOString() });
-    } catch (error) {
-      if (!(error instanceof MandateError)) throw error;
-      human("mandate_confirm_failed", { mandateId: draft.mandateId, ...reasons(error) });
-      problems = error.problems.length > 0 ? error.problems : [error.message];
-      continue;
-    }
-    const confirmed = human("mandate_confirmed", { mandateId: draft.mandateId, draft });
-    const event = log.append({
-      runId,
-      scenarioId,
-      parentId: confirmed.eventId,
-      lane: "mandate",
-      type: "mandate_locked",
-      provenance: "system",
-      payload: { mandate },
-    });
-    return { outcome: "locked", mandate, event };
+    const decision = await options.person.review(version.draft, problems);
+    const step = stepMandate(context, version, decision);
+    if (step.outcome !== "open") return step;
+    version = { draft: step.draft, versionId: step.versionId };
+    problems = step.problems;
   }
-  throw new Error(`No decision on mandate ${draft.mandateId} after ${maxDecisions} tries`);
+  throw new Error(`No decision on mandate ${options.draft.mandateId} after ${maxDecisions} tries`);
+}
+
+// Where a run's mandate stands, read from its events alone, so a person can take it one decision
+// at a time over HTTP and the server holds nothing in memory between them. The version is the last
+// draft or edit; a lock or a rejection ends it.
+export type MandateProgress =
+  | { status: "none" }
+  | ({ status: "drafted" } & DraftVersion & { requestEventId: string })
+  | { status: "locked"; mandate: LockedMandate }
+  | { status: "rejected"; reason: string | null };
+
+export function mandateProgressOf(events: readonly Event[]): MandateProgress {
+  // Typed through a cast: the compiler would otherwise narrow both to null for the whole loop.
+  let open = null as (DraftVersion & { requestEventId: string }) | null;
+  let ended = null as MandateProgress | null;
+  let request: Event | null = null;
+  for (const event of events) {
+    const body = (event.payload ?? {}) as { draft?: unknown; reason?: unknown; mandate?: unknown };
+    if (event.lane === "human" && event.type === "mandate_requested") {
+      request = event;
+    } else if (event.lane === "mandate" && event.type === "mandate_drafted" && request) {
+      const draft = draftSchema.safeParse(body.draft);
+      open = draft.success
+        ? { draft: draft.data, versionId: event.eventId, requestEventId: request.eventId }
+        : null;
+      ended = null;
+    } else if (open && !ended && event.type === "mandate_edited") {
+      const draft = draftSchema.safeParse(body.draft);
+      if (draft.success) open = { ...open, draft: draft.data, versionId: event.eventId };
+    } else if (open && !ended && event.type === "mandate_rejected") {
+      ended = { status: "rejected", reason: typeof body.reason === "string" ? body.reason : null };
+    } else if (open && !ended && event.type === "mandate_locked") {
+      const verified = verifyMandate(body.mandate);
+      if (verified.intact) ended = { status: "locked", mandate: verified.mandate };
+    }
+  }
+  if (ended) return ended;
+  return open ? { status: "drafted", ...open } : { status: "none" };
 }
 
 const reasons = (error: MandateError) => ({ reason: error.message, problems: error.problems });

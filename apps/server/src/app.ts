@@ -1,21 +1,29 @@
+import type { LiveModels } from "@firewall/agent";
 import { type ArenaService, ShopError } from "@firewall/arena";
 import { type EventLog, InvalidEventError } from "@firewall/events";
-import type { PaymentAdapter } from "@firewall/payments";
 import { Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { createLiveService } from "./live/service.js";
+import type { PaymentSetup } from "./payments.js";
 import { arenaRoutes } from "./routes/arena.js";
 import { evalRoutes } from "./routes/eval.js";
 import { eventRoutes } from "./routes/events.js";
+import { liveRoutes } from "./routes/live.js";
 import { version } from "./version.js";
 import { webHandler } from "./web.js";
 
 export interface AppDependencies {
   log: EventLog;
   arena: ArenaService;
-  // What a person's decision on an escalated run is carried out through (the sandbox adapter in
-  // production). Unset, the decision route answers 503 with `paymentsUnavailable`.
-  payments?: PaymentAdapter;
+  // The one payment adapter the server moves money through: a live run holds its cart on it, and a
+  // person's decision on an escalated run is carried out on the same instance (the sandbox adapter
+  // when its variables are set, otherwise one in-memory fake). Unset, live runs are off and the
+  // decision route answers 503 with `paymentsUnavailable`.
+  payments?: PaymentSetup;
   paymentsUnavailable?: string;
+  // Live runs from the web app. `models` is null (or the field unset) when the server has no model
+  // key: live runs are then off, and the page says so. `capUsd` is FIREWALL_LIVE_DAILY_USD.
+  live?: { models: LiveModels | null; capUsd: number; now?: () => Date };
   // The folder of the eval's results files (`RESULTS_DIR`), served read-only. Unset, the server has
   // none to serve and `/eval/results` says so (an empty list, not available).
   resultsDir?: string;
@@ -36,6 +44,7 @@ export function createApp({
   arena,
   payments,
   paymentsUnavailable,
+  live,
   resultsDir,
   webDir,
 }: AppDependencies) {
@@ -50,6 +59,23 @@ export function createApp({
       ...(payments && { payments }),
       ...(paymentsUnavailable && { paymentsUnavailable }),
     }),
+  );
+
+  // Built here, from the same `payments` the decision route gets, so a live run and a decision on
+  // it can never be on two adapters.
+  app.route(
+    "/live",
+    liveRoutes(
+      createLiveService({
+        log,
+        arena,
+        models: live?.models ?? null,
+        payments: payments ?? null,
+        // No setting is no live runs: a cap nobody chose is not one to spend against.
+        capUsd: live?.capUsd ?? 0,
+        ...(live?.now && { now: live.now }),
+      }),
+    ),
   );
 
   app.route("/eval", evalRoutes(resultsDir ?? null));

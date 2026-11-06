@@ -35,6 +35,14 @@ export interface CallOptions {
   parentId?: string;
 }
 
+// What a caller says about who started a run, written into its `run_started` event. The web app's
+// live runs say `origin: "web"` (the daily spend cap counts those) and which payment adapter holds
+// their money.
+export interface StartOptions {
+  origin?: "web";
+  payments?: "fake" | "sandbox";
+}
+
 export interface ArenaServiceOptions {
   log: EventLog;
   catalog?: Catalog;
@@ -97,7 +105,7 @@ export function createArenaService(options: ArenaServiceOptions) {
   }
 
   return {
-    start(scenarioId: string, seed: string): ArenaRun {
+    start(scenarioId: string, seed: string, options: StartOptions = {}): ArenaRun {
       const scenario = findScenario(scenarioId);
       if (!scenario) throw new ShopError("not_found", `No scenario "${scenarioId}"`);
       const run: ArenaRun = {
@@ -110,7 +118,18 @@ export function createArenaService(options: ArenaServiceOptions) {
       };
       runs.set(run.runId, run);
       // The request is what the person said, so its provenance is the user.
-      record(run, "run_started", "user", { seed, request: scenario.request }, {});
+      record(
+        run,
+        "run_started",
+        "user",
+        {
+          seed,
+          request: scenario.request,
+          ...(options.origin && { origin: options.origin }),
+          ...(options.payments && { payments: options.payments }),
+        },
+        {},
+      );
       return run;
     },
 

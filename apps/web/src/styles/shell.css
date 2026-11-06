@@ -32,6 +32,7 @@
 .topbar-end {
   display: flex;
   align-items: center;
+  gap: var(--space-4);
 }
 
 .nav-link {
@@ -310,4 +311,9 @@
   .run-time {
     grid-row: 2;
   }
+}
+
+/* The run's money, said quietly beside its title in the list. */
+.run-money-kind {
+  white-space: nowrap;
 }

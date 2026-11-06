@@ -299,3 +299,49 @@ describe("following a run as it happens", () => {
     expect(eventCalls(fetchMock, idOf(fixtures.escalated))).toBe(before);
   });
 });
+
+describe("a run started from the web app", () => {
+  it("says quietly which money it moved, beside its title", async () => {
+    await open(fixtures.webApproved);
+    const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
+    expect(within(crumbs).getByText(/Practice money/)).toBeInTheDocument();
+  });
+
+  it("says nothing about money for a run that never recorded its adapter", async () => {
+    await open(fixtures.approved);
+    const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
+    expect(within(crumbs).queryByText(/Practice money|Sandbox/)).toBeNull();
+  });
+
+  it("says a rejected mandate stopped the run, with no replay and no polling", async () => {
+    const fetchMock = await open(fixtures.webMandateRejected);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "You rejected the mandate, so no agent ran.",
+    );
+    expect(screen.getByText("No run")).toBeInTheDocument();
+    expect(screen.queryByText("Following this run as it happens.")).toBeNull();
+    expect(eventCalls(fetchMock, idOf(fixtures.webMandateRejected))).toBe(1);
+  });
+
+  it("follows a run whose mandate is locked until the agent's events arrive", async () => {
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+    const locked = upTo(fixtures.webApproved, "mandate", "mandate_locked");
+    vi.setSystemTime(Date.parse(locked.at(-1)?.ts ?? "") + 1000);
+    const fetchMock = mockServer({
+      events: (_id, call) => (call === 1 ? locked : fixtures.webApproved),
+      payees,
+    });
+    renderApp(`/runs/${idOf(fixtures.webApproved)}`);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("The agent is shopping.");
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(POLL_MS + 50);
+    });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      "The cart matches what you asked for.",
+    );
+    expect(eventCalls(fetchMock, idOf(fixtures.webApproved))).toBe(2);
+  });
+});

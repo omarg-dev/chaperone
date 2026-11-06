@@ -129,7 +129,8 @@ export function outcomeOf(events: readonly OutcomeEvent[]): RunOutcome {
 // configuration of each review the run went through (an eval run reviews one checkout under
 // several), and who the money was paid out to. Pure, like `outcomeOf`.
 //
-//  - run_started (lane arena): the seed the scenario was built with;
+//  - run_started (lane arena): the seed the scenario was built with, and, for a live run started
+//    from the web app, `origin` and the payment adapter that holds its money;
 //  - review_started (lane review): `config`, in the order the reviews ran, so the last is the one
 //    the run's outcome comes from;
 //  - enforced (lane review): `payouts`, the sellers the capture was shared out to. The last
@@ -138,16 +139,22 @@ export interface RunFacets {
   seed: string | null;
   reviews: string[];
   paidPayees: string[];
+  origin: string | null;
+  payments: string | null;
 }
 
 export function facetsOf(events: readonly OutcomeEvent[]): RunFacets {
   let seed: string | null = null;
   const reviews: string[] = [];
   let paidPayees: string[] = [];
+  let origin: string | null = null;
+  let payments: string | null = null;
   for (const event of events) {
     const body = record(event.payload);
     if (event.lane === "arena" && event.type === "run_started") {
       if (typeof body.seed === "string") seed = body.seed;
+      if (typeof body.origin === "string") origin = body.origin;
+      if (typeof body.payments === "string") payments = body.payments;
     } else if (event.lane === "review" && event.type === "review_started") {
       reviews.push(typeof body.config === "string" ? body.config : "full");
     } else if (event.lane === "review" && event.type === "enforced") {
@@ -158,5 +165,5 @@ export function facetsOf(events: readonly OutcomeEvent[]): RunFacets {
         .map((p) => p.payeeKey as string);
     }
   }
-  return { seed, reviews, paidPayees };
+  return { seed, reviews, paidPayees, origin, payments };
 }

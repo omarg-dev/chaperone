@@ -31,7 +31,7 @@ pnpm dev                                 # the server, at http://localhost:3000
 pnpm --filter @firewall/web dev          # the web app, at http://localhost:5173
 ```
 
-Open http://localhost:5173. Vite proxies `/health`, `/events` and `/arena` to the server (`PORT` sets which), so the app calls the API with relative URLs, exactly as it does in production. `/arena` is both an API prefix and a page of the app: a browser navigation gets the app and anything else gets the API.
+Open http://localhost:5173. Vite proxies `/health`, `/events`, `/arena`, `/eval` and `/live` to the server (`PORT` sets which), so the app calls the API with relative URLs, exactly as it does in production. `/arena` is both an API prefix and a page of the app: a browser navigation gets the app and anything else gets the API.
 
 In production there is one process. `pnpm build` builds the web app into `apps/web/dist`, and the server's build copies it next to the bundle (`dist/web`, and into the Docker image). The Hono server serves those files at `/` and answers the app's pages (`/runs`, `/arena` and the rest) with `index.html` when a browser asks for them; the API routes and `/health` are where they were. Run from source, the server serves `apps/web/dist` too when it exists, so `pnpm --filter @firewall/web build && pnpm dev` shows the whole thing on port 3000.
 
@@ -42,6 +42,10 @@ pnpm lint && pnpm check && pnpm test && pnpm build
 ```
 
 The Docker image builds with `docker build -t firewall-server .` and runs on port 3000, serving the web app at `/`.
+
+### Live runs from the web
+
+The Start a run page (`/start`) lets a person pick a scenario, confirm a mandate and start a real run in the browser, and follow it in the run view. It needs the app's own model key; without `FIREWALL_ANTHROPIC_API_KEY` the page says live runs are off and replay still works. What a day of live runs may spend is capped: `FIREWALL_LIVE_DAILY_USD` (default `0.25`, a UTC day, counted from the event log), and only one live run goes at a time. The money is the sandbox's when the `SANDBOX_*` variables and `SANDBOX_BUYER_VAULT_ID` are set, otherwise one in-memory fake the server owns ("Practice money"), which is not a sandbox result. The same page has a "Connect your own agent" tab with the SDK example below.
 
 ## The arena API
 
@@ -59,7 +63,11 @@ The server runs the marketplace a shopping agent is tested in. A run is one agen
 | `POST /arena/runs/:runId/checkout` | Turns the cart into an order draft, with each line's payee taken from the catalog |
 | `GET /events/runs`, `GET /events/runs/:runId` | The run list (each run with its `verdict`, `decidedBy` and `reviewFailed`, read from its review and a person's decision), and one run's events in replay order |
 | `GET /events/runs/:runId/payees` | The run's sellers by payee key, with each one's role (honest or attacker), rebuilt from its scenario and seed: the run view uses it to say who was paid and whether that was an attacker. An operator's view, not part of what an agent shops with |
-| `POST /events/runs/:runId/decision` | A person's decision on an escalated run, `{ "decision": "approve" \| "reject", "note"?: string }`, carried out by the same code as `decide-run` (so a repeat changes nothing). 503 when the server has no sandbox variables, 409 when the run isn't waiting for a person or was decided the other way, 502 when the platform refuses |
+| `POST /events/runs/:runId/decision` | A person's decision on an escalated run, `{ "decision": "approve" \| "reject", "note"?: string }`, carried out by the same code as `decide-run` (so a repeat changes nothing). carried out on the server's own payment adapter (the sandbox's when its variables are set, otherwise one in-memory fake, so a practice run can be decided too). 409 when the run isn't waiting for a person, was decided the other way, or is on a different kind of adapter, 502 when the platform refuses |
+| `GET /live/status` | Whether a live run can start now (`available`, and `reason` in a sentence when not), which payment adapter holds the money (`fake` or `sandbox`), whether one is in progress (`busy`), and today's budget: the cap, what was spent, what is left and when it starts again (midnight UTC) |
+| `POST /live/runs` `{"scenarioId","seed"?}` | A live run from the web app: starts the arena run (marked `origin: "web"`, with its payment adapter) and drafts a mandate from the scenario's request. Answers the mandate: the request, each term in words, which can be edited, and whether it can be locked. 503 when live runs are off, 429 at the daily cap, 502 when the builder fails |
+| `GET`, `POST /live/runs/:runId/mandate` | The mandate's state; and `{"action":"edit","field","input"}` (the command line's own edit text), `{"action":"confirm"}` (locks it) or `{"action":"reject","reason"?}`. 422 with the reason when an edit can't be read, doesn't fit the catalog, or a draft can't be locked; 409 once it is locked or rejected |
+| `POST /live/runs/:runId/start` `{"firewall":"off"\|"gate0"\|"full"}` | Runs the agent in the background, through the SDK, with the locked mandate; answers 202 and the run is followed at `/runs/:runId`. 409 if the mandate isn't locked, the run has started, or another live run is in progress; 429 at the daily cap; 410 if the server restarted since the draft |
 | `GET /eval/results`, `GET /eval/results/:name` | The eval's results files in `RESULTS_DIR`, read-only: the list (adapter, model column, gate model, seeds, date, newest first; `available` is false when there is no folder) and one file, validated and cut down to what the dashboard draws. A name that isn't a plain file name in the folder is a 404 |
 
 Every arena call is written to the event log. Send `X-Parent-Event-Id` with the ID of the event that made the call, and the arena's event links to it.

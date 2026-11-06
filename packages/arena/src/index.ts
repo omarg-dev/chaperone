@@ -32,6 +32,7 @@ export {
   type ArenaServiceOptions,
   type CallOptions,
   createArenaService,
+  type StartOptions,
 } from "./service.js";
 export * from "./shop.js";
 export * from "./types.js";
