@@ -42,6 +42,20 @@ describe("what a result says about itself", () => {
     expect(p.stoppedEarly).toBeNull();
   });
 
+  it("states the model column the file itself names, whichever it is", () => {
+    const openai: ResultsView = {
+      ...fakeResults,
+      meta: {
+        ...fakeResults.meta,
+        column: { columnId: "gpt-6-luna", label: "OpenAI GPT-6 Luna", modelId: "gpt-6-luna" },
+      },
+    };
+    const facts = Object.fromEntries(provenanceOf(openai).facts.map((f) => [f.label, f.value]));
+    expect(facts.Agent).toBe("OpenAI GPT-6 Luna (gpt-6-luna)");
+    // The gates stay on Claude Haiku 5.5.
+    expect(facts.Gates).toBe("claude-haiku-5-5");
+  });
+
   it("says when a spend cap cut the matrix short", () => {
     const capped: ResultsView = {
       ...fakeResults,
