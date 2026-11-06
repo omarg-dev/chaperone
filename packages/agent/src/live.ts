@@ -4,6 +4,7 @@ import {
   createChannel3Market,
   createExtractor,
   createIntentAuditor,
+  createTraceAuditor,
   EXTRACTOR_MODEL,
   extractionVocabulary,
   type ReviewGates,
@@ -64,6 +65,7 @@ export function liveModelsFromEnv(
     gates: (catalog) => ({
       extractor: createExtractor({ client, vocabulary: extractionVocabulary(catalog) }),
       auditor: createIntentAuditor({ client }),
+      traceAuditor: createTraceAuditor({ client }),
       market: createChannel3Market(channel3ConfigFromEnv(env)),
     }),
     gateModel: EXTRACTOR_MODEL,

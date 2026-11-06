@@ -6,6 +6,7 @@ import {
   createChannel3Market,
   createExtractor,
   createIntentAuditor,
+  createTraceAuditor,
   extractionVocabulary,
   type RecordedGate2Case,
   replayByRequest,
@@ -27,6 +28,12 @@ export const loadGate2Recording = (name: string): RecordedGate2Case =>
     readFileSync(new URL(`../../firewall/fixtures/gate2/${name}.json`, import.meta.url), "utf8"),
   );
 
+// The Gate 3 recording of the same case: the trace auditor's answer, which `full` now asks for.
+const gate3CallsOf = (name: string): { requestSha256: string; response: unknown }[] =>
+  JSON.parse(
+    readFileSync(new URL(`../../firewall/fixtures/gate3/${name}.json`, import.meta.url), "utf8"),
+  ).calls;
+
 export const SEED = "gate2-1";
 export const HALVARD = "lst_keyboard_02_1";
 export const TERN = "lst_keyboard_01_1";
@@ -37,12 +44,13 @@ const TEST_CONFIG = { apiKey: "the-apps-own-key", baseUrl: "https://models.firew
 // Real extractor, auditor and market reference whose network calls are answered from a recording.
 export function gatesReplaying(recording: RecordedGate2Case) {
   return (catalog: Catalog) => {
-    const replay = replayByRequest(recording.calls);
+    const replay = replayByRequest([...recording.calls, ...gate3CallsOf(recording.case)]);
     const client = createAnthropicClient(TEST_CONFIG, { fetch: replay.fetch, maxRetries: 0 });
     const market = replayMarket(recording.market.calls);
     return {
       extractor: createExtractor({ client, vocabulary: extractionVocabulary(catalog) }),
       auditor: createIntentAuditor({ client }),
+      traceAuditor: createTraceAuditor({ client }),
       market: createChannel3Market({
         apiKey: recording.market.configured ? "placeholder-market-key" : null,
         fetch: market.fetch,
@@ -113,17 +121,25 @@ const done = {
   warnings: [],
 };
 
-// A scripted agent: opens each listing's page and reviews, adds the bought ones, checks out (or
+// A scripted agent: searches first when asked to (as Gate 2's honest case does), opens each
+// listing's page and reviews, adds the bought ones, checks out (or
 // stops without checking out).
-export function shopping(options: { open: string[]; buy: string[]; checkout?: boolean }) {
+export function shopping(options: {
+  open: string[];
+  buy: string[];
+  checkout?: boolean;
+  search?: boolean;
+}) {
   const turns = [
-    turn(
-      "Looking.",
-      options.open.flatMap((listingId): Call[] => [
+    turn("Looking.", [
+      ...(options.search
+        ? ([["search", { text: "tactile mechanical keyboard", category: "keyboard" }]] as Call[])
+        : []),
+      ...options.open.flatMap((listingId): Call[] => [
         ["view_listing", { listingId }],
         ["read_reviews", { listingId }],
       ]),
-    ),
+    ]),
     turn(
       "Adding.",
       options.buy.map((listingId): Call => ["add_to_cart", { listingId, quantity: 1 }]),

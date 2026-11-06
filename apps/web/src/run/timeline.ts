@@ -10,6 +10,7 @@
 //   payments payment_call: create_order, authorize_order (the hold), capture, payout, void, ...
 //   gate0   verdict (checks)          gate1  gate1_started, gate1_facts, verdict
 //   gate2   gate2_started, gate2_market, gate2_judgement, verdict
+//   gate3   gate3_started, gate3_judgement, verdict
 //   review  review_started, review_finished, review_failed, escalated, enforced
 //
 // Two rules the screen depends on, kept here so they can be tested:
@@ -24,7 +25,7 @@ import type { GateState, ZoneKind } from "../design";
 import { list, num, type Obj, obj, type Payee, type RunEvent, str } from "./events";
 
 export type Verdict = "approve" | "escalate" | "block";
-export type GateName = "gate0" | "gate1" | "gate2";
+export type GateName = "gate0" | "gate1" | "gate2" | "gate3";
 
 // ---------------------------------------------------------------------------------------------
 // The model
@@ -142,6 +143,18 @@ export type RunItem = ItemBase &
         title: string;
         explanation: string | null;
         lines: Gate2Line[];
+        notes: string[];
+        costUsd: number;
+        latencyMs: number;
+      }
+    | {
+        // Catalog zone: what Gate 3 read of the agent's trace (the calls it made, never page text
+        // or its own words) and judged: whether the choice was the mandate's or a page's.
+        kind: "gate3_card";
+        verdict: Verdict;
+        title: string;
+        explanation: string | null;
+        rows: FactRow[];
         notes: string[];
         costUsd: number;
         latencyMs: number;
@@ -1133,6 +1146,62 @@ export function buildRun(
     });
   }
 
+  const gate3 = gateVerdict("gate3");
+  if (gate3) {
+    const verdict = verdictOf(verdictResult(gate3).verdict) ?? "escalate";
+    const reasons = reasonsOf(gate3).map((r) => tidyReason(r, names));
+    const startedEvent = gateEvents("gate3").find((e) => e.type === "gate3_started");
+    const judgement = gateEvents("gate3").find((e) => e.type === "gate3_judgement");
+    const failedJudgement = gateEvents("gate3").some((e) => e.type === "gate3_judgement_failed");
+    const trace = obj(startedEvent?.payload);
+    const choices = list(trace.choices).map(obj);
+    const steps = list(trace.steps);
+    const flaggedKinds = [
+      ...new Set(
+        choices.flatMap((c) => list(c.exposures).flatMap((e) => list(obj(e).kinds).map(String))),
+      ),
+    ];
+    const rows: FactRow[] = [{ label: "Calls the agent made", value: String(steps.length) }];
+    rows.push({
+      label: "Flagged pages read before it chose",
+      value: flaggedKinds.length === 0 ? "None" : flaggedKinds.map((k) => flagLabel(k)).join(", "),
+    });
+    const judged = obj(obj(judgement?.payload).judgement);
+    items.push({
+      id: `gate3_${gate3.eventId}`,
+      at: gate3.ts,
+      zone: "route",
+      group: "gate3",
+      kind: "gate",
+      gate: "gate3",
+      label: "Gate 3",
+      verdict,
+      reads: { catalog: true, seller: "never", facts: "reads" },
+      facts: [],
+      costUsd: spend("gate3"),
+      latencyMs: gateLatency("gate3"),
+    });
+    items.push({
+      id: `gate3_card_${gate3.eventId}`,
+      at: gate3.ts,
+      zone: "catalog",
+      group: "gate3",
+      kind: "gate3_card",
+      verdict,
+      title: reasons[0] ?? "Checked how the agent chose",
+      explanation: failedJudgement ? null : str(judged.explanation),
+      rows,
+      notes: [
+        ...reasons.slice(1),
+        ...(failedJudgement
+          ? ["The auditor couldn't judge the trace, so only the checks in code ran"]
+          : []),
+      ],
+      costUsd: spend("gate3"),
+      latencyMs: gateLatency("gate3"),
+    });
+  }
+
   // ---- The review's own verdict, and the gates it skipped.
   const reviewVerdict = finished ? verdictOf(obj(finished.payload).verdict) : null;
   if (finished) {
@@ -1299,7 +1368,12 @@ export function buildRun(
   // The gates that escalated, from their cards, so a line here is the card's own title.
   const heldReasons: HeldReason[] = [];
   for (const item of ordered) {
-    if (item.kind !== "gate0_card" && item.kind !== "gate1_card" && item.kind !== "gate2_card") {
+    if (
+      item.kind !== "gate0_card" &&
+      item.kind !== "gate1_card" &&
+      item.kind !== "gate2_card" &&
+      item.kind !== "gate3_card"
+    ) {
       continue;
     }
     if (item.verdict !== "escalate") continue;

@@ -1,12 +1,6 @@
 import type { Catalog } from "@firewall/arena";
 import type { Event, EventLog } from "@firewall/events";
-import {
-  type LockedMandate,
-  lockedMandateOf,
-  MandateError,
-  type TokenCounts,
-} from "@firewall/mandate";
-import { z } from "zod";
+import type { LockedMandate, TokenCounts } from "@firewall/mandate";
 import { AuditError, type AuditResult, type AuditView, type IntentAuditor } from "./auditor.js";
 import {
   type CartLine,
@@ -17,14 +11,10 @@ import {
   mandateFit,
 } from "./comparables.js";
 import type { GateResult } from "./gate.js";
-import {
-  decideGate2,
-  type Gate2Finding,
-  type LineReview,
-  type MandateStatus,
-} from "./gate2-verdict.js";
+import { decideGate2, type Gate2Finding, type LineReview } from "./gate2-verdict.js";
 import { type MarketCheck, type MarketReference, marketCheck, marketQueryFor } from "./market.js";
 import type { ReviewerView } from "./reviewer-view.js";
+import { checkoutOf, mandateOf, Refs } from "./run-inputs.js";
 import { STEERING_FLAGS } from "./verdict.js";
 
 // Gate 2, the intent auditor, over one run's event log. It reads:
@@ -69,75 +59,6 @@ export class Gate2InputError extends Error {
     super(message);
     this.name = "Gate2InputError";
   }
-}
-
-// The checkout's numbers. The line title is not read: zod drops keys it isn't told about.
-const checkedOut = z.object({
-  result: z.object({
-    currency: z.literal("USD"),
-    lines: z.array(
-      z.object({
-        listingId: z.string(),
-        quantity: z.number().int().positive(),
-        unitPriceCents: z.number().int(),
-        discountCents: z.number().int(),
-        totalCents: z.number().int(),
-      }),
-    ),
-    totalCents: z.number().int(),
-  }),
-});
-
-function checkoutOf(events: readonly Event[]) {
-  const checkout = events.filter((e) => e.lane === "arena" && e.type === "checkout").at(-1);
-  if (!checkout) throw new Gate2InputError("The run has no checkout to review");
-  const parsed = checkedOut.safeParse(checkout.payload);
-  if (!parsed.success || parsed.data.result.lines.length === 0) {
-    throw new Gate2InputError(`Event ${checkout.eventId} isn't a checkout the arena writes`);
-  }
-  return { event: checkout, order: parsed.data.result };
-}
-
-function mandateOf(events: readonly Event[]): {
-  status: MandateStatus;
-  mandate: LockedMandate | null;
-} {
-  const locked = events.filter((e) => e.type === "mandate_locked").at(-1);
-  if (!locked) {
-    return { status: { status: "missing", problems: [] }, mandate: null };
-  }
-  try {
-    const mandate = lockedMandateOf(events);
-    return { status: { status: "intact", eventId: locked.eventId }, mandate };
-  } catch (error) {
-    if (!(error instanceof MandateError)) throw error;
-    return {
-      status: { status: "altered", eventId: locked.eventId, problems: error.problems },
-      mandate: null,
-    };
-  }
-}
-
-// Event IDs, given to the auditor as E1, E2, ... in the order they come up, and mapped back.
-class Refs {
-  private readonly byId = new Map<string, string>();
-  private readonly byRef = new Map<string, string>();
-  readonly described: { ref: string; is: string }[] = [];
-  ref(eventId: string, is: string): string {
-    let ref = this.byId.get(eventId);
-    if (!ref) {
-      ref = `E${this.byId.size + 1}`;
-      this.byId.set(eventId, ref);
-      this.byRef.set(ref, eventId);
-      this.described.push({ ref, is });
-    }
-    return ref;
-  }
-  refOrNull(eventId: string | null, is: string): string | null {
-    return eventId === null ? null : this.ref(eventId, is);
-  }
-  eventIdOf = (ref: string) => this.byRef.get(ref);
-  all = () => [...this.byRef.keys()];
 }
 
 const comparablesSummary = (c: Comparables | null) =>
@@ -281,7 +202,7 @@ export async function runGate2(
   const now = options.now ?? (() => performance.now());
   const started = now();
   const events = log.listRun(runId);
-  const checkout = checkoutOf(events);
+  const checkout = checkoutOf(events, (message) => new Gate2InputError(message));
   const { status, mandate } = mandateOf(events);
   const append = (
     type: string,

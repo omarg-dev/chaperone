@@ -1,5 +1,5 @@
 // Shared by the tests in this package. Nothing here calls a model.
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import type { Catalog } from "@firewall/arena";
 import {
   arenaVocabulary,
@@ -12,6 +12,7 @@ import {
 import { createIntentAuditor } from "./auditor.js";
 import { createExtractor } from "./extractor.js";
 import { extractionVocabulary } from "./facts.js";
+import type { Gate3Case } from "./gate3-cases.js";
 import { createChannel3Market } from "./market.js";
 import {
   type RecordedCall,
@@ -21,6 +22,7 @@ import {
   replayMarket,
 } from "./recorded.js";
 import type { ListingInScope, PageDocument } from "./sources.js";
+import { createTraceAuditor } from "./trace-auditor.js";
 
 export const TEST_CONFIG = { apiKey: "the-apps-own-key", baseUrl: "https://models.firewall.test" };
 
@@ -30,16 +32,68 @@ export const loadRecording = (name: string): RecordedCase =>
 export const loadGate2Recording = (name: string): RecordedGate2Case =>
   JSON.parse(readFileSync(new URL(`../fixtures/gate2/${name}.json`, import.meta.url), "utf8"));
 
+const gate3File = (name: string) => new URL(`../fixtures/gate3/${name}.json`, import.meta.url);
+
+export const loadGate3Recording = (name: string): RecordedCase =>
+  JSON.parse(readFileSync(new URL(`../fixtures/gate3/${name}.json`, import.meta.url), "utf8"));
+
+// The recordings of every model call a Gate 3 case makes: Gate 1's (from Gate 2's or Gate 1's
+// recording of the same case, or the case's own) and Gate 3's. `own` is false while recording.
+export function gate3Calls(c: Gate3Case, own = true): RecordedCall[] {
+  const mine = own ? loadGate3Recording(c.name).calls : [];
+  if (!c.gate1From) return mine;
+  const gate1 =
+    c.gate1From.dir === "gate2"
+      ? loadGate2Recording(c.gate1From.name)
+      : loadRecording(c.gate1From.name);
+  return [...gate1.calls, ...mine];
+}
+
+// Real extractor and trace auditor whose network calls are answered from a Gate 3 case's
+// recordings, by request hash.
+export function gate3Replaying(c: Gate3Case, catalog: Catalog) {
+  const replay = replayByRequest(gate3Calls(c));
+  const client = createAnthropicClient(TEST_CONFIG, { fetch: replay.fetch, maxRetries: 0 });
+  return {
+    extractor: createExtractor({ client, vocabulary: extractionVocabulary(catalog) }),
+    traceAuditor: createTraceAuditor({ client }),
+    replay,
+  };
+}
+
+// A real trace auditor whose every call is answered with `response`.
+export function traceAuditorAnswering(response: unknown) {
+  const sent: { url: string; headers: Headers; body: unknown }[] = [];
+  const fetch = (async (url: string | URL | Request, init?: RequestInit) => {
+    sent.push({
+      url: String(url),
+      headers: new Headers(init?.headers),
+      body: init?.body ? JSON.parse(String(init.body)) : null,
+    });
+    return Response.json(response);
+  }) as typeof globalThis.fetch;
+  return {
+    auditor: createTraceAuditor({
+      client: createAnthropicClient(TEST_CONFIG, { fetch, maxRetries: 0 }),
+    }),
+    sent,
+  };
+}
+
 // Real extractor, auditor and market reference whose network calls are answered from a Gate 2
 // recording, by request hash. The market reference is configured exactly when it was recorded
 // with a key; the key here is a placeholder, since nothing leaves the process.
 export function gatesReplaying(catalog: Catalog, recording: RecordedGate2Case) {
-  const replay = replayByRequest(recording.calls);
+  const replay = replayByRequest([
+    ...recording.calls,
+    ...(existsSync(gate3File(recording.case)) ? loadGate3Recording(recording.case).calls : []),
+  ]);
   const client = createAnthropicClient(TEST_CONFIG, { fetch: replay.fetch, maxRetries: 0 });
   const marketReplay = replayMarket(recording.market.calls);
   return {
     extractor: createExtractor({ client, vocabulary: extractionVocabulary(catalog) }),
     auditor: createIntentAuditor({ client }),
+    traceAuditor: createTraceAuditor({ client }),
     market: createChannel3Market({
       apiKey: recording.market.configured ? "placeholder-market-key" : null,
       fetch: marketReplay.fetch,

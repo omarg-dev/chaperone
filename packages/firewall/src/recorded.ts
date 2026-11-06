@@ -77,3 +77,8 @@ export function replayMarket(calls: readonly RecordedMarketCall[]) {
   }) as typeof globalThis.fetch;
   return { fetch, misses };
 }
+
+// Gate 3's recordings hold the model calls a case needed that no other recording holds: Gate 3's
+// judgement, and Gate 1's extractions for a case that is not one of Gate 2's or Gate 1's (those
+// replay from their own recordings, so Gate 3's request, which holds Gate 1's facts, matches).
+export const RECORD_GATE3_COMMAND = "pnpm --filter @firewall/firewall record-gate3-fixtures";

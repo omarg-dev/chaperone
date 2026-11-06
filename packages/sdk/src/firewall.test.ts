@@ -364,7 +364,7 @@ describe("settle: the review tree's enforcement, through the SDK", () => {
     const settled = await firewall.settle();
 
     expect(settled?.review.verdict).toBe("approve");
-    expect(settled?.review.gates.map((g) => g.gate)).toEqual(["gate0", "gate1", "gate2"]);
+    expect(settled?.review.gates.map((g) => g.gate)).toEqual(["gate0", "gate1", "gate2", "gate3"]);
     expect(settled?.enforcement).toMatchObject({ money: "captured", decidedBy: "review" });
     expect(payments(runId, "capture")).toHaveLength(1);
     expect(settled?.enforcement.payouts.length).toBeGreaterThan(0);
@@ -429,7 +429,7 @@ describe("settle: the review tree's enforcement, through the SDK", () => {
     // and no gate has run by the time it returns.
     expect(await use(tools, "checkout")).toMatchObject({ status: "pending_review" });
     const lanes = new Set(log.listRun(runId).map((e) => e.lane));
-    for (const lane of ["gate0", "gate1", "gate2", "review"])
+    for (const lane of ["gate0", "gate1", "gate2", "gate3", "review"])
       expect(lanes.has(lane as never)).toBe(false);
   });
 

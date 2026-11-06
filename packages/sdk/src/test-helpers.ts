@@ -5,6 +5,7 @@ import {
   createChannel3Market,
   createExtractor,
   createIntentAuditor,
+  createTraceAuditor,
   extractionVocabulary,
   type RecordedGate2Case,
   replayByRequest,
@@ -28,6 +29,12 @@ export const loadGate2Recording = (name: string): RecordedGate2Case =>
   JSON.parse(
     readFileSync(new URL(`../../firewall/fixtures/gate2/${name}.json`, import.meta.url), "utf8"),
   );
+
+// The Gate 3 recording of the same case: the trace auditor's answer, which `full` now asks for.
+const gate3CallsOf = (name: string): { requestSha256: string; response: unknown }[] =>
+  JSON.parse(
+    readFileSync(new URL(`../../firewall/fixtures/gate3/${name}.json`, import.meta.url), "utf8"),
+  ).calls;
 
 export const SC_B01_DRAFT: MandateDraft = {
   mandateId: "md_gate2case",
@@ -59,12 +66,13 @@ const TEST_CONFIG = { apiKey: "the-apps-own-key", baseUrl: "https://models.firew
 // by request hash. Nothing leaves the process.
 export function gatesReplaying(recording: RecordedGate2Case) {
   return (catalog: Catalog) => {
-    const replay = replayByRequest(recording.calls);
+    const replay = replayByRequest([...recording.calls, ...gate3CallsOf(recording.case)]);
     const client = createAnthropicClient(TEST_CONFIG, { fetch: replay.fetch, maxRetries: 0 });
     const market = replayMarket(recording.market.calls);
     return {
       extractor: createExtractor({ client, vocabulary: extractionVocabulary(catalog) }),
       auditor: createIntentAuditor({ client }),
+      traceAuditor: createTraceAuditor({ client }),
       market: createChannel3Market({
         apiKey: recording.market.configured ? "placeholder-market-key" : null,
         fetch: market.fetch,

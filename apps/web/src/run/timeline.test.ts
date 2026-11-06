@@ -61,10 +61,21 @@ describe("an approved run", () => {
       ["gate0", "approve", "route"],
       ["gate1", "approve", "route"],
       ["gate2", "approve", "route"],
+      ["gate3", "approve", "route"],
     ]);
     expect(stations[0]?.reads).toEqual({ catalog: true, seller: "never", facts: "none" });
     expect(stations[1]?.reads).toEqual({ catalog: true, seller: "quarantine", facts: "writes" });
     expect(stations[2]?.reads).toEqual({ catalog: true, seller: "never", facts: "reads" });
+    expect(stations[3]?.reads).toEqual({ catalog: true, seller: "never", facts: "reads" });
+    // Gate 3's card says how the agent chose, from the trace and never from page text.
+    expect(of(run.items, "gate3_card")[0]).toMatchObject({
+      zone: "catalog",
+      verdict: "approve",
+      rows: [
+        { label: "Calls the agent made", value: "7" },
+        { label: "Flagged pages read before it chose", value: "None" },
+      ],
+    });
     expect(of(run.items, "gate0_card")[0]).toMatchObject({
       zone: "catalog",
       title: "Every rule passed",
@@ -85,6 +96,7 @@ describe("an approved run", () => {
       "Made the request",
       "Confirmed and locked",
       "Started shopping",
+      "Searched the marketplace",
       "Opened 2 listings",
       "Read the reviews",
       "Added the Halvard TKL",
@@ -134,6 +146,7 @@ describe("a blocked run", () => {
     expect(of(run.items, "skipped").map((s) => s.text)).toEqual([
       "Gate 1 skipped: Gate 0 blocked, which ends the review",
       "Gate 2 skipped: Gate 0 blocked, which ends the review",
+      "Gate 3 skipped: Gate 0 blocked, which ends the review",
     ]);
     expect(run.money).toMatchObject({ state: "voided", payouts: [], paidToAttackerCents: 0 });
     expect(run.exit).toBe("void");
@@ -344,6 +357,7 @@ describe("a run with an unrequested extra item", () => {
       ["gate0", "escalate"],
       ["gate1", "approve"],
       ["gate2", "escalate"],
+      ["gate3", "escalate"],
     ]);
     expect(of(run.items, "gate0_card")[0]?.title).toMatch(/mouse/i);
     expect(run.cart).toHaveLength(2);
@@ -457,7 +471,7 @@ describe("a run reviewed under more than one configuration", () => {
       [...base.slice(0, at), ...early, ...base.slice(at)].map((e, i) => ({ ...e, seq: i })),
     );
     expect(run.earlierReviews).toEqual(["off"]);
-    expect(of(run.items, "gate")).toHaveLength(3);
+    expect(of(run.items, "gate")).toHaveLength(4);
     expect(of(run.items, "review")).toHaveLength(1);
   });
 });
@@ -527,12 +541,14 @@ describe("what an escalated run says about being held", () => {
     expect(run.heldReasons.map((r) => [r.gate, r.label])).toEqual([
       ["gate1", "Gate 1"],
       ["gate2", "Gate 2"],
+      ["gate3", "Gate 3"],
     ]);
     expect(run.heldReasons[0]?.reason).toBe(cardTitle(run, "gate1_card"));
     expect(run.heldReasons[1]?.reason).toBe(cardTitle(run, "gate2_card"));
+    expect(run.heldReasons[2]?.reason).toBe(cardTitle(run, "gate3_card"));
 
     const extra = build(fixtures.extraItem);
-    expect(extra.heldReasons.map((r) => r.gate)).toEqual(["gate0", "gate2"]);
+    expect(extra.heldReasons.map((r) => r.gate)).toEqual(["gate0", "gate2", "gate3"]);
     expect(extra.heldReasons[0]?.reason).toBe(cardTitle(extra, "gate0_card"));
   });
 
@@ -550,7 +566,7 @@ describe("what an escalated run says about being held", () => {
   });
 
   it("reads when the hold ends from the payments lane, and doesn't make one up", () => {
-    expect(build(fixtures.escalated).holdExpiresAt).toBe("2026-11-26T23:20:38.611Z");
+    expect(build(fixtures.escalated).holdExpiresAt).toBe("2026-12-02T11:27:59.907Z");
 
     // The sandbox may not report it: the adapter writes an empty string.
     const unreported = fixtures.escalated.map((e) => {
