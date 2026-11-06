@@ -130,3 +130,17 @@ A finished run (or one waiting on a person) has "Replay this run" above its time
 - **The header follows the playhead.** The headline, the money (held, then captured or voided, and red only once a payout reaches an attacker), the cost and a "Replay, event 12 of 45" badge are those of the log up to that event. A decision that was already made isn't offered again while the playhead is before it.
 - **Keyboard**: space plays and pauses, the left and right arrows step one event, Home and End go to the ends. A button keeps its own space, a slider its own arrows, and a search box or menu everything.
 - **Reduced motion**: with `prefers-reduced-motion` the replay opens paused on the first event, to be played or stepped, and the page scrolls to the newest row without animating.
+
+## Escalation inbox
+
+`/escalations` (`src/pages/Escalations.tsx`, with `src/inbox/`) is every purchase held for a person: each run whose verdict is escalate and that nobody has decided, the same rule as the count in the top bar (`isHeldForPerson`). The oldest hold comes first, since it has waited longest. It is what the Spine-Decision mockup becomes when there are several, with the decision made from the list.
+
+- **An item says what the run page says.** The request, the held cart, and one line for each gate that escalated come from `buildRun` (`heldReasons` is the title of that gate's card in the run view), so the inbox can't disagree with the run. It is read from the run's events once, and again only when the run has grown. A gate's line never quotes seller text, and the inbox has no seller zone.
+- **How long it has been held** is the time since the review escalated ("Held for 7 hours", on hover the time itself), and **when the hold ends** is the authorization's expiry as the payments lane recorded it ("Hold ends in 28 days"). The sandbox may not report an expiry; then nothing is said, and it is never worked out. A hold already released says nothing either.
+- **Deciding is the run view's call.** `useDecision` and `DecisionButtons` (`run/DecisionPanel.tsx`) are shared: Reject and release hold is the filled button, Approve and pay the secondary, and the server's own message ("This server can't carry out a decision: ...", or the platform's refusal) is shown under them. The buttons stay on screen when the server can't decide, because a fake-adapter run can't be decided from the server.
+- **A decided item leaves the list** and a short note takes its place at the top: "Approved. $109.99 was captured and the seller paid." or "Rejected. The hold on $128.98 was released and nobody was paid.", with a link to the run and a way to dismiss it. A decision that was written but not carried out (the platform refused) keeps its item in the list, since its money is still held, until it goes through.
+- **Recently decided** lists the last five runs a person decided, with Approved or Rejected (a reject is a block, so it is the neutral pill), and how long ago. It leaves out what the page just confirmed.
+- **Colour.** A held purchase is amber (`escalate`), never red: nothing has reached an attacker.
+- **It stays current.** The list is read again every 7 seconds while the tab is visible, and at once when the window gets focus or the tab comes back, so a run that escalates appears without a reload. It stops when the page is left. The list isn't drawn until each held run has been read, so an item doesn't move as the rest arrive.
+- **Empty**: "Nothing is waiting on you", with the same `EmptyState` as the rest.
+

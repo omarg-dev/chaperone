@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router";
-import { Arena, Dashboard, Escalations, NotFound } from "./pages/Placeholders";
+import { Escalations } from "./pages/Escalations";
+import { Arena, Dashboard, NotFound } from "./pages/Placeholders";
 import { Runs } from "./pages/Runs";
 import { RunView } from "./run/RunView";
 import { RunsProvider } from "./runs/RunsProvider";

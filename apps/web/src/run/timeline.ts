@@ -226,6 +226,14 @@ export interface Headline {
 
 export type Exit = "capture" | "person" | "void";
 
+// Why a gate sent the purchase to the person: the gate and the one line its card in the run view
+// opens with, so the inbox says what the run page says.
+export interface HeldReason {
+  gate: GateName;
+  label: string;
+  reason: string;
+}
+
 export interface RunModel {
   runId: string | null;
   scenarioId: string | null;
@@ -240,6 +248,12 @@ export interface RunModel {
   cart: CartLine[];
   // The escalation is waiting for the person, who can still approve or reject it.
   awaitingPerson: boolean;
+  // When the review escalated it, and one line for each gate that did (in gate order).
+  escalatedAt: string | null;
+  heldReasons: HeldReason[];
+  // When the platform's authorization expires, as the payments lane recorded it; null when the log
+  // doesn't say (the sandbox may not report it) or the hold was already released. Never worked out.
+  holdExpiresAt: string | null;
   // More events will arrive without anyone acting: poll until this goes false.
   live: boolean;
   // Which exit the money took at the foot of the route, or null while it is still on its way.
@@ -734,6 +748,12 @@ export function buildRun(
     ({ call }) => call.operation === "authorize_order" || call.operation === "reauthorize",
   );
   const heldCents = num(obj(authorized?.call.result).amountCents);
+  const expiry = str(obj(authorized?.call.result).expiresAt);
+  const released = payments.some(
+    ({ event, call }) =>
+      call.operation === "void" && authorized !== undefined && event.seq > authorized.event.seq,
+  );
+  const holdExpiresAt = expiry && !released && !Number.isNaN(Date.parse(expiry)) ? expiry : null;
   const checkoutGroup = checkoutEvent?.parentId
     ? groups.find((g) => g.callIds.includes(checkoutEvent.parentId ?? ""))
     : undefined;
@@ -1169,6 +1189,17 @@ export function buildRun(
     .sort((a, b) => toMs(a.item.at) - toMs(b.item.at) || a.index - b.index)
     .map(({ item }) => item);
 
+  // The gates that escalated, from their cards, so a line here is the card's own title.
+  const heldReasons: HeldReason[] = [];
+  for (const item of ordered) {
+    if (item.kind !== "gate0_card" && item.kind !== "gate1_card" && item.kind !== "gate2_card") {
+      continue;
+    }
+    if (item.verdict !== "escalate") continue;
+    const gate: GateName = item.kind.slice(0, 5) as GateName;
+    heldReasons.push({ gate, label: gateName(gate), reason: item.title });
+  }
+
   return {
     runId: first?.runId ?? null,
     scenarioId: first?.scenarioId ?? started?.scenarioId ?? null,
@@ -1182,6 +1213,9 @@ export function buildRun(
     money,
     cart,
     awaitingPerson,
+    escalatedAt: escalated?.ts ?? null,
+    heldReasons,
+    holdExpiresAt,
     live,
     exit,
     earlierReviews,

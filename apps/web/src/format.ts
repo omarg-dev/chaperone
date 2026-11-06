@@ -31,3 +31,33 @@ export function formatElapsed(ms: number): string {
 export function formatCost(usd: number): string {
   return usd <= 0 ? "No cost" : `$${usd.toFixed(4)}`;
 }
+
+const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+
+// A stretch of time in the largest whole unit that fits: "less than a minute", "5 minutes",
+// "3 hours", "2 days". It rounds down, so it never says longer than it has been (or sooner than it
+// will be).
+export function formatSpan(ms: number): string {
+  const minutes = Math.floor(Math.max(0, ms) / 60_000);
+  if (minutes < 1) return "less than a minute";
+  if (minutes < 60) return plural(minutes, "minute");
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return plural(hours, "hour");
+  return plural(Math.floor(hours / 24), "day");
+}
+
+// "3 hours ago", or "just now" inside the first minute.
+export function formatAgo(iso: string, now: number): string {
+  const then = Date.parse(iso);
+  if (Number.isNaN(then)) return iso;
+  const span = formatSpan(now - then);
+  return span === "less than a minute" ? "just now" : `${span} ago`;
+}
+
+// How long an authorization has left, from the expiry the payments lane recorded: "Hold ends in
+// 28 days", "Hold ends in 5 hours", "Hold ends in less than a minute", or that it has ended.
+export function formatHoldEnds(expiresAt: string, now: number): string {
+  const ends = Date.parse(expiresAt);
+  if (Number.isNaN(ends)) return "";
+  return ends <= now ? "The hold has ended" : `Hold ends in ${formatSpan(ends - now)}`;
+}

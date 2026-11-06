@@ -52,7 +52,7 @@ describe("navigation", () => {
 
   it("names what each empty page will hold", async () => {
     renderApp("/escalations");
-    expect(await screen.findByText("Nothing is waiting for you.")).toBeInTheDocument();
+    expect(await screen.findByText("Nothing is waiting on you")).toBeInTheDocument();
     renderApp("/dashboard");
     expect(await screen.findByText("No numbers to show yet.")).toBeInTheDocument();
   });

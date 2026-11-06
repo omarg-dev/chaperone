@@ -43,7 +43,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: the MVP (steps 0 to 18) is merged and released as 0.1.1; in v1.1 the design pass, the web app shell and the live run view (which covers step 4) are merged, and step 5, history and replay, is open for review; next is step 6, the escalation inbox.** MVP step 6, the first technical checks, is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now: the MVP (steps 0 to 18) is merged and released as 0.1.1; in v1.1 the design pass, the web app shell and the live run view (which covers step 4) are merged, and steps 5 (history and replay) and 6 (the escalation inbox) are open for review; next is step 7, the AG Studio dashboard.** MVP step 6, the first technical checks, is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -84,7 +84,7 @@ Done when: with the firewall off a run sends sandbox money to an attacker accoun
 | 3 | Live run view: the vertical timeline with the review tree on its spine, with causal arrows (steps 3 and 4 in one: the approved design makes them one screen). Built as our own timeline component behind a small interface, since there is no Bryntum access; the causal arrows are left out for now, except the one where Gate 1's fact crosses from seller text to the spine | ✅ |
 | 4 | Review tree per checkout | Merged into step 3 (✅) |
 | 5 | History and replay: the Runs page filters, searches and pages every run, and a finished run's page replays its own events with a playhead kept in the address | 👀 PR open |
-| 6 | Escalation inbox | ⬜ |
+| 6 | Escalation inbox: every purchase held for a person, oldest first, with why it was held and when its hold ends, approved or rejected from the list | 👀 PR open |
 | 7 | AG Studio dashboard with custom widgets and theming | ⬜ |
 | 8 | Onboarding flow: connect agent, set mandate, run | ⬜ |
 | 9 | Hosted deploy on the VPS, with a hard spend cap and recorded real runs as the default demo | ⬜ |
