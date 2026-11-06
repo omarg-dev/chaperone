@@ -1,5 +1,6 @@
 # The site block for the shared gateway's Caddyfile (the custom Caddy build with the rate_limit
-# plugin, on the web-gateway network). Reload after adding:
+# plugin, on the web-gateway network). The rulebook's "Set up a repo" workflow adds it and reloads
+# the gateway, skipping it when the site is already there. By hand, add it and reload:
 #   docker exec caddy caddy reload --config /etc/caddy/Caddyfile
 #
 # Anyone can reach this app, so the routes that cost money or change a run have zones of their own,

@@ -1,0 +1,36 @@
+name: Release
+
+# Merging a PR that adds a new version to the top of CHANGELOG.md releases it: the image is built,
+# the commit is tagged v<version>, a GitHub Release is published with that entry as its notes, and
+# production is deployed. Any other push to main releases nothing (and deploys staging, when the
+# repo variable STAGING_ENABLED is true).
+#
+# To put an earlier release back on production: run this workflow by hand with that version.
+#
+# The steps live once in omarg-dev/code-repo-rulebook, so a fix there reaches every repo.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: An earlier version to put back on production, like 0.1.2. Leave empty to release main.
+        type: string
+        default: ""
+
+# A release is never cancelled: a deploy killed halfway leaves the server in a state nothing describes.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Release
+    uses: omarg-dev/code-repo-rulebook/.github/workflows/release.yml@main
+    with:
+      version: ${{ inputs.version || '' }}
+    secrets: inherit

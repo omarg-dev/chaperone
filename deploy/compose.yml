@@ -1,10 +1,10 @@
 # One folder on the server, ~/stacks/chaperone, with its own .env and data/ (owned by uid 1000).
-# Each deploy copies this file and backup.sh into that folder, then runs
+# The first release creates the folder; each release copies this file into it, then runs
 # `docker compose pull && up -d` there. Staging is off, so there is one environment.
 services:
   app:
-    # IMAGE_REPO (ghcr.io/<owner>/<repo>) and IMAGE_TAG come from .env, and the deploy sets them
-    # for its own run, so a rename of the repository changes one line there and nothing here.
+    # IMAGE_REPO (ghcr.io/<owner>/<repo>) comes from .env, so a rename of the repository changes one
+    # line there and nothing here; the release sets IMAGE_TAG to the version it deploys.
     image: ${IMAGE_REPO:?set IMAGE_REPO in .env}:${IMAGE_TAG:-prod}
     # The gateway's Caddy reaches the app by this name.
     container_name: ${CONTAINER_NAME:-chaperone}
