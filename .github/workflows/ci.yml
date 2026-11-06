@@ -79,3 +79,81 @@ jobs:
         run: |
           docker exec app node -e "fetch('http://127.0.0.1:3000/').then((r) => r.text()).then((t) => process.exit(t.includes('id=\"root\"') ? 0 : 1), () => process.exit(1))" \
             || { docker logs app; echo "::error::GET / did not return the web app."; exit 1; }
+
+  # What only runs on the server: the compose file, the example .env it reads, the backup script and
+  # the commands the README tells Omar to run there. The example env is a working file, so the checks
+  # use it as the server's .env.
+  deploy-config:
+    name: Deployment config
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compose file resolves with the example env
+        working-directory: deploy
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+          # Nothing is published on the host, and the app is on the shared gateway network.
+          if docker compose config | grep -q 'published:'; then
+            echo "::error::compose.yml publishes a host port."
+            exit 1
+          fi
+      - name: Scripts parse
+        run: |
+          bash -n deploy/backup.sh
+          test -x deploy/backup.sh
+      # Not checked here: the Caddyfile. Its rate_limit directive belongs to the custom Caddy build on
+      # the server, which a stock `caddy validate` rejects, and building that plugin in CI costs more
+      # than the file is worth. deploy/Caddyfile.example is reviewed by eye and by the server's own
+      # `caddy reload`, which refuses a bad file and keeps the old config.
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: chaperone-ci:ci
+          cache-from: type=gha
+      # Run it the way the server does: this compose file, the example env, a data folder owned by
+      # uid 1000, a gateway network of the same name. Then do what the README has Omar do there.
+      - name: Container starts healthy under compose
+        working-directory: deploy
+        env:
+          IMAGE_REPO: chaperone-ci
+          IMAGE_TAG: ci
+        run: |
+          docker network create web-gateway
+          mkdir -p data
+          sudo chown 1000:1000 data
+          docker compose up -d
+          for i in $(seq 1 30); do
+            if [ "$(docker inspect -f '{{.State.Health.Status}}' chaperone)" = healthy ]; then exit 0; fi
+            sleep 2
+          done
+          docker compose logs
+          echo "::error::The container never reported healthy."
+          exit 1
+      - name: Runs as uid 1000
+        working-directory: deploy
+        run: test "$(docker compose exec -T app id -u)" = 1000
+        env:
+          IMAGE_REPO: chaperone-ci
+          IMAGE_TAG: ci
+      - name: Backup script makes a good backup
+        working-directory: deploy
+        env:
+          IMAGE_REPO: chaperone-ci
+          IMAGE_TAG: ci
+        run: |
+          ./backup.sh
+          # The backups folder belongs to the container's user and is private to it, so it is
+          # listed from inside the container rather than by the runner.
+          docker compose exec -T app ls -l /data/backups
+          test "$(docker compose exec -T app sh -c 'ls /data/backups/events-*.db | wc -l')" = 1
+      - name: Runs export and import in the container
+        working-directory: deploy
+        env:
+          IMAGE_REPO: chaperone-ci
+          IMAGE_TAG: ci
+        run: |
+          docker compose exec -T app node dist/cli.js export-runs > runs.json
+          docker compose exec -T app node dist/cli.js import-runs - < runs.json

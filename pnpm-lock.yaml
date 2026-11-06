@@ -63,6 +63,9 @@ importers:
       '@firewall/web':
         specifier: workspace:*
         version: link:../web
+      '@types/better-sqlite3':
+        specifier: 9.6.0
+        version: 9.6.0
       ai:
         specifier: 7.0.134
         version: 7.0.134(zod@4.6.7)
