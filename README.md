@@ -274,8 +274,126 @@ Each run writes `<date>-<adapter>-<column>.json` (every cell and configuration),
 | `packages/firewall` | The review tree: Gate 0, deterministic policy, Gate 1, the quarantined extractor, Gate 2, the intent auditor, their shared result type, and enforcement of the verdict |
 | `packages/sdk` | The SDK: `createFirewall` and `firewall.wrap` put the firewall in front of an agent's payment tools, with the arena as its catalog source |
 | `packages/eval` | The eval harness: the matrix runner, the metrics and the results file |
+| `deploy` | What runs on the server: the compose file, the env example, the backup script and the Caddy site block |
 | `packages/` | Other libraries the apps share, added as each step needs them |
 | `docs/` | The plan |
+
+## Deploying (one-time setup)
+
+Chaperone runs on the VPS at `https://chaperone.omarg.dev`, deployed the rulebook's way: merging `dev` into `prod` builds the arm64 image, pushes it to `ghcr.io/<owner>/<repo>` as `:prod` and `:prod-<commit>`, and (once `DEPLOY_ENABLED` is `true`) restarts the stack on the server over SSH. The server never has a checkout of this repo: each deploy writes `compose.yml` and `backup.sh` into `~/stacks/chaperone/`. Staging is off. Until step 5 below, a push to `prod` still builds and pushes the image and stops there.
+
+### 1. On the server
+
+```sh
+id -u                                  # the data folder must belong to this uid; the container runs as 1000
+mkdir -p ~/stacks/chaperone/data/results
+sudo chown -R 1000:1000 ~/stacks/chaperone/data
+```
+
+Copy the env file from your machine (from the repo root), then edit it on the server:
+
+```sh
+scp deploy/.env.example <user>@<server>:stacks/chaperone/.env
+ssh <user>@<server> 'chmod 600 ~/stacks/chaperone/.env && nano ~/stacks/chaperone/.env'
+```
+
+The example runs as it is: replays, the dashboard and the arena work, and live runs are off. Every variable is explained in [deploy/.env.example](deploy/.env.example). If the repository is renamed, change `IMAGE_REPO` there.
+
+### 2. The Caddy gateway
+
+Add the site block from [deploy/Caddyfile.example](deploy/Caddyfile.example) to the shared gateway's Caddyfile, then reload:
+
+```sh
+docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+```
+
+It proxies to the container `chaperone` on port 3000, and rate limits live runs (12 a minute per address), decisions (10) and other writes more tightly than reads. The gateway has to be on the external `web-gateway` network (it is, for the other apps); the compose file joins the same one and publishes nothing on the host.
+
+### 3. DNS
+
+None to add: the `*.omarg.dev` wildcard covers `chaperone.omarg.dev`. Check with `dig +short chaperone.omarg.dev`.
+
+### 4. On GitHub
+
+Settings, Secrets and variables, Actions:
+
+| Where | Name | Value |
+|---|---|---|
+| Repository secret | `DEPLOY_HOST` | the server's host name or IP |
+| Repository secret | `DEPLOY_USER` | the user that owns `~/stacks/chaperone` |
+| Repository secret | `DEPLOY_SSH_KEY` | a private key whose public half is in that user's `authorized_keys` (make one just for this: `ssh-keygen -t ed25519 -f chaperone-deploy`) |
+| Repository secret | `DEPLOY_PORT` | optional, the SSH port; unset means 22 |
+| Environment `production` variable | `DEPLOY_PATH` | the absolute path, such as `/home/<user>/stacks/chaperone` (`~` isn't expanded) |
+| Environment `production` variable | `APP_URL` | `https://chaperone.omarg.dev` |
+| Repository variable | `DEPLOY_ENABLED` | `true`, once steps 1 to 3 are done; until then the deploy job is skipped |
+
+Create the `production` environment first (Settings, Environments).
+
+The deploy logs the server in to ghcr with the workflow's own token for the length of the deploy, so the package can stay private. For a `docker compose pull` by hand on the server, either make the package public (Packages, the package's settings, Change visibility) or run `docker login ghcr.io` there with a personal access token that has only `read:packages`.
+
+### 5. First deploy
+
+Open the release PR from `dev` into `prod` when you are ready. The workflow builds the image, deploys, and polls `https://chaperone.omarg.dev/health`. To go back to an earlier release, set `IMAGE_TAG=prod-<commit>` in the server's `.env` and run `docker compose up -d` in `~/stacks/chaperone`.
+
+### 6. The nightly backup
+
+`backup.sh` (written next to `compose.yml` by each deploy) takes SQLite's online backup of the event log into `data/backups/events-<UTC time>.db`, checks it, and keeps the newest 14. After the first deploy:
+
+```sh
+crontab -e
+# add:
+17 3 * * * ~/stacks/chaperone/backup.sh >> ~/stacks/chaperone/data/backups/backup.log 2>&1
+```
+
+Run `~/stacks/chaperone/backup.sh` once by hand to see it work. To restore a backup:
+
+```sh
+cd ~/stacks/chaperone
+docker compose stop app
+cp data/events.db data/events.db.before-restore       # optional: keep what is there
+cp data/backups/events-<time>.db data/events.db
+rm -f data/events.db-wal data/events.db-shm
+sudo chown 1000:1000 data/events.db
+docker compose up -d
+```
+
+### 7. The demo runs
+
+The hosted app should open on real recorded runs, so import them once. The event log is append-only, and import only adds: events keep their IDs, times and parents, an event already there is skipped, and importing the same file twice does nothing.
+
+On a machine that has the real runs (this repo, with its `.env`), export the ones that held their money on the sandbox. From the server's own log (runs started on the web app, `apps/server/data/events.db`):
+
+```sh
+pnpm --filter @firewall/server export-runs --sandbox --out "$PWD/demo-runs.json"
+```
+
+or from an eval matrix run, whose events are in their own file under `results/`:
+
+```sh
+pnpm --filter @firewall/server export-runs --sandbox --db "$PWD/results/<date>-sandbox-<column>.events.db" --out "$PWD/demo-runs.json"
+```
+
+`--run <runId>` (repeatable) picks single runs instead. Look at what is in the file before sending it: the runs and the seller text in them become public. Then import on the server:
+
+```sh
+scp demo-runs.json <user>@<server>:/tmp/
+ssh <user>@<server> 'cd ~/stacks/chaperone && docker compose exec -T app node dist/cli.js import-runs - < /tmp/demo-runs.json && rm /tmp/demo-runs.json'
+```
+
+Runs imported with a time from today count toward that UTC day's live-run spend, so import runs the app made on the web earlier than today, or accept the small overlap. To show an eval's results on the dashboard, copy its `.json` file into `~/stacks/chaperone/data/results/`; no restart is needed.
+
+### What turns live runs and sandbox money on
+
+| In the server's `.env` | Effect |
+|---|---|
+| nothing | replays, the dashboard, the escalation inbox and the arena work; the Start a run page says live runs are off |
+| `FIREWALL_ANTHROPIC_API_KEY` | live runs on, with one fake payment adapter ("Practice money", not a sandbox result) |
+| `FIREWALL_LIVE_DAILY_USD` | the most live runs may spend in a UTC day (default `0.25`; `0` turns live runs off). Counted from the event log, so a restart can't reset it |
+| `SANDBOX_CLIENT_ID`, `SANDBOX_CLIENT_SECRET` and the six `SANDBOX_MERCHANT_*` | decisions on held purchases use the real sandbox |
+| the above and `SANDBOX_BUYER_VAULT_ID` | live runs use the real sandbox as well. Without the vault ID they are off and the page says what is missing |
+| `FIREWALL_CHANNEL3_API_KEY` | Gate 2 checks prices against the real market |
+
+Sandbox credentials only, never live ones. After editing `.env`, run `docker compose up -d` in `~/stacks/chaperone` to apply it.
 
 ## Branches
 

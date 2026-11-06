@@ -1,0 +1,51 @@
+# The site block for the shared gateway's Caddyfile (the custom Caddy build with the rate_limit
+# plugin, on the web-gateway network). Reload after adding:
+#   docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+#
+# Anyone can reach this app, so the routes that cost money or change a run have zones of their own,
+# tighter than reads. Zones are independent: a request counts against every zone it matches.
+# The web app's first load fetches a handful of files, so the all-requests zone stays loose.
+
+chaperone.omarg.dev {
+	rate_limit {
+		# Starting a live run, drafting its mandate, locking it: each draft and start spends the
+		# day's model budget (the server's own cap is the hard limit; this keeps one address from
+		# using it up).
+		zone chaperone_live {
+			match {
+				method POST
+				path /live/*
+			}
+			key {remote_host}
+			events 12
+			window 1m
+		}
+		# Deciding a held purchase moves (sandbox) money.
+		zone chaperone_decision {
+			match {
+				method POST
+				path /events/runs/*/decision
+			}
+			key {remote_host}
+			events 10
+			window 1m
+		}
+		# Every other write: the arena's runs, carts and checkouts.
+		zone chaperone_writes {
+			match {
+				method POST DELETE
+			}
+			key {remote_host}
+			events 120
+			window 1m
+		}
+		# Everything, reads included.
+		zone chaperone_all {
+			key {remote_host}
+			events 100
+			window 1s
+		}
+	}
+	encode zstd gzip
+	reverse_proxy chaperone:3000
+}
