@@ -19,6 +19,8 @@ export {
   planMatrix,
   type RunMatrixOptions,
   runMatrix,
+  type ScenarioSet,
+  scenarioSetOf,
   selectScenarios,
 } from "./matrix.js";
 export { type AttackRow, type ConfigMetrics, computeMetrics, type Metrics } from "./metrics.js";
@@ -32,6 +34,7 @@ export {
   type ResultsMeta,
   renderMarkdown,
   resultsName,
+  SCENARIO_SET_NOTES,
   type WrittenResults,
   writeResults,
 } from "./results.js";

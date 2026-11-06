@@ -1,26 +1,47 @@
-import { SCENARIOS, type ScenarioDefinition } from "@firewall/arena";
+import { isHeldOut, SCENARIOS, type ScenarioDefinition } from "@firewall/arena";
 import type { CellInput, CellResult } from "./types.js";
 
 // The matrix: which cells to run, what they should cost, and how to run them with a limit on
 // concurrency and a hard cap on spend. Nothing here knows about models or payments; the cell task
 // is passed in, so the same loop is tested with scripted cells.
 
-// Scenarios named by "all", "attacks", "benign" or a comma-separated list of IDs.
+// Which set a matrix's scenarios come from: our own (benign and A1 to A7), or the held-out set,
+// ported from published benchmarks and never used to tune the gates. A matrix runs one set, so the
+// held-out rates are never pooled with ours.
+export type ScenarioSet = "own" | "held-out";
+
+// Scenarios named by "all" (every scenario of our own), "attacks" (our own attacks), "benign",
+// "held-out" (the held-out set) or a comma-separated list of IDs, all from one set.
 export function selectScenarios(selector: string): ScenarioDefinition[] {
   const wanted = selector.trim();
-  if (wanted === "all") return [...SCENARIOS];
-  if (wanted === "attacks") return SCENARIOS.filter((s) => s.kind === "attack");
-  if (wanted === "benign") return SCENARIOS.filter((s) => s.kind === "benign");
+  const own = SCENARIOS.filter((s) => !isHeldOut(s));
+  if (wanted === "all") return own;
+  if (wanted === "attacks") return own.filter((s) => s.kind === "attack");
+  if (wanted === "benign") return own.filter((s) => s.kind === "benign");
+  if (wanted === "held-out") return SCENARIOS.filter(isHeldOut);
   const ids = wanted
     .split(",")
     .map((id) => id.trim())
     .filter(Boolean);
   if (ids.length === 0) throw new Error("No scenarios named");
-  return ids.map((id) => {
-    const found = SCENARIOS.find((s) => s.scenarioId === id);
-    if (!found) throw new Error(`No scenario "${id}"`);
-    return found;
+  const found = ids.map((id) => {
+    const scenario = SCENARIOS.find((s) => s.scenarioId === id);
+    if (!scenario) throw new Error(`No scenario "${id}"`);
+    return scenario;
   });
+  scenarioSetOf(found);
+  return found;
+}
+
+// The set the scenarios come from, refusing a mix of the two.
+export function scenarioSetOf(scenarios: readonly ScenarioDefinition[]): ScenarioSet {
+  const heldOut = scenarios.filter(isHeldOut).length;
+  if (heldOut > 0 && heldOut < scenarios.length) {
+    throw new Error(
+      "Held-out scenarios run on their own (--scenarios held-out), never mixed with ours",
+    );
+  }
+  return heldOut > 0 ? "held-out" : "own";
 }
 
 export function parseSeeds(text: string): string[] {

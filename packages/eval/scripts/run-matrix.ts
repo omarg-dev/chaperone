@@ -1,6 +1,6 @@
 // Runs the eval matrix locally and writes a results file.
 //
-//   pnpm --filter @firewall/eval run-matrix --scenarios <ids|all|attacks|benign> --seeds 1,2
+//   pnpm --filter @firewall/eval run-matrix --scenarios <ids|all|attacks|benign|held-out> --seeds 1,2
 //     --column haiku [--adapter fake|sandbox] [--max-usd 0.5] [--concurrency 3] [--dry-run]
 //     [--out <dir>] [--agent-max-usd 0.05]
 //
@@ -9,7 +9,9 @@
 // events go into one event log file next to the results (`<name>.events.db`), and the results are
 // `<name>.json` (every cell, every configuration) and `<name>.md` (a short summary), under the
 // repo's `results/` folder. Both files state the payment adapter, the model column, the gate model,
-// the seeds and the date.
+// the seeds and the date. "all" is every scenario of our own; the held-out set (attacks ported
+// from published benchmarks, docs/held-out.md) runs on its own with --scenarios held-out, and its
+// files say so and end their names in -held-out.
 //
 // Calls models, so it costs money: --dry-run prints the cell count and expected cost and spends
 // nothing; --max-usd (default $0.50) stops the matrix starting new cells once it is spent. Needs
@@ -65,6 +67,8 @@ import {
   resultsName,
   runAndEvaluateCell,
   runMatrix,
+  type ScenarioSet,
+  scenarioSetOf,
   selectScenarios,
   writeResults,
 } from "../src/index.js";
@@ -93,7 +97,7 @@ const { values } = parseArgs({
 
 if (!values.scenarios) {
   fail(
-    "Usage: run-matrix --scenarios <ids|all|attacks|benign> [--seeds 1,2] [--column haiku] " +
+    "Usage: run-matrix --scenarios <ids|all|attacks|benign|held-out> [--seeds 1,2] [--column haiku] " +
       "[--adapter fake|sandbox] [--max-usd 0.5] [--concurrency 3] [--dry-run]",
   );
 }
@@ -121,8 +125,10 @@ const concurrency = Math.floor(positive("concurrency", values.concurrency));
 
 let scenarios: ReturnType<typeof selectScenarios>;
 let seeds: string[];
+let scenarioSet: ScenarioSet;
 try {
   scenarios = selectScenarios(values.scenarios);
+  scenarioSet = scenarioSetOf(scenarios);
   seeds = parseSeeds(values.seeds);
 } catch (error) {
   fail((error as Error).message);
@@ -132,7 +138,7 @@ const estimate = estimateMatrix(cells);
 
 console.log(
   `${estimate.cells} cells (${scenarios.length} scenarios x ${seeds.length} seeds), ${column.label}, ` +
-    `${adapterName} payments, gates on ${EXTRACTOR_MODEL}`,
+    `${adapterName} payments, gates on ${EXTRACTOR_MODEL}, ${scenarioSet} scenario set`,
 );
 console.log(
   `Expected cost about $${estimate.expectedUsd.toFixed(4)} ($${estimate.perCellUsd.toFixed(4)} a cell); ` +
@@ -159,7 +165,7 @@ try {
 }
 
 const startedAt = new Date();
-const name = resultsName(startedAt, adapterName, column.columnId);
+const name = resultsName(startedAt, adapterName, column.columnId, scenarioSet);
 const dataDir = values.out ?? "results";
 const outDir = isAbsolute(dataDir) ? dataDir : join(REPO_ROOT, dataDir);
 mkdirSync(outDir, { recursive: true });
