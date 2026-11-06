@@ -4,6 +4,18 @@ What each release brought, for the people who use it. Adding a version at the to
 into main is the release: it's tagged, published and deployed from there. Each release bumps the
 patch version, except the one minor version per milestone the repo's `CLAUDE.md` allows.
 
+## 0.2.0
+
+v1.1: Chaperone gets its web app, at chaperone.omarg.dev, showing every purchase an agent tried and what happened to the money.
+
+- Watch a run on one timeline: what the person asked for, what the agent did, what each gate found and where the money went, with seller text kept behind a hatch. Replay any finished run step by step, and share a link to a moment in it.
+- Start a run yourself: pick a shopping task, read and lock the mandate, and watch a real agent shop while the gates review its cart. Live runs are capped at $0.25 of model spend a day.
+- Approve or reject held purchases from an inbox, oldest first, with each gate's reason. A decision the payment platform refused stays there until it's finished.
+- Browse every run in a grid you can filter, sort, group and export to Excel, with totals for what's held, paid to sellers, paid to attackers and voided.
+- See how the firewall does on the eval: off, rules only and the full review side by side, grouped by attack and charted, with each result saying which payment adapter produced it.
+- A fourth gate, the trace auditor, checks whether the agent's choice came from the mandate or from a seller steering it, and sends steered purchases to a person.
+- Put Chaperone in front of your own agent with the SDK, from the example on the Start a run page.
+
 ## 0.1.1
 
 The MVP: a shopping agent's checkout is held, reviewed against what the person asked for, and only then paid.
