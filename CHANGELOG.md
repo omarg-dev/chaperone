@@ -1,7 +1,8 @@
 # Changelog
 
-What each release brought, for the people who use it. A release is a `dev → prod` merge and
-bumps the patch version.
+What each release brought, for the people who use it. Adding a version at the top and merging it
+into main is the release: it's tagged, published and deployed from there. Each release bumps the
+patch version, except the one minor version per milestone the repo's `CLAUDE.md` allows.
 
 ## 0.1.1
 

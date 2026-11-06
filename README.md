@@ -286,84 +286,52 @@ Each run writes `<date>-<adapter>-<column>.json` (every cell and configuration),
 
 ## Deploying (one-time setup)
 
-Chaperone runs on the VPS at `https://chaperone.omarg.dev`, deployed the rulebook's way: merging `dev` into `prod` builds the arm64 image, pushes it to `ghcr.io/<owner>/<repo>` as `:prod` and `:prod-<commit>`, and (once `DEPLOY_ENABLED` is `true`) restarts the stack on the server over SSH. The server never has a checkout of this repo: each deploy writes `compose.yml` and `backup.sh` into `~/stacks/chaperone/`. Staging is off. Until step 5 below, a push to `prod` still builds and pushes the image and stops there.
+Chaperone runs on the VPS at `https://chaperone.omarg.dev`, deployed the rulebook's way. Releasing and deploying are the rulebook's shared workflows: a merged PR that adds a new version to the top of `CHANGELOG.md` is a release, and `.github/workflows/release.yml` builds the arm64 image, pushes it to `ghcr.io/omarg-dev/chaperone` as `:<version>` and `:prod`, tags the commit `v<version>`, publishes a GitHub Release, writes `compose.yml` into `~/stacks/chaperone/` over SSH, runs `docker compose pull && up -d` there, and waits for `/health`. The server never has a checkout of this repo. Staging is off.
 
-### 1. On the server
+### 1. "setup"
 
-```sh
-id -u                                  # the data folder must belong to this uid; the container runs as 1000
-mkdir -p ~/stacks/chaperone/data/results
-sudo chown -R 1000:1000 ~/stacks/chaperone/data
-```
+The rulebook's "Set up a repo" workflow (run with `repo: chaperone`) gives `main` its ruleset, copies the deploy secrets kept in the rulebook, sets `DEPLOY_ENABLED`, and adds the site block from [deploy/Caddyfile.example](deploy/Caddyfile.example) to the gateway (skipping it when the site is already there). Nothing is set by hand in this repo's settings. DNS needs nothing: the `*.omarg.dev` wildcard covers `chaperone.omarg.dev`.
 
-Copy the env file from your machine (from the repo root), then edit it on the server:
+The site block proxies to the container `chaperone` on port 3000, and rate limits live runs (12 a minute per address), decisions (10) and other writes more tightly than reads.
 
-```sh
-scp deploy/.env.example <user>@<server>:stacks/chaperone/.env
-ssh <user>@<server> 'chmod 600 ~/stacks/chaperone/.env && nano ~/stacks/chaperone/.env'
-```
+### 2. The server's `.env`
 
-The example runs as it is: replays, the dashboard and the arena work, and live runs are off. Every variable is explained in [deploy/.env.example](deploy/.env.example). If the repository is renamed, change `IMAGE_REPO` there.
-
-### 2. The Caddy gateway
-
-Add the site block from [deploy/Caddyfile.example](deploy/Caddyfile.example) to the shared gateway's Caddyfile, then reload:
+The first release creates `~/stacks/chaperone/` with `data/` and a `.env` copied from [deploy/.env.example](deploy/.env.example). It runs as it is: replays, the dashboard and the arena work, and live runs are off. Fill in the real values once (the table at the end of this section says which turn what on), then apply them:
 
 ```sh
-docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+nano ~/stacks/chaperone/.env
+cd ~/stacks/chaperone && docker compose up -d
 ```
 
-It proxies to the container `chaperone` on port 3000, and rate limits live runs (12 a minute per address), decisions (10) and other writes more tightly than reads. The gateway has to be on the external `web-gateway` network (it is, for the other apps); the compose file joins the same one and publishes nothing on the host.
+The container runs as uid 1000. If the deploy user isn't uid 1000, the deploy log says so; then `sudo chown -R 1000:1000 ~/stacks/chaperone/data`.
 
-### 3. DNS
+### 3. Releases and going back
 
-None to add: the `*.omarg.dev` wildcard covers `chaperone.omarg.dev`. Check with `dig +short chaperone.omarg.dev`.
+Ask for a release ("release"): the release PR bumps the version in `package.json` and adds its entry to `CHANGELOG.md`, and merging it deploys. To put an earlier release back ("rollback"), run the Release workflow by hand with that version: it points `:prod` at that version's image and deploys it with that release's `compose.yml`.
 
-### 4. On GitHub
+### 4. The nightly backup
 
-Settings, Secrets and variables, Actions:
-
-| Where | Name | Value |
-|---|---|---|
-| Repository secret | `DEPLOY_HOST` | the server's host name or IP |
-| Repository secret | `DEPLOY_USER` | the user that owns `~/stacks/chaperone` |
-| Repository secret | `DEPLOY_SSH_KEY` | a private key whose public half is in that user's `authorized_keys` (make one just for this: `ssh-keygen -t ed25519 -f chaperone-deploy`) |
-| Repository secret | `DEPLOY_PORT` | optional, the SSH port; unset means 22 |
-| Environment `production` variable | `DEPLOY_PATH` | the absolute path, such as `/home/<user>/stacks/chaperone` (`~` isn't expanded) |
-| Environment `production` variable | `APP_URL` | `https://chaperone.omarg.dev` |
-| Repository variable | `DEPLOY_ENABLED` | `true`, once steps 1 to 3 are done; until then the deploy job is skipped |
-
-Create the `production` environment first (Settings, Environments).
-
-The deploy logs the server in to ghcr with the workflow's own token for the length of the deploy, so the package can stay private. For a `docker compose pull` by hand on the server, either make the package public (Packages, the package's settings, Change visibility) or run `docker login ghcr.io` there with a personal access token that has only `read:packages`.
-
-### 5. First deploy
-
-Open the release PR from `dev` into `prod` when you are ready. The workflow builds the image, deploys, and polls `https://chaperone.omarg.dev/health`. To go back to an earlier release, set `IMAGE_TAG=prod-<commit>` in the server's `.env` and run `docker compose up -d` in `~/stacks/chaperone`.
-
-### 6. The nightly backup
-
-`backup.sh` (written next to `compose.yml` by each deploy) takes SQLite's online backup of the event log into `data/backups/events-<UTC time>.db`, checks it, and keeps the newest 14. After the first deploy:
+The app's `backup` command takes SQLite's online backup of the event log into `data/backups/events-<UTC time>.db`, checks it, and keeps the newest 14. After the first release:
 
 ```sh
 crontab -e
 # add:
-17 3 * * * ~/stacks/chaperone/backup.sh >> ~/stacks/chaperone/data/backups/backup.log 2>&1
+17 3 * * * cd ~/stacks/chaperone && docker compose exec -T app node dist/cli.js backup --keep 14 >> ~/stacks/chaperone/backup.log 2>&1
 ```
 
-Run `~/stacks/chaperone/backup.sh` once by hand to see it work. To restore a backup:
+Run the command once by hand to see it work. To restore a backup:
 
 ```sh
 cd ~/stacks/chaperone
 docker compose stop app
-cp data/events.db data/events.db.before-restore       # optional: keep what is there
-cp data/backups/events-<time>.db data/events.db
-rm -f data/events.db-wal data/events.db-shm
+sudo cp data/events.db data/events.db.before-restore     # optional: keep what is there
+sudo cp data/backups/events-<time>.db data/events.db
+sudo rm -f data/events.db-wal data/events.db-shm
 sudo chown 1000:1000 data/events.db
 docker compose up -d
 ```
 
-### 7. The demo runs
+### 5. The demo runs
 
 The hosted app should open on real recorded runs, so import them once. The event log is append-only, and import only adds: events keep their IDs, times and parents, an event already there is skipped, and importing the same file twice does nothing.
 
@@ -404,12 +372,10 @@ Sandbox credentials only, never live ones. After editing `.env`, run `docker com
 ## Branches
 
 ```
-feat/<thing> ──PR──▶ dev ──PR──▶ prod
-                                  │
-                              production
+feat/<thing> ──PR──▶ main ──release──▶ production
 ```
 
-`dev` is the default branch: every change is a PR into it. A release is one PR from `dev` into `prod`, and only `prod` deploys. There's no staging.
+`main` is the only long-lived branch: every change is a PR into it. A release is a merged PR that adds a new version to the top of `CHANGELOG.md`; the Release workflow (`.github/workflows/release.yml`, which calls the rulebook's shared one) tags it, publishes it and deploys it. Merging anything else deploys nothing. There's no staging.
 
 ## License
 
