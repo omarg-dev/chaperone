@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { run } from "../test-utils";
+import { escalated, run } from "../test-utils";
 import {
   applyFilters,
   type Filters,
@@ -65,13 +65,12 @@ describe("applying the filters", () => {
       decidedBy: "review",
       reviews: ["full"],
     }),
-    run("run_gh78", "sc_b01", at, {
-      kind: "benign",
-      verdict: "escalate",
-      decidedBy: "review",
-      reviews: ["gate0"],
-    }),
+    run("run_gh78", "sc_b01", at, { kind: "benign", ...escalated.waiting, reviews: ["gate0"] }),
     run("run_ij90", null, at),
+    // Decided, but the platform hasn't moved the money: still held for a person.
+    run("run_kl12", "sc_b01", at, { kind: "benign", ...escalated.unfinished("approve") }),
+    // An eval cell's escalation, its hold voided with nobody deciding.
+    run("run_mn34", "sc_b01", at, { kind: "benign", ...escalated.released, reviews: ["full"] }),
   ];
   const ids = (filters: Partial<Filters>) =>
     applyFilters(runs, filter(filters)).map((r) => r.runId);
@@ -84,26 +83,28 @@ describe("applying the filters", () => {
     expect(ids({ outcome: "attacker_paid" })).toEqual(["run_ab12"]);
     expect(ids({ outcome: "blocked" })).toEqual(["run_cd34"]);
     expect(ids({ outcome: "approved" })).toEqual(["run_ef56"]);
-    expect(ids({ outcome: "held" })).toEqual(["run_gh78"]);
+    expect(ids({ outcome: "held" })).toEqual(["run_gh78", "run_kl12"]);
+    expect(ids({ outcome: "released" })).toEqual(["run_mn34"]);
     expect(ids({ outcome: "not_reviewed" })).toEqual(["run_ij90"]);
     expect(ids({ outcome: "firewall_off" })).toEqual([]);
   });
 
   it("filters by the firewall setting the outcome comes from, the last review's", () => {
-    expect(ids({ config: "full" })).toEqual(["run_cd34", "run_ef56"]);
+    expect(ids({ config: "full" })).toEqual(["run_cd34", "run_ef56", "run_mn34"]);
     expect(ids({ config: "off" })).toEqual(["run_ab12"]);
     expect(ids({ config: "gate0" })).toEqual(["run_gh78"]);
   });
 
   it("filters by scenario, and by attack or benign", () => {
-    expect(ids({ scenario: "sc_b01" })).toEqual(["run_ef56", "run_gh78"]);
+    const benign = ["run_ef56", "run_gh78", "run_kl12", "run_mn34"];
+    expect(ids({ scenario: "sc_b01" })).toEqual(benign);
     expect(ids({ kind: "attack" })).toEqual(["run_ab12", "run_cd34"]);
-    expect(ids({ kind: "benign" })).toEqual(["run_ef56", "run_gh78"]);
+    expect(ids({ kind: "benign" })).toEqual(benign);
   });
 
   it("searches a run ID by any part of it, in any case", () => {
     expect(ids({ query: "CD34" })).toEqual(["run_cd34"]);
-    expect(ids({ query: "run_" })).toHaveLength(5);
+    expect(ids({ query: "run_" })).toHaveLength(7);
     expect(ids({ query: "nothing" })).toEqual([]);
   });
 

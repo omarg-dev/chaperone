@@ -247,6 +247,23 @@
   opacity: 0.85;
 }
 
+/* A decision that was recorded but not carried out: what it was, and the one way to finish it. */
+.decision-finish {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.decision-finish .decision-actions {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.decision-unfinished {
+  margin: 0;
+  color: var(--ink-2);
+}
+
 .decision-problem {
   grid-column: 1 / -1;
   padding: var(--space-3) var(--space-4);

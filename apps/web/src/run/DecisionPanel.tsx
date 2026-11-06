@@ -41,11 +41,72 @@ export function useDecision(
   return { asking, problem, decide };
 }
 
+// A decision that was recorded but didn't finish: the money is still held. The only way forward is
+// the decision already made, sent again (the server finishes what is left, and refuses the
+// opposite), so that is the one button.
+export interface Unfinished {
+  decision: "approve" | "reject";
+  problem: string | null;
+}
+
 // The two ways out, as in the approved Spine decision screen. Rejecting is the filled button,
 // because it is the safe one. Both stay on screen whatever the server says: when it can't carry a
-// decision out, its message is shown under them.
-export function DecisionButtons({ asking, problem, decide }: ReturnType<typeof useDecision>) {
+// decision out, its message is shown under them. A decision already made but not carried out
+// (`unfinished`) says so and offers to finish it instead.
+export function DecisionButtons({
+  asking,
+  problem,
+  decide,
+  unfinished,
+  saidAbove = false,
+}: ReturnType<typeof useDecision> & {
+  unfinished?: Unfinished | null;
+  // The page already says what was decided and why it didn't finish (the run view's headline does),
+  // so it isn't said again here.
+  saidAbove?: boolean;
+}) {
   const busy = asking !== null;
+  if (unfinished) {
+    const approved = unfinished.decision === "approve";
+    return (
+      <div className="decision-finish">
+        {!saidAbove && (
+          <p className="decision-unfinished">
+            You {approved ? "approved" : "rejected"} this purchase, but it didn't finish.
+            {unfinished.problem ? ` The last attempt failed: ${unfinished.problem}` : ""}
+          </p>
+        )}
+        <div className="decision-actions">
+          <Button
+            type="button"
+            variant={approved ? "secondary" : "primary"}
+            disabled={busy}
+            onClick={() => decide(unfinished.decision)}
+          >
+            <span className="decision-choice">
+              <span className="decision-choice-title">
+                {asking
+                  ? approved
+                    ? "Paying…"
+                    : "Releasing the hold…"
+                  : approved
+                    ? "Finish and pay"
+                    : "Finish and release hold"}
+              </span>
+              <span className="decision-choice-note">
+                {approved ? "The seller is paid" : "Nobody is paid"}
+              </span>
+            </span>
+          </Button>
+        </div>
+        {problem && (
+          <p className="decision-problem" role="alert">
+            {problem}
+          </p>
+        )}
+      </div>
+    );
+  }
   return (
     <>
       <div className="decision-actions">
@@ -99,10 +160,12 @@ export function HeldCart({ cart }: { cart: CartLine[] }) {
 export function DecisionPanel({
   runId,
   cart,
+  unfinished,
   onDecided,
 }: {
   runId: string;
   cart: CartLine[];
+  unfinished?: Unfinished | null;
   onDecided: () => void;
 }) {
   const decision = useDecision(runId, () => onDecided());
@@ -111,7 +174,7 @@ export function DecisionPanel({
       <div className="decision-cart">
         <HeldCart cart={cart} />
       </div>
-      <DecisionButtons {...decision} />
+      <DecisionButtons {...decision} unfinished={unfinished} saidAbove />
     </section>
   );
 }

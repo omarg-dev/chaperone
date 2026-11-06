@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mockDevice, mockServer, renderApp, run } from "./test-utils";
+import { escalated, mockDevice, mockServer, renderApp, run } from "./test-utils";
 
 beforeEach(() => {
   mockDevice(false);
@@ -64,22 +64,28 @@ describe("navigation", () => {
     expect(await screen.findByText("There's nothing at this address.")).toBeInTheDocument();
   });
 
-  it("counts the escalations waiting for a person, and not the ones already decided", async () => {
+  it("counts the escalations that still need a person: waiting, or decided but not carried out", async () => {
     mockServer({
       runs: [
-        run("run_a", "sc_b01", "2026-10-24T10:00:00Z", {
-          verdict: "escalate",
-          decidedBy: "review",
-        }),
+        run("run_a", "sc_b01", "2026-10-24T10:00:00Z", escalated.waiting),
         run("run_b", "sc_b02", "2026-10-24T09:00:00Z", { verdict: "approve", decidedBy: "review" }),
-        run("run_c", "sc_b03", "2026-10-24T08:00:00Z", { verdict: "approve", decidedBy: "person" }),
-        run("run_d", "sc_b04", "2026-10-24T07:00:00Z", {
-          verdict: "escalate",
-          decidedBy: "review",
-        }),
+        run("run_c", "sc_b03", "2026-10-24T08:00:00Z", escalated.decided("approve")),
+        run("run_d", "sc_b04", "2026-10-24T07:00:00Z", escalated.waiting),
+        // The platform refused the person's decision, so its hold is still open.
+        run("run_e", "sc_b05", "2026-10-24T06:00:00Z", escalated.unfinished("approve")),
+        // An eval cell's escalation, its hold voided with nobody deciding: nobody is waiting.
+        run("run_f", "sc_b06", "2026-10-24T05:00:00Z", escalated.released),
       ],
     });
     renderApp("/dashboard");
-    expect(await screen.findByRole("status", { name: "2 waiting for you" })).toHaveTextContent("2");
+    expect(await screen.findByRole("status", { name: "3 waiting for you" })).toHaveTextContent("3");
+  });
+
+  it("doesn't count a run released with no decision, even when it is the only escalation", async () => {
+    mockServer({
+      runs: [run("run_f", "sc_b06", "2026-10-24T05:00:00Z", escalated.released)],
+    });
+    renderApp("/dashboard");
+    expect(await screen.findByRole("status", { name: "0 waiting for you" })).toHaveTextContent("0");
   });
 });

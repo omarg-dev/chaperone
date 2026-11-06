@@ -79,6 +79,12 @@ export interface RunOutcome {
   decidedBy: "review" | "person" | "no_review" | null;
   // A gate broke: nothing was enforced and the order stays held.
   reviewFailed: boolean;
+  // The platform's hold on the order is still open: no capture or void of it has gone through.
+  holdOpen: boolean;
+  // What an escalated run needs, from the person's decision and the hold (see `escalationOf`):
+  // waiting for a person, decided but not carried out (unfinished), released without a decision,
+  // or decided. Null when the review didn't escalate.
+  escalation: "waiting" | "unfinished" | "released" | "decided" | null;
 }
 
 // What a run list shows beyond the outcome: see `facetsOf`.

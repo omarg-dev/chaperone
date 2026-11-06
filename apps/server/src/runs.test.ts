@@ -82,6 +82,12 @@ describe("GET /events/runs", () => {
     expect(runs.run_no_scenario).toMatchObject({ attackerPaid: false });
   });
 
+  it("leaves out the escalation of a run the review didn't escalate", async () => {
+    run("run_approved", "sc_b01");
+    const runs = await list();
+    expect(runs.run_approved).toMatchObject({ escalation: null, holdOpen: false });
+  });
+
   it("lists the configurations a run was reviewed under, in order, and its seed, not who was paid", async () => {
     run("run_cell", "sc_b01", { seed: "7", configs: ["off", "gate0", "full"] });
     const runs = await list();

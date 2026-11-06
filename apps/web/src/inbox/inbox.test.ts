@@ -1,15 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { run } from "../test-utils";
+import { escalated, run } from "../test-utils";
 import { confirmationText, decidedLabel, oldestFirst, recentlyDecided, waitingRuns } from "./inbox";
 
-const held = (id: string, at: string) =>
-  run(id, "sc_b01", at, { verdict: "escalate", decidedBy: "review" });
+const held = (id: string, at: string) => run(id, "sc_b01", at, escalated.waiting);
 const decided = (id: string, at: string, verdict: "approve" | "block") =>
-  run(id, "sc_b01", at, { verdict, decidedBy: "person" });
+  run(id, "sc_b01", at, escalated.decided(verdict));
+const unfinished = (id: string, at: string, verdict: "approve" | "block") =>
+  run(id, "sc_b01", at, escalated.unfinished(verdict));
+const released = (id: string, at: string) => run(id, "sc_b01", at, escalated.released);
 
 describe("what is waiting", () => {
-  it("is every escalation nobody has decided, and nothing else", () => {
+  it("is every escalation that still needs a person, and nothing else", () => {
     const runs = [
+      // Decided but not carried out: its hold is still open.
+      unfinished("g", "2026-10-24T04:00:00Z", "approve"),
+      // Voided with nobody deciding: nobody is waiting.
+      released("h", "2026-10-24T03:00:00Z"),
       held("a", "2026-10-24T10:00:00Z"),
       run("b", "s", "2026-10-24T09:00:00Z", { verdict: "approve", decidedBy: "review" }),
       decided("c", "2026-10-24T08:00:00Z", "approve"),
@@ -17,7 +23,7 @@ describe("what is waiting", () => {
       run("e", "s", "2026-10-24T06:00:00Z", { reviewFailed: true }),
       run("f", "s", "2026-10-24T05:00:00Z", { decidedBy: "no_review" }),
     ];
-    expect(waitingRuns(runs).map((r) => r.runId)).toEqual(["a"]);
+    expect(waitingRuns(runs).map((r) => r.runId)).toEqual(["g", "a"]);
   });
 
   it("puts the hold that has waited longest first, by when it began where that is known", () => {
@@ -40,6 +46,9 @@ describe("recently decided", () => {
   const runs = [
     decided("old", "2026-10-24T01:00:00Z", "approve"),
     held("held", "2026-10-24T12:00:00Z"),
+    // A decision whose money hasn't moved is still waiting above, not decided yet.
+    unfinished("stuck", "2026-10-24T14:00:00Z", "approve"),
+    released("released", "2026-10-24T15:00:00Z"),
     decided("new", "2026-10-24T11:00:00Z", "block"),
     run("review", "s", "2026-10-24T13:00:00Z", { verdict: "approve", decidedBy: "review" }),
     decided("mid", "2026-10-24T05:00:00Z", "approve"),

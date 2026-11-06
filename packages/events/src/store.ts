@@ -4,7 +4,7 @@ import { and, asc, count, eq, inArray, max, min, or, sql, sum } from "drizzle-or
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { newEventId } from "./ids.js";
-import { facetsOf, NO_OUTCOME, type OutcomeEvent, outcomeOf } from "./outcome.js";
+import { facetsOf, HOLD_OPERATIONS, NO_OUTCOME, type OutcomeEvent, outcomeOf } from "./outcome.js";
 import { events } from "./schema.js";
 import type { Event, NewEvent, RunSummary } from "./types.js";
 import { validateNewEvent } from "./validate.js";
@@ -130,6 +130,15 @@ export function openEventLog(options: EventLogOptions): EventLog {
         .from(events)
         .where(
           or(
+            // The calls that open and close the hold, which say whether an escalation is still held.
+            and(
+              eq(events.lane, "payments"),
+              eq(events.type, "payment_call"),
+              sql`json_extract(${events.payload}, '$.operation') in (${sql.join(
+                HOLD_OPERATIONS.map((operation) => sql`${operation}`),
+                sql`, `,
+              )})`,
+            ),
             and(
               inArray(events.lane, ["review", "human"]),
               inArray(events.type, [

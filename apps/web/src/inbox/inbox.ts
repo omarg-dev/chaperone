@@ -4,8 +4,9 @@ import { isHeldForPerson } from "../runs/state";
 
 // What the escalation inbox lists, as the run list says it. Pure, so the rules have unit tests.
 
-// Runs whose verdict is escalate and that no person has decided: the same rule as the top bar's
-// count, so the two agree.
+// Runs that need a person: escalated with the platform's hold still open, whether nobody has decided
+// (waiting) or a person decided and the money hasn't moved yet (unfinished). A hold released with
+// no decision isn't here. The same rule as the top bar's count, so the two agree.
 export function waitingRuns(runs: readonly RunSummary[]): RunSummary[] {
   return runs.filter(isHeldForPerson);
 }
@@ -20,15 +21,16 @@ export function oldestFirst<T extends { run: RunSummary; heldSince: string | nul
   return [...items].sort((a, b) => at(a) - at(b) || a.run.runId.localeCompare(b.run.runId));
 }
 
-// The last few runs a person decided, newest first, leaving out the ones the page already shows
-// another way (the confirmations from this visit).
+// The last few runs a person decided and whose money has moved, newest first, leaving out the ones
+// the page already shows another way (the confirmations from this visit). A decision that didn't
+// finish is still in the list above.
 export function recentlyDecided(
   runs: readonly RunSummary[],
   leaveOut: ReadonlySet<string>,
   limit = 5,
 ): RunSummary[] {
   return runs
-    .filter((run) => run.decidedBy === "person" && !leaveOut.has(run.runId))
+    .filter((run) => run.escalation === "decided" && !leaveOut.has(run.runId))
     .sort((a, b) => Date.parse(b.lastEventAt) - Date.parse(a.lastEventAt))
     .slice(0, limit);
 }

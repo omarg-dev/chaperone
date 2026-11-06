@@ -24,16 +24,52 @@ describe("a run's state", () => {
     expect(noVerdictText(run("r", "s", at))).toBe("No review yet");
   });
 
-  it("holds an escalation for the person until they decide it", () => {
-    expect(isHeldForPerson(run("r", "s", at, { verdict: "escalate", decidedBy: "review" }))).toBe(
-      true,
-    );
-    expect(isHeldForPerson(run("r", "s", at, { verdict: "approve", decidedBy: "person" }))).toBe(
+  it("holds an escalation for the person while its hold is open and nobody has decided", () => {
+    const waiting = run("r", "s", at, {
+      verdict: "escalate",
+      decidedBy: "review",
+      holdOpen: true,
+      escalation: "waiting",
+    });
+    expect(isHeldForPerson(waiting)).toBe(true);
+    expect(isHeldForPerson(run("r", "s", at, { verdict: "approve", decidedBy: "review" }))).toBe(
       false,
     );
     expect(isHeldForPerson(run("r", "s", at, { verdict: "block", decidedBy: "review" }))).toBe(
       false,
     );
+  });
+
+  it("still holds a decision that wasn't carried out, and lets go of one that was", () => {
+    const decided = { verdict: "approve", decidedBy: "person" } as const;
+    expect(
+      isHeldForPerson(run("r", "s", at, { ...decided, holdOpen: true, escalation: "unfinished" })),
+    ).toBe(true);
+    expect(isHeldForPerson(run("r", "s", at, { ...decided, escalation: "decided" }))).toBe(false);
+  });
+
+  it("does not hold an escalation whose hold was released with no decision", () => {
+    const released = run("r", "s", at, {
+      verdict: "escalate",
+      decidedBy: "review",
+      escalation: "released",
+    });
+    expect(isHeldForPerson(released)).toBe(false);
+    expect(pillStateOf(released)).toBeNull();
+    expect(noVerdictText(released)).toBe("Hold released");
+  });
+
+  it("shows an unfinished decision as an escalation, not as the verdict the person chose", () => {
+    expect(
+      pillStateOf(
+        run("r", "s", at, {
+          verdict: "approve",
+          decidedBy: "person",
+          holdOpen: true,
+          escalation: "unfinished",
+        }),
+      ),
+    ).toBe("escalate");
   });
 });
 
@@ -45,7 +81,14 @@ describe("how a run ended", () => {
     expect(ended({ verdict: "approve", decidedBy: "person" })).toBe("approved");
     expect(ended({ verdict: "block", decidedBy: "review" })).toBe("blocked");
     expect(ended({ verdict: "block", decidedBy: "person" })).toBe("blocked");
-    expect(ended({ verdict: "escalate", decidedBy: "review" })).toBe("held");
+    expect(ended({ verdict: "escalate", decidedBy: "review", escalation: "waiting" })).toBe("held");
+    expect(ended({ verdict: "approve", decidedBy: "person", escalation: "unfinished" })).toBe(
+      "held",
+    );
+    expect(ended({ verdict: "escalate", decidedBy: "review", escalation: "released" })).toBe(
+      "released",
+    );
+    expect(ended({ verdict: "block", decidedBy: "person", escalation: "decided" })).toBe("blocked");
     expect(ended({ decidedBy: "no_review" })).toBe("firewall_off");
     expect(ended({ reviewFailed: true })).toBe("review_failed");
     expect(ended({})).toBe("not_reviewed");

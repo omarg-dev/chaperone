@@ -313,7 +313,11 @@ export function exitsOf(model: RunModel): TimelineFooter {
         <span className="tl-exit-title">To the person</span>
         {exit === "person" && (
           <span className="tl-exit-line">
-            {model.awaitingPerson ? "Waiting on you" : "Stays held, nobody is deciding"}
+            {model.unfinished
+              ? "Your decision isn't finished"
+              : model.awaitingPerson
+                ? "Waiting on you"
+                : "Stays held, nobody is deciding"}
           </span>
         )}
       </>

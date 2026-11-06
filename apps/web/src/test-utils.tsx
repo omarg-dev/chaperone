@@ -97,7 +97,15 @@ export const run = (
   outcome: Partial<
     Pick<
       RunSummary,
-      "verdict" | "decidedBy" | "reviewFailed" | "reviews" | "kind" | "attackerPaid" | "seed"
+      | "verdict"
+      | "decidedBy"
+      | "reviewFailed"
+      | "holdOpen"
+      | "escalation"
+      | "reviews"
+      | "kind"
+      | "attackerPaid"
+      | "seed"
     >
   > = {},
 ): RunSummary => ({
@@ -110,9 +118,22 @@ export const run = (
   verdict: null,
   decidedBy: null,
   reviewFailed: false,
+  holdOpen: false,
+  escalation: null,
   seed: "1",
   reviews: [],
   kind: null,
   attackerPaid: false,
   ...outcome,
 });
+
+// The states an escalated run can be in, as the run list summarises them (`escalationOf`).
+export const escalated = {
+  waiting: { verdict: "escalate", decidedBy: "review", holdOpen: true, escalation: "waiting" },
+  released: { verdict: "escalate", decidedBy: "review", holdOpen: false, escalation: "released" },
+  // A person decided but the platform hasn't moved the money: the decision reads as the verdict.
+  unfinished: (verdict: "approve" | "block") =>
+    ({ verdict, decidedBy: "person", holdOpen: true, escalation: "unfinished" }) as const,
+  decided: (verdict: "approve" | "block") =>
+    ({ verdict, decidedBy: "person", holdOpen: false, escalation: "decided" }) as const,
+} as const;

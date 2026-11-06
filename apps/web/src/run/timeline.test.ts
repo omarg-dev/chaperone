@@ -1,3 +1,4 @@
+import { needsPerson, outcomeOf } from "@firewall/events/outcome";
 import { describe, expect, it } from "vitest";
 import type { RunEvent } from "./events";
 import { fixtures, payees, upTo } from "./fixtures";
@@ -224,6 +225,79 @@ describe("a person's decision", () => {
     });
     expect(run.money).toMatchObject({ state: "voided", payouts: [] });
     expect(run.exit).toBe("void");
+  });
+});
+
+// An escalation follows the money: it needs a person while the platform's hold is open, whether or
+// not they have decided. The run list reads the same rule (`outcomeOf`, in @firewall/events), and the
+// run view's model has to agree with it on every real log.
+describe("an escalation that follows the hold", () => {
+  it("a person decided but the platform refused: the decision is on the log and the hold is open", () => {
+    const run = build(fixtures.escalatedUnfinished);
+    expect(run.escalation).toBe("unfinished");
+    expect(run.awaitingPerson).toBe(true);
+    expect(run.unfinished).toEqual({
+      decision: "approve",
+      problem: "The payment platform is unavailable",
+    });
+    expect(run.headline).toMatchObject({
+      outcome: "unfinished",
+      pill: { state: "escalate", label: "Decision not finished" },
+      title: "You approved this purchase, but it didn't finish.",
+      lede: "The payment platform is unavailable. Finish it below.",
+    });
+    // Still held, not captured: the money is where the platform left it.
+    expect(run.money.state).toBe("held");
+    expect(run.exit).toBe("person");
+    expect(run.live).toBe(false);
+    // The decision the person made is still on the timeline.
+    expect(of(run.items, "step").map((s) => s.title)).toContain("Approved the purchase");
+  });
+
+  it("an eval's cleanup voided the hold with nobody deciding: released, and nobody is waiting", () => {
+    const run = build(fixtures.escalatedReleased);
+    expect(run.escalation).toBe("released");
+    expect(run.awaitingPerson).toBe(false);
+    expect(run.released).toBe(true);
+    expect(run.unfinished).toBeNull();
+    expect(run.headline).toMatchObject({
+      outcome: "released",
+      pill: null,
+      badge: "Hold released",
+      title: "The hold was released without a decision.",
+    });
+    expect(run.money).toMatchObject({ state: "voided", payouts: [] });
+    expect(run.exit).toBe("void");
+    expect(run.live).toBe(false);
+    expect(run.holdExpiresAt).toBeNull();
+    // No decision on the timeline, because nobody made one.
+    expect(of(run.items, "step").map((s) => s.title)).not.toContain("Approved the purchase");
+  });
+
+  it("is waiting only while the hold is open, and decided once the money moved", () => {
+    expect(build(fixtures.escalated)).toMatchObject({
+      escalation: "waiting",
+      awaitingPerson: true,
+    });
+    expect(build(fixtures.escalatedApproved)).toMatchObject({
+      escalation: "decided",
+      awaitingPerson: false,
+      unfinished: null,
+    });
+    expect(build(fixtures.escalatedRejected)).toMatchObject({
+      escalation: "decided",
+      awaitingPerson: false,
+    });
+    expect(build(fixtures.approved)).toMatchObject({ escalation: null, awaitingPerson: false });
+  });
+
+  it("agrees with the run list's rule on every recorded log", () => {
+    for (const [name, log] of Object.entries(fixtures)) {
+      const outcome = outcomeOf(log);
+      const run = build(log);
+      expect(run.escalation, name).toBe(outcome.escalation);
+      expect(run.awaitingPerson, name).toBe(needsPerson(outcome.escalation));
+    }
   });
 });
 

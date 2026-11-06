@@ -7,6 +7,8 @@ import blocked from "./blocked.json";
 import escalated from "./escalated.json";
 import escalatedApproved from "./escalated_approved.json";
 import escalatedRejected from "./escalated_rejected.json";
+import escalatedReleased from "./escalated_released.json";
+import escalatedUnfinished from "./escalated_unfinished.json";
 import extraItem from "./extra_item.json";
 
 const as = (log: unknown) => log as RunEvent[];
@@ -18,6 +20,8 @@ export const fixtures = {
   escalated: as(escalated),
   escalatedApproved: as(escalatedApproved),
   escalatedRejected: as(escalatedRejected),
+  escalatedReleased: as(escalatedReleased),
+  escalatedUnfinished: as(escalatedUnfinished),
   extraItem: as(extraItem),
 };
 

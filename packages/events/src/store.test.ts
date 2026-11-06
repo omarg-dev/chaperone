@@ -24,6 +24,8 @@ const noOutcome = {
   verdict: null,
   decidedBy: null,
   reviewFailed: false,
+  holdOpen: false,
+  escalation: null,
   seed: null,
   reviews: [],
   paidPayees: [],
@@ -155,6 +157,21 @@ describe("reading", () => {
     review("run_block", "review_finished", { verdict: "block" });
     review("run_off", "review_finished", { verdict: null });
     review("run_failed", "review_failed", { error: "model unavailable" });
+    // An escalation needs the order's hold on record, since it is waiting for a person only while
+    // the hold is open (see outcome.test.ts for each state).
+    for (const runId of ["run_open", "run_yes", "run_no"]) {
+      log.append({
+        runId,
+        lane: "payments",
+        type: "payment_call",
+        provenance: "system",
+        payload: {
+          operation: "authorize_order",
+          input: ["order_1"],
+          result: { authorizationId: "A1" },
+        },
+      });
+    }
     review("run_open", "review_finished", { verdict: "escalate" });
     review("run_yes", "review_finished", { verdict: "escalate" });
     decide("run_yes", "approve");

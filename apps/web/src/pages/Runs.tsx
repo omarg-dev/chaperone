@@ -32,7 +32,11 @@ function Verdict({ run }: { run: RunSummary }) {
   return (
     <span className="verdict-cell">
       <Pill state={state} />
-      {run.decidedBy === "person" && <span className="t-meta">You decided</span>}
+      {run.escalation === "unfinished" ? (
+        <span className="t-meta">Decision not finished</span>
+      ) : (
+        run.decidedBy === "person" && <span className="t-meta">You decided</span>
+      )}
     </span>
   );
 }
