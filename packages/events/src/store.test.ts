@@ -20,7 +20,14 @@ function open() {
   });
 }
 
-const noOutcome = { verdict: null, decidedBy: null, reviewFailed: false };
+const noOutcome = {
+  verdict: null,
+  decidedBy: null,
+  reviewFailed: false,
+  seed: null,
+  reviews: [],
+  paidPayees: [],
+};
 
 const base: NewEvent = { runId: "run_a", lane: "agent", type: "tool_call", provenance: "system" };
 
@@ -173,6 +180,39 @@ describe("reading", () => {
       run_no: ["block", "person", false],
       run_approved: ["approve", "review", false],
       run_retried: ["approve", "review", false],
+    });
+  });
+
+  it("adds the seed, the configurations a run was reviewed under and who was paid", () => {
+    const append = (runId: string, lane: "arena" | "review", type: string, payload: unknown) =>
+      log.append({ runId, lane, type, provenance: "system", payload });
+
+    append("run_cell", "arena", "run_started", { seed: "3", request: "x" });
+    // An eval cell: one checkout reviewed under three configurations, the last enforced.
+    for (const config of ["off", "gate0", "full"]) {
+      append("run_cell", "review", "review_started", { config });
+      append("run_cell", "review", "review_finished", { verdict: "approve" });
+    }
+    append("run_cell", "review", "enforced", {
+      money: "captured",
+      payouts: [
+        { payeeKey: "seller_2", amountCents: 9000 },
+        { payeeKey: "attacker_1", amountCents: 0 },
+      ],
+    });
+    // Voided: nobody was paid.
+    append("run_void", "review", "review_started", { config: "full" });
+    append("run_void", "review", "enforced", { money: "voided", payouts: [] });
+    // A run that never got as far as a review.
+    log.append({ ...base, runId: "run_early" });
+
+    const facets = Object.fromEntries(
+      log.listRuns().map((r) => [r.runId, [r.seed, r.reviews, r.paidPayees]]),
+    );
+    expect(facets).toEqual({
+      run_cell: ["3", ["off", "gate0", "full"], ["seller_2"]],
+      run_void: [null, ["full"], []],
+      run_early: [null, [], []],
     });
   });
 

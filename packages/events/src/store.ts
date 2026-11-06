@@ -1,10 +1,10 @@
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import { and, asc, count, eq, inArray, max, min, sql, sum } from "drizzle-orm";
+import { and, asc, count, eq, inArray, max, min, or, sql, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { newEventId } from "./ids.js";
-import { NO_OUTCOME, type OutcomeEvent, outcomeOf } from "./outcome.js";
+import { facetsOf, NO_OUTCOME, type OutcomeEvent, outcomeOf } from "./outcome.js";
 import { events } from "./schema.js";
 import type { Event, NewEvent, RunSummary } from "./types.js";
 import { validateNewEvent } from "./validate.js";
@@ -117,7 +117,8 @@ export function openEventLog(options: EventLogOptions): EventLog {
         .orderBy(sql`${min(events.seq)} desc`)
         .all();
 
-      // The events that say how a run ended, for every run in one read.
+      // The events that say how a run ended and what it was reviewed under, for every run in one
+      // read.
       const decisive = new Map<string, OutcomeEvent[]>();
       const rows = db
         .select({
@@ -128,9 +129,18 @@ export function openEventLog(options: EventLogOptions): EventLog {
         })
         .from(events)
         .where(
-          and(
-            inArray(events.lane, ["review", "human"]),
-            inArray(events.type, ["review_finished", "review_failed", "human_decision"]),
+          or(
+            and(
+              inArray(events.lane, ["review", "human"]),
+              inArray(events.type, [
+                "review_started",
+                "review_finished",
+                "review_failed",
+                "enforced",
+                "human_decision",
+              ]),
+            ),
+            and(eq(events.lane, "arena"), eq(events.type, "run_started")),
           ),
         )
         .orderBy(asc(events.seq))
@@ -141,10 +151,14 @@ export function openEventLog(options: EventLogOptions): EventLog {
         else decisive.set(row.runId, [row]);
       }
 
-      return runs.map((run) => ({
-        ...run,
-        ...(decisive.has(run.runId) ? outcomeOf(decisive.get(run.runId) ?? []) : NO_OUTCOME),
-      }));
+      return runs.map((run) => {
+        const mine = decisive.get(run.runId) ?? [];
+        return {
+          ...run,
+          ...(mine.length > 0 ? outcomeOf(mine) : NO_OUTCOME),
+          ...facetsOf(mine),
+        };
+      });
     },
 
     subscribe(listener) {

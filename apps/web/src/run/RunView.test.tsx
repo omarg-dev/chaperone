@@ -62,6 +62,17 @@ describe("the run view", () => {
     expect(document.querySelector(".run-money-attacker")).toBeNull();
   });
 
+  it("opens the page a flagged passage is on, so it is seen where it was written", async () => {
+    await open(fixtures.escalated);
+    const pages = [...document.querySelectorAll(".tl-served details")];
+    const withMarks = pages.filter((d) => d.querySelector(".tl-passage mark"));
+    expect(withMarks.length).toBeGreaterThan(0);
+    for (const page of withMarks) expect(page).toHaveAttribute("open");
+    for (const page of pages.filter((d) => !withMarks.includes(d))) {
+      expect(page).not.toHaveAttribute("open");
+    }
+  });
+
   it("outlines nothing when Gate 1 found nothing to flag", async () => {
     await open(fixtures.approved);
     expect(document.querySelector(".tl-crosses-flagged")).toBeNull();

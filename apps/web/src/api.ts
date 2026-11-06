@@ -17,6 +17,15 @@ export interface RunSummary {
   decidedBy: "review" | "person" | "no_review" | null;
   // A gate broke: nothing was enforced and the order stays held.
   reviewFailed: boolean;
+  // The seed the run's scenario was built with.
+  seed: string | null;
+  // The firewall configuration of each review the run went through, in order ("off", "gate0",
+  // "full"). An eval run reviews one checkout under all three; the last is the one that counts.
+  reviews: string[];
+  // Whether the run's scenario is an attack, or null when the arena doesn't know the scenario.
+  kind: "attack" | "benign" | null;
+  // Money was paid out to one of the scenario's attackers.
+  attackerPaid: boolean;
 }
 
 export interface ScenarioInfo {

@@ -107,4 +107,26 @@ The product's name, logo and graphics never use PayPal's name or logo. "Built on
 - **The mandate says what it didn't enforce.** The terms row "Not enforced" lists words from the request that weren't made a rule ("mid-range"), with the hint "In your request, but not made a rule".
 - **The route ends in three exits**: capture and pay the seller, to the person, void the hold. The one taken is solid, the others dashed.
 - **An escalated run shows the held cart and the two options** from the Spine-Decision screen, with Reject as the filled button. They post to `POST /events/runs/:runId/decision`.
+- **A page Gate 1 copied a passage from is open**, so the outlined passage is seen where it was written and not behind a closed row; the pages with nothing flagged stay closed.
 - **A run in progress is read again every 1.5 seconds** until its money is settled, a gate broke, or a person has to decide.
+
+## The Runs page
+
+`/runs` (`src/pages/Runs.tsx`) is the history: every run, newest first, fifty to a page, so it stays quick with the few hundred an eval writes. `src/runs/filters.ts` is the pure side (reading and writing the filters, applying them, paging) and `src/runs/state.ts` says how a run ended.
+
+- **Filters sit above the list**: a search by run ID, then outcome, firewall setting, scenario and attack or benign, with "Clear filters" once any is on. Each is one native select, which is keyboard and screen-reader complete for free.
+- **The filters live in the address** (`?outcome=blocked&firewall=full&scenario=sc_a01&kind=attack&q=mvsq&page=2`), so a filtered view can be shared. Only what differs from everything is written, a value that means nothing is read as no filter, and a change goes back to the first page. Typing in the search writes the address when the typing pauses.
+- **An outcome is exactly one of seven**: approved, blocked, held for a person, paid attacker, firewall off, review failed, or not reviewed yet, in the run view's own order of precedence (money that reached an attacker first, however the run got there). The list shows the same "Paid attacker" pill as the run view.
+- **The firewall column says which setting the outcome comes from**, the last review's, and, small beside it, which settings reviewed the same checkout before it ("after Off, Gate 0 only"): an eval cell is reviewed under off, gate0 and full. The firewall filter is on that last setting.
+- **Attack or benign comes from the arena**, not the run's name: the server answers it from the scenario (`kind`), as it answers whether an attacker was paid (`attackerPaid`, rebuilt from the scenario and seed, never guessed). The list marks an attack scenario with a small "Attack" badge. This is an operator's view, like the payees.
+
+## Replay
+
+A finished run (or one waiting on a person) has "Replay this run" above its timeline; a run in progress is followed live and offered the replay once it is over. Replay plays the run's own events in log order, and the timeline builds up as the playhead passes each one. It draws `buildRun(events.slice(0, position))`, the same mapping as the live view over a prefix of the log, so it can't drift from it; at the last position it is the run view. The pure side is `src/run/playhead.ts` (positions, delays, keys, what to call an event); `useReplay.ts` holds the state; `ReplayBar.tsx` is the control.
+
+- **The bar sits at the foot of the page and stays in view** while the timeline is read: play and pause, a step back and forward, a scrubber over the events with "12 of 45 · 6.8s", the speed (1×, 4×, Instant) and "Exit replay". Under it, one line says what the event at the playhead was ("Gate 1 flagged a passage as steering"), in fixed words: a seller's text never reaches it.
+- **Speed**: 1× waits the real gap between two events, with a quiet gap capped at 1.5 seconds (a model turn can take half a minute), 4× a quarter of that, Instant goes straight to the end.
+- **The position is `?at=<n>`**: how many events are shown, from 1. An event's ID works too (`?at=ev_0028`), and a position past the end is the end. It opens a shared link at that moment, paused. The address follows the playhead once it is still, and is left alone while it plays (a browser limits how often a page may rewrite its address).
+- **The header follows the playhead.** The headline, the money (held, then captured or voided, and red only once a payout reaches an attacker), the cost and a "Replay, event 12 of 45" badge are those of the log up to that event. A decision that was already made isn't offered again while the playhead is before it.
+- **Keyboard**: space plays and pauses, the left and right arrows step one event, Home and End go to the ends. A button keeps its own space, a slider its own arrows, and a search box or menu everything.
+- **Reduced motion**: with `prefers-reduced-motion` the replay opens paused on the first event, to be played or stepped, and the page scrolls to the newest row without animating.

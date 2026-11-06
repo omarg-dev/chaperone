@@ -43,7 +43,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: the MVP is done in code (step 18 is open for review, with steps 15 to 17 open and steps 1 to 14 merged); the design pass (v1.1 step 1) is approved and the web app shell (step 2) and the live run view (step 3, which also covers step 4) are open for review; next is step 5, history and replay.** Step 6 is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now: the MVP (steps 0 to 18) is merged and released as 0.1.1; in v1.1 the design pass, the web app shell and the live run view (which covers step 4) are merged, and step 5, history and replay, is open for review; next is step 6, the escalation inbox.** MVP step 6, the first technical checks, is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `dev`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `dev`.
 
@@ -53,7 +53,7 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 
 | # | Step | Status |
 |---|---|---|
-| 0 | Repo setup and this plan | 👀 PRs 1 and 2 |
+| 0 | Repo setup and this plan | ✅ |
 | 1 | Monorepo scaffold: workspace, lint, typecheck, tests, CI, a server with `/health`, Docker image | ✅ |
 | 2 | Event log: the append-only event schema, SQLite through Drizzle, append and query | ✅ |
 | 3 | Arena catalog: fictional sellers, products and reviews, seeded scenarios, the first benign ones | ✅ |
@@ -62,16 +62,16 @@ Status: ✅ merged · 🔨 in progress · 👀 PR open, waiting on review · ⏸
 | 6 | First technical checks against the sandbox (see below) | ✅ all five answered; check 3, the saved wallet, works with one scripted approval |
 | 7 | Sandbox payment adapter: authorize, capture, void, reauthorize, payouts to sellers, saved wallet; one order per cart, paid to the platform | ✅ the contract suite passes against the sandbox |
 | 8 | Shopping agent on the AI SDK, checking out through the payment adapter | ✅ |
-| 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | 👀 PR open; checkpoint ✅ in step 14's runs: with no firewall, sc_a01, sc_a02 and sc_a03 each paid an attacker's sandbox account |
-| 10 | Mandate builder with confirmation (command line) | 👀 PR open |
-| 11 | Gate 0, deterministic policy | 👀 PR open |
-| 12 | Gate 1, quarantined extractor | 👀 PR open |
-| 13 | Gate 2, intent auditor | 👀 PR open |
-| 14 | Review tree and enforcement: approve captures, block voids, escalate holds | 👀 PR open |
-| 15 | Attacks A3, A5, A6 and A7 | 👀 PR open |
-| 16 | SDK wrapper v1 | 👀 PR open |
-| 17 | Eval harness v1 with the local runner and a results file | 👀 PR open |
-| 18 | 22 benign scenarios, the first off-vs-on numbers, release 0.1.1 | 👀 PR open |
+| 9 | Attacks A1, A2 and A4. Checkpoint: with no firewall, a run pays an attacker in the sandbox | ✅ checkpoint in step 14's runs: with no firewall, sc_a01, sc_a02 and sc_a03 each paid an attacker's sandbox account |
+| 10 | Mandate builder with confirmation (command line) | ✅ |
+| 11 | Gate 0, deterministic policy | ✅ |
+| 12 | Gate 1, quarantined extractor | ✅ |
+| 13 | Gate 2, intent auditor | ✅ |
+| 14 | Review tree and enforcement: approve captures, block voids, escalate holds | ✅ |
+| 15 | Attacks A3, A5, A6 and A7 | ✅ |
+| 16 | SDK wrapper v1 | ✅ |
+| 17 | Eval harness v1 with the local runner and a results file | ✅ |
+| 18 | 22 benign scenarios, the first off-vs-on numbers, release 0.1.1 | ✅ |
 
 Done when: with the firewall off a run sends sandbox money to an attacker account, with it on the same run is voided, and the off-vs-on attack success rate and false block rate exist. The first matrix (fake payment adapter, 30 scenarios, seeds 1 and 2, Claude Haiku 5.5, $0.28) found the agent fooled in 11 of 16 attack runs: with the firewall off 11 reached an attacker's account (68.8%), with Gate 0 only 4 (25.0%) and with the full tree none, at no false blocks and 4 false escalations in 49 clean carts (8.2%). Two of those four were benign scenarios. These are development numbers, not sandbox ones.
 
@@ -80,10 +80,10 @@ Done when: with the firewall off a run sends sandbox money to an attacker accoun
 | # | Step | Status |
 |---|---|---|
 | 1 | Design pass with the design skills: tokens, layout and mockups of every screen, reviewed by Omar before any UI code | ✅ Spine, approved by Omar Oct 28 |
-| 2 | Web app shell: theme tokens, light and dark, navigation, empty states | 👀 PR open |
-| 3 | Live run view: the vertical timeline with the review tree on its spine, with causal arrows (steps 3 and 4 in one: the approved design makes them one screen). Built as our own timeline component behind a small interface, since there is no Bryntum access; the causal arrows are left out for now, except the one where Gate 1's fact crosses from seller text to the spine | 👀 PR open |
-| 4 | Review tree per checkout | Merged into step 3 (👀) |
-| 5 | History and replay | ⬜ |
+| 2 | Web app shell: theme tokens, light and dark, navigation, empty states | ✅ |
+| 3 | Live run view: the vertical timeline with the review tree on its spine, with causal arrows (steps 3 and 4 in one: the approved design makes them one screen). Built as our own timeline component behind a small interface, since there is no Bryntum access; the causal arrows are left out for now, except the one where Gate 1's fact crosses from seller text to the spine | ✅ |
+| 4 | Review tree per checkout | Merged into step 3 (✅) |
+| 5 | History and replay: the Runs page filters, searches and pages every run, and a finished run's page replays its own events with a playhead kept in the address | 👀 PR open |
 | 6 | Escalation inbox | ⬜ |
 | 7 | AG Studio dashboard with custom widgets and theming | ⬜ |
 | 8 | Onboarding flow: connect agent, set mandate, run | ⬜ |

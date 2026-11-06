@@ -10,6 +10,9 @@ export const POLL_MS = 1500;
 export interface RunState {
   status: "loading" | "ready" | "missing" | "error";
   model: RunModel;
+  // The run's events as the server sent them, and who its payees are: what a replay draws prefixes of.
+  events: RunEvent[];
+  payees: Payee[];
   // Read the run again now (after a person decided it).
   reload: () => void;
 }
@@ -67,5 +70,5 @@ export function useRun(runId: string): RunState {
   }, [runId, round]);
 
   const model = useMemo(() => buildRun(events, payees), [events, payees]);
-  return { status, model, reload };
+  return { status, model, events, payees, reload };
 }

@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { mockDevice, mockServer, renderApp, run } from "../test-utils";
@@ -88,13 +88,150 @@ describe("the Runs page", () => {
     expect(fetchMock).toHaveBeenCalledWith("/events/runs", expect.anything());
   });
 
-  it("lists every run, however many there are", async () => {
+  it("pages through a long history, fifty runs at a time", async () => {
+    const user = userEvent.setup();
     const many = Array.from({ length: 130 }, (_, i) =>
       run(`run_${i}`, "sc_b01", "2026-10-24T10:00:00Z"),
     );
     mockServer({ runs: many });
     renderApp("/runs");
     const list = await screen.findByRole("list", { name: "Runs" });
-    expect(within(list).getAllByRole("link")).toHaveLength(130);
+    expect(within(list).getAllByRole("link")).toHaveLength(50);
+    expect(screen.getByText("Showing 1–50 of 130 runs")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByText("Showing 51–100 of 130 runs")).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent("/runs?page=2");
+    expect(
+      within(screen.getByRole("list", { name: "Runs" })).getAllByRole("link")[0],
+    ).toHaveAttribute("href", "/runs/run_50");
+    await user.click(screen.getByRole("button", { name: "Next" }));
+    expect(screen.getByText("Page 3 of 3")).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Runs" })).getAllByRole("link")).toHaveLength(
+      30,
+    );
+    expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
+  });
+});
+
+describe("the history's filters", () => {
+  const runs = [
+    run("run_paid", "sc_a01", "2026-10-24T11:03:00Z", {
+      kind: "attack",
+      decidedBy: "no_review",
+      attackerPaid: true,
+      reviews: ["off"],
+    }),
+    run("run_blocked", "sc_a01", "2026-10-24T11:02:00Z", {
+      kind: "attack",
+      verdict: "block",
+      decidedBy: "review",
+      reviews: ["off", "gate0", "full"],
+    }),
+    run("run_approved", "sc_b01", "2026-10-24T11:01:00Z", {
+      kind: "benign",
+      verdict: "approve",
+      decidedBy: "review",
+      reviews: ["full"],
+    }),
+    run("run_held", "sc_b01", "2026-10-24T11:00:00Z", {
+      kind: "benign",
+      verdict: "escalate",
+      decidedBy: "review",
+      reviews: ["full"],
+    }),
+  ];
+  const scenarios = [
+    { scenarioId: "sc_a01", title: "Wireless tactile keyboard", request: "x" },
+    { scenarioId: "sc_b01", title: "Tactile keyboard under $120", request: "x" },
+  ];
+  const shownIds = () =>
+    within(screen.getByRole("list", { name: "Runs" }))
+      .getAllByRole("link")
+      .map((a) => a.getAttribute("href")?.replace("/runs/", ""));
+
+  it("opens on the filters in the address, so a filtered view can be shared", async () => {
+    mockServer({ runs, scenarios });
+    renderApp("/runs?outcome=blocked&kind=attack");
+    await screen.findByRole("list", { name: "Runs" });
+    expect(shownIds()).toEqual(["run_blocked"]);
+    expect(screen.getByLabelText("Outcome")).toHaveValue("blocked");
+    expect(screen.getByLabelText("Kind")).toHaveValue("attack");
+    expect(screen.getByText("Showing 1–1 of 1 matching runs, out of 4")).toBeInTheDocument();
+  });
+
+  it("writes each filter into the address as it is chosen", async () => {
+    const user = userEvent.setup();
+    mockServer({ runs, scenarios });
+    renderApp("/runs");
+    await screen.findByRole("list", { name: "Runs" });
+    expect(shownIds()).toHaveLength(4);
+
+    await user.selectOptions(screen.getByLabelText("Outcome"), "Paid attacker");
+    expect(shownIds()).toEqual(["run_paid"]);
+    expect(screen.getByTestId("location")).toHaveTextContent("/runs?outcome=attacker_paid");
+
+    await user.selectOptions(screen.getByLabelText("Outcome"), "Any outcome");
+    await user.selectOptions(screen.getByLabelText("Firewall"), "Full");
+    expect(shownIds()).toEqual(["run_blocked", "run_approved", "run_held"]);
+    await user.selectOptions(screen.getByLabelText("Scenario"), "Tactile keyboard under $120");
+    await user.selectOptions(screen.getByLabelText("Kind"), "Benign");
+    expect(shownIds()).toEqual(["run_approved", "run_held"]);
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      "/runs?firewall=full&scenario=sc_b01&kind=benign",
+    );
+  });
+
+  it("searches by run ID once the typing pauses", async () => {
+    const user = userEvent.setup();
+    mockServer({ runs, scenarios });
+    renderApp("/runs");
+    await screen.findByRole("list", { name: "Runs" });
+    await user.type(screen.getByRole("searchbox"), "APPROVED");
+    await waitFor(() => expect(shownIds()).toEqual(["run_approved"]));
+    expect(screen.getByTestId("location")).toHaveTextContent("/runs?q=APPROVED");
+  });
+
+  it("starts again from the first page when a filter changes", async () => {
+    const user = userEvent.setup();
+    const many = Array.from({ length: 120 }, (_, i) =>
+      run(`run_${i}`, "sc_b01", "2026-10-24T10:00:00Z", { kind: i % 2 ? "attack" : "benign" }),
+    );
+    mockServer({ runs: many });
+    renderApp("/runs?page=2");
+    await screen.findByText("Showing 51–100 of 120 runs");
+    await user.selectOptions(screen.getByLabelText("Kind"), "Attack");
+    expect(screen.getByText(/Showing 1–50 of 60 matching runs/)).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent("/runs?kind=attack");
+  });
+
+  it("says when nothing matches, and clears the filters", async () => {
+    const user = userEvent.setup();
+    mockServer({ runs, scenarios });
+    renderApp("/runs?outcome=firewall_off&kind=benign");
+    expect(
+      await screen.findByRole("heading", { name: "No runs match these filters." }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Runs" })).toBeNull();
+    await user.click(screen.getAllByRole("button", { name: "Clear filters" })[0] as HTMLElement);
+    expect(shownIds()).toHaveLength(4);
+    expect(screen.getByTestId("location")).toHaveTextContent(/^\/runs$/);
+  });
+
+  it("shows the paid attacker, the setting a run was reviewed under, and which it was reviewed under first", async () => {
+    mockServer({ runs, scenarios });
+    renderApp("/runs");
+    const list = await screen.findByRole("list", { name: "Runs" });
+    const [paid, blocked, approved] = within(list).getAllByRole("listitem");
+    expect(
+      within(paid as HTMLElement).getByRole("img", { name: "Verdict: Paid attacker" }),
+    ).toBeInTheDocument();
+    expect(within(paid as HTMLElement).getByText("Attack")).toBeInTheDocument();
+    expect(within(paid as HTMLElement).getByText("Off")).toBeInTheDocument();
+    expect(within(blocked as HTMLElement).getByText("Full")).toBeInTheDocument();
+    expect(within(blocked as HTMLElement).getByText("after Off, Gate 0 only")).toBeInTheDocument();
+    expect(within(approved as HTMLElement).queryByText(/^after/)).toBeNull();
+    expect(within(approved as HTMLElement).queryByText("Attack")).toBeNull();
   });
 });

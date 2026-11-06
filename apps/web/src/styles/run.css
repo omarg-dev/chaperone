@@ -451,3 +451,128 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Replay: the control at the foot of the page, and the way into it. */
+.run-replay-entry {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.run-replaying {
+  border-style: solid;
+  color: var(--hold);
+  border-color: var(--hold);
+}
+
+.replay {
+  position: sticky;
+  bottom: var(--space-4);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  box-shadow: 0 6px 24px rgba(30, 22, 32, 0.14);
+}
+
+.replay-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.replay-play {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 112px;
+  min-height: 36px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.replay-play svg {
+  color: var(--hold);
+}
+
+.replay-play:hover {
+  background: var(--sunk);
+}
+
+.replay-step:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.replay-scrubber {
+  flex: 1 1 220px;
+  min-width: 160px;
+  accent-color: var(--hold);
+}
+
+.replay-readout {
+  min-width: 108px;
+  color: var(--ink-2);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.replay-speeds {
+  display: inline-flex;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.replay-speed {
+  min-height: 34px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-inline-start: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.replay-speed:first-child {
+  border-inline-start: 0;
+}
+
+.replay-speed:hover {
+  background: var(--sunk);
+}
+
+.replay-speed[aria-pressed="true"] {
+  background: var(--hold-tint);
+  color: var(--hold);
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--hold);
+}
+
+.replay-now {
+  min-height: 1.4em;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* What the replay scrolls into view keeps clear of the bar. */
+.run .tl-rows > li {
+  scroll-margin-bottom: 140px;
+}
