@@ -2,7 +2,7 @@ name: CI
 
 on:
   pull_request:
-    branches: [dev, prod]
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
@@ -98,10 +98,6 @@ jobs:
             echo "::error::compose.yml publishes a host port."
             exit 1
           fi
-      - name: Scripts parse
-        run: |
-          bash -n deploy/backup.sh
-          test -x deploy/backup.sh
       # Not checked here: the Caddyfile. Its rate_limit directive belongs to the custom Caddy build on
       # the server, which a stock `caddy validate` rejects, and building that plugin in CI costs more
       # than the file is worth. deploy/Caddyfile.example is reviewed by eye and by the server's own
@@ -138,13 +134,14 @@ jobs:
         env:
           IMAGE_REPO: chaperone-ci
           IMAGE_TAG: ci
-      - name: Backup script makes a good backup
+      - name: The backup command makes a good backup
         working-directory: deploy
         env:
           IMAGE_REPO: chaperone-ci
           IMAGE_TAG: ci
         run: |
-          ./backup.sh
+          # The same command the server's nightly cron runs (README, "The nightly backup").
+          docker compose exec -T app node dist/cli.js backup --keep 14
           # The backups folder belongs to the container's user and is private to it, so it is
           # listed from inside the container rather than by the runner.
           docker compose exec -T app ls -l /data/backups
