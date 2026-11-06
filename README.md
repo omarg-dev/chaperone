@@ -263,7 +263,9 @@ pnpm --filter @firewall/eval run-matrix --scenarios all --seeds 1,2 --column hai
 pnpm --filter @firewall/eval run-matrix --scenarios sc_b01,sc_a02 --seeds 1 --column haiku     # the real thing
 ```
 
-`--scenarios` takes IDs, `all`, `attacks` or `benign`; `--adapter fake|sandbox` picks the payment adapter (default `fake`); `--max-usd` (default 0.50) stops the matrix starting new cells once it is spent, on top of the agent's own per-run cap (`--agent-max-usd`); `--concurrency` (default 3) is how many cells run at once. It needs `FIREWALL_ANTHROPIC_API_KEY` and calls models: a cell is about half a cent to a cent. The tests call none.
+`--scenarios` takes IDs, `all`, `attacks`, `benign` or `held-out`; `--adapter fake|sandbox` picks the payment adapter (default `fake`); `--max-usd` (default 0.50) stops the matrix starting new cells once it is spent, on top of the agent's own per-run cap (`--agent-max-usd`); `--concurrency` (default 3) is how many cells run at once. It needs `FIREWALL_ANTHROPIC_API_KEY` and calls models: a cell is about half a cent to a cent. The tests call none.
+
+`all` and `attacks` are our own scenarios. `held-out` is the held-out set: 17 attacks ported, with attribution, from published benchmarks (StakeBench, Magentic Marketplace, AgentDojo and InjecAgent), written without reading the gates and never used to tune them, so the numbers show the firewall wasn't fitted to our own attacks. It runs on its own, never mixed with ours, and its files say so and end their names in `-held-out`. [docs/held-out.md](docs/held-out.md) lists the sources, licences, what was ported and what was left out.
 
 Each run writes `<date>-<adapter>-<column>.json` (every cell and configuration), a `.md` summary and the `.events.db` event log holding every run, under `results/`, which git ignores. **Every file says which payment adapter produced it.** Numbers from the `fake` adapter are for development; only a run against the sandbox may be shown in the video or the write-up. [results/README.md](results/README.md) explains the file and how each rate is counted. The cell functions (`runCell`, `evaluateCell`) are plain async functions over serialisable records, so the same code can run as tasks on Render Workflows later.
 
@@ -379,4 +381,4 @@ feat/<thing> ──PR──▶ main ──release──▶ production
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE). The held-out attacks adapt text from MIT-licensed benchmarks, whose notices are in [packages/arena/THIRD_PARTY_NOTICES.md](packages/arena/THIRD_PARTY_NOTICES.md).
