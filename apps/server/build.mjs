@@ -6,8 +6,10 @@ rmSync("dist", { recursive: true, force: true });
 // One file, so the runtime image needs almost no node_modules. Workspace packages export
 // TypeScript source, so they have to be bundled rather than resolved at runtime.
 await build({
-  entryPoints: ["src/index.ts"],
-  outfile: "dist/index.js",
+  // The server, and the command line that runs beside it in the same image (export-runs and
+  // import-runs: `docker compose exec app node dist/cli.js ...`).
+  entryPoints: { index: "src/index.ts", cli: "src/cli-main.ts" },
+  outdir: "dist",
   bundle: true,
   platform: "node",
   target: "node22",

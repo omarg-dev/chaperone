@@ -1,0 +1,27 @@
+# One folder on the server, ~/stacks/chaperone, with its own .env and data/ (owned by uid 1000).
+# Each deploy copies this file and backup.sh into that folder, then runs
+# `docker compose pull && up -d` there. Staging is off, so there is one environment.
+services:
+  app:
+    # IMAGE_REPO (ghcr.io/<owner>/<repo>) and IMAGE_TAG come from .env, and the deploy sets them
+    # for its own run, so a rename of the repository changes one line there and nothing here.
+    image: ${IMAGE_REPO:?set IMAGE_REPO in .env}:${IMAGE_TAG:-prod}
+    # The gateway's Caddy reaches the app by this name.
+    container_name: ${CONTAINER_NAME:-chaperone}
+    restart: unless-stopped
+    # The image already runs as the node user (uid 1000), which owns data/; said again here so a
+    # change to the image can't quietly make it root.
+    user: "1000:1000"
+    env_file: .env
+    # The image's HEALTHCHECK calls /health; nothing to repeat here.
+    volumes:
+      # The event log (events.db), its backups (backups/) and the eval's results (results/, which
+      # .env points RESULTS_DIR at). The image's DATA_DIR is /data.
+      - ./data:/data
+    networks:
+      - web-gateway
+
+# Shared with the Caddy gateway container; nothing is published on the host.
+networks:
+  web-gateway:
+    external: true
