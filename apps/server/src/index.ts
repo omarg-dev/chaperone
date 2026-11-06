@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { type LiveModels, liveModelsFromEnv } from "@firewall/agent";
@@ -7,19 +7,13 @@ import { openEventLog } from "@firewall/events";
 import { serve } from "@hono/node-server";
 import { createApp } from "./app.js";
 import { readConfig } from "./config.js";
+import { eventLogOptions } from "./open-log.js";
 import { paymentSetupFromEnv } from "./payments.js";
 import { version } from "./version.js";
 
 const { port, dataDir, resultsDir: configuredResults, liveDailyUsd } = readConfig(process.env);
 
-// The bundled build ships the event log's migrations next to itself (see build.mjs). Run from
-// source, there's no such folder and the events package finds its own.
-const bundled = fileURLToPath(new URL("./drizzle", import.meta.url));
-mkdirSync(dataDir, { recursive: true });
-const log = openEventLog({
-  path: join(dataDir, "events.db"),
-  ...(existsSync(bundled) && { migrationsFolder: bundled }),
-});
+const log = openEventLog(eventLogOptions(dataDir));
 const arena = createArenaService({ log });
 
 // The web app: the bundled build ships it next to itself (see build.mjs). Run from source, the
