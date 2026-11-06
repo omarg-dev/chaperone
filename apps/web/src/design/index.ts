@@ -27,6 +27,7 @@ export {
   StateGlyph,
 } from "./Pill";
 export { Seal, sealGroups } from "./Seal";
+export { Toggle } from "./Toggle";
 export { Vault } from "./Vault";
 export { Wordmark } from "./Wordmark";
 export { ReadChip, Zone, type ZoneKind } from "./Zone";

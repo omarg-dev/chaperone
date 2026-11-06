@@ -371,6 +371,24 @@ describe("the drill-down under a run", () => {
     expect(await screen.findByRole("region", { name: /under each setting/ })).toBeVisible();
   });
 
+  it("keeps the detail right under its row when the table is sorted", async () => {
+    const user = userEvent.setup();
+    const table = await openTable();
+    // The second seed of the first scenario is the table's second row; sorting by seed, biggest
+    // first, puts it first. The detail goes with it, since it is AG's own master/detail row and not a
+    // copy of the row that sorts on its own.
+    await user.click(within(rowOf(table, 1)).getByText("Wireless keyboard"));
+    await screen.findByRole("region", { name: "Wireless keyboard, seed 2, under each setting" });
+    expect(rowOf(table, 1).classList.contains("is-open")).toBe(true);
+    const seed = within(table).getByText("Seed").closest(".ag-header-cell-label") as HTMLElement;
+    await user.click(seed);
+    await user.click(seed);
+    await waitFor(() => {
+      expect(rowOf(table, 0).classList.contains("is-open")).toBe(true);
+      expect(rowOf(table, 1).classList.contains("is-detail")).toBe(true);
+    });
+  });
+
   it("keeps the other columns, filters and links as they were", async () => {
     const user = userEvent.setup();
     const table = await openTable();
@@ -380,6 +398,112 @@ describe("the drill-down under a run", () => {
     // The open row isn't a benign one any more, so its detail goes with it.
     await waitFor(() => expect(opened()).toBeNull());
     expect(screen.getByText("44 of 60 runs")).toBeInTheDocument();
+  });
+});
+
+describe("the table grouped by attack", () => {
+  const onlyFake = { list: { ...list, results: [list.results[1] as never] }, files };
+  const groupRow = (table: HTMLElement, name: string) =>
+    Array.from(table.querySelectorAll<HTMLElement>(".ag-row.is-group")).find((row) =>
+      row.textContent?.includes(name),
+    );
+
+  async function groupedTable() {
+    const user = userEvent.setup();
+    mockServer({
+      results: onlyFake,
+      scenarios: [{ scenarioId: "sc_a01", title: "Wireless keyboard", request: "x" }],
+    });
+    renderApp("/dashboard");
+    const table = await screen.findByRole("region", { name: "Every run in this matrix" });
+    await waitFor(() => expect(table.querySelectorAll(".ag-row").length).toBeGreaterThan(0));
+    await user.click(screen.getByRole("checkbox", { name: "Group by attack" }));
+    await waitFor(() =>
+      expect(table.querySelectorAll(".ag-row.is-group").length).toBeGreaterThan(0),
+    );
+    return { user, table };
+  }
+
+  it("is off until asked for, and a group row says how many of its runs got through", async () => {
+    const { table } = await groupedTable();
+    // What Gate 0 only let through is one view: the attacks its rules can't see.
+    const verified = groupRow(table, "A1 (verified)") as HTMLElement;
+    expect(verified).toHaveTextContent("2 runs");
+    const cell = (config: string) => verified.querySelector(`[col-id="${config}"]`) as HTMLElement;
+    expect(cell("off")).toHaveTextContent("2 of 2 got through");
+    expect(cell("gate0")).toHaveTextContent("2 of 2 got through");
+    expect(cell("full")).toHaveTextContent("0 of 2 got through");
+    // Money that reached an attacker is red, and the full tree's zero isn't.
+    expect(cell("gate0").querySelector(".group-figure-attacker")).not.toBeNull();
+    expect(cell("full").querySelector(".group-figure-attacker")).toBeNull();
+    const unverified = groupRow(table, "A1 (unverified)") as HTMLElement;
+    expect(unverified.querySelector('[col-id="gate0"]')).toHaveTextContent("0 of 2 got through");
+    // The benign runs are a group with no attacks to count.
+    expect(groupRow(table, "Benign runs")?.querySelector('[col-id="off"]')).toHaveTextContent(
+      "No attacks",
+    );
+  });
+
+  it("opens a group to its runs, and a run to its detail, and ungroups", async () => {
+    const { user, table } = await groupedTable();
+    const verified = groupRow(table, "A1 (verified)") as HTMLElement;
+    const opener = within(verified).getByRole("button", { name: "Show the runs of A1 (verified)" });
+    expect(opener).toHaveAttribute("aria-expanded", "false");
+    await user.click(opener);
+    await waitFor(() =>
+      expect(
+        within(groupRow(table, "A1 (verified)") as HTMLElement).getByRole("button", {
+          name: "Hide the runs of A1 (verified)",
+        }),
+      ).toHaveAttribute("aria-expanded", "true"),
+    );
+    // Its two runs are under it, and one opens its cell under each setting like any other.
+    const runs = await waitFor(() => {
+      const found = Array.from(
+        table.querySelectorAll<HTMLElement>(".ag-row:not(.is-group)"),
+      ).filter((row) => within(row).queryByRole("button", { name: /under each setting/ }));
+      expect(found.length).toBeGreaterThanOrEqual(2);
+      return found;
+    });
+    await user.click(runs[0]?.querySelector(".cell-title") as HTMLElement);
+    expect(await screen.findByRole("region", { name: /under each setting/ })).toBeVisible();
+
+    await user.click(screen.getByRole("checkbox", { name: "Group by attack" }));
+    await waitFor(() => expect(table.querySelectorAll(".ag-row.is-group").length).toBe(0));
+    expect(screen.getByText("60 runs")).toBeInTheDocument();
+  });
+
+  it("groups only the runs the filters let through", async () => {
+    const { user, table } = await groupedTable();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
+    await waitFor(() => expect(table.querySelectorAll(".ag-row.is-group").length).toBe(1));
+    expect(groupRow(table, "Benign runs")).toHaveTextContent("44 runs");
+  });
+});
+
+describe("charting the table", () => {
+  const onlyFake = { list: { ...list, results: [list.results[1] as never] }, files };
+
+  it("offers a chart of the attacks, and a chart of picked cells once some are picked", async () => {
+    mockServer({ results: onlyFake });
+    renderApp("/dashboard");
+    await screen.findByRole("region", { name: "Every run in this matrix" });
+    expect(screen.getByRole("button", { name: "Chart attacks" })).toBeEnabled();
+    // Nothing is picked until someone drags across cells, and the button says how to.
+    const picked = screen.getByRole("button", { name: "Chart picked cells" });
+    expect(picked).toBeDisabled();
+    expect(picked).toHaveAttribute("title", "Drag across cells in the table to pick some.");
+    // The chart has its own place in the page, empty and hidden until it is drawn.
+    expect(screen.queryByRole("region", { name: "Chart" })).not.toBeInTheDocument();
+  });
+
+  it("has nothing to chart when no attack is shown", async () => {
+    const user = userEvent.setup();
+    mockServer({ results: onlyFake });
+    renderApp("/dashboard");
+    await screen.findByRole("region", { name: "Every run in this matrix" });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
+    expect(screen.getByRole("button", { name: "Chart attacks" })).toBeDisabled();
   });
 });
 

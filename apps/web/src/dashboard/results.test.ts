@@ -2,11 +2,18 @@ import type { CellView, ResultsView } from "@firewall/eval/view";
 import { describe, expect, it } from "vitest";
 import { fakeResults, sandboxResults } from "./fixtures";
 import {
+  attackGroupCount,
+  attackSucceeded,
   attackTally,
+  BENIGN_GROUP,
   configsOf,
   failedReviewsNote,
   filterRows,
+  type GridRow,
+  gotThrough,
   gridRows,
+  groupFigure,
+  groupOf,
   headlineOf,
   measuresOf,
   NO_ROW_FILTERS,
@@ -14,6 +21,7 @@ import {
   outcomeRank,
   provenanceOf,
   runLink,
+  tallyGroup,
   tallyLabel,
 } from "./results";
 
@@ -264,5 +272,83 @@ describe("the table of runs", () => {
 
   it("says which sandbox a result is from, and not that a sandbox result is fake", () => {
     expect(provenanceOf(sandboxResults).adapter).toBe("sandbox");
+  });
+});
+
+describe("the table grouped by attack", () => {
+  const rows = gridRows(fakeResults, {});
+  const groups = new Map<string, GridRow[]>();
+  for (const row of rows) groups.set(groupOf(row), [...(groups.get(groupOf(row)) ?? []), row]);
+
+  it("has a group for each attack and variant, and one for the benign runs, last", () => {
+    const names = [...groups.keys()];
+    // The attacks keep the order the file has them in, which isn't the attacks' numbering.
+    expect(names.slice(0, -1).sort()).toEqual([
+      "A1 (unverified)",
+      "A1 (verified)",
+      "A2",
+      "A3",
+      "A4",
+      "A5",
+      "A6",
+      "A7",
+    ]);
+    expect(names.at(-1)).toBe(BENIGN_GROUP);
+    expect(groups.get(BENIGN_GROUP)).toHaveLength(44);
+    expect([...groups.values()].reduce((n, g) => n + g.length, 0)).toBe(60);
+  });
+
+  it("counts the attack groups a chart reads, and not the benign one", () => {
+    expect(attackGroupCount(rows)).toBe(8);
+    expect(attackGroupCount(rows.filter((row) => row.kind === "benign"))).toBe(0);
+    expect(attackGroupCount(rows.filter((row) => row.attack?.startsWith("A1")))).toBe(2);
+  });
+
+  it("adds up, under each setting, to the file's own count of attacks that got through", () => {
+    for (const config of ["off", "gate0", "full"] as const) {
+      const metric = fakeResults.metrics.configs.find((c) => c.config === config);
+      const succeeded = [...groups.values()].reduce(
+        (n, group) => n + tallyGroup(group, config).succeeded,
+        0,
+      );
+      expect(succeeded).toBe(metric?.attackSuccesses);
+      // The number a column holds for a run is the same count, one run at a time.
+      expect(rows.reduce((n, row) => n + gotThrough(row, config), 0)).toBe(metric?.attackSuccesses);
+    }
+  });
+
+  it("says what Gate 0 only let through: the attacks the rules can't see", () => {
+    const gate0 = (name: string) => tallyGroup(groups.get(name) ?? [], "gate0");
+    expect(gate0("A1 (verified)")).toEqual({ runs: 2, attacks: 2, succeeded: 2, paidAttacker: 2 });
+    expect(gate0("A1 (unverified)").succeeded).toBe(0);
+    expect(groupFigure(gate0("A1 (verified)"))).toBe("2 of 2 got through");
+    expect(groupFigure(gate0("A1 (unverified)"))).toBe("0 of 2 got through");
+  });
+
+  it("says a benign group has no attacks, and never counts one as getting through", () => {
+    const benign = tallyGroup(groups.get(BENIGN_GROUP) ?? [], "off");
+    expect(benign).toEqual({ runs: 44, attacks: 0, succeeded: 0, paidAttacker: 0 });
+    expect(groupFigure(benign)).toBe("No attacks");
+  });
+
+  it("counts an attack that succeeded without paying an attacker, and doesn't make it red", () => {
+    const [first] = rows;
+    if (!first) throw new Error("the fixture has rows");
+    const harmed = {
+      ...first,
+      outcomes: {
+        ...first.outcomes,
+        off: { state: "harmed", label: "Attack succeeded" },
+      },
+    } as const;
+    expect(attackSucceeded(harmed.outcomes.off)).toBe(true);
+    expect(tallyGroup([harmed], "off")).toEqual({
+      runs: 1,
+      attacks: 1,
+      succeeded: 1,
+      paidAttacker: 0,
+    });
+    expect(attackSucceeded({ state: "blocked", label: "Blocked" })).toBe(false);
+    expect(attackSucceeded({ state: "held", label: "Sent to a person" })).toBe(false);
   });
 });

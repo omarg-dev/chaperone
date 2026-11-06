@@ -105,3 +105,47 @@ export function heldRightNow(runs: readonly RunSummary[]): {
   }
   return { cents, holds, waiting, oldestWaitingAt: oldest };
 }
+
+// The cents a run has in one money column, or null when its money is somewhere else (or it has none
+// yet). A group row adds these up, so a scenario's row says how much of its money is in each place.
+export function moneyIn(run: RunSummary, place: MoneyPlace): number | null {
+  const placed = placeOf(run);
+  return placed?.place === place ? placed.cents : null;
+}
+
+export interface MoneyTotal {
+  cents: number;
+  runs: number;
+}
+
+// Where the money of a set of runs is, in four: held right now (a hold that is open), moved to
+// sellers, paid to attackers (the red one: moved to a seller the scenario says is an attacker), and
+// voided (the hold was closed and nobody was paid). Every run with money is in exactly one, since
+// `placeOf` puts it in exactly one place, so the four add up to the money of all of them. The Runs
+// page's status bar says these for the runs the filters leave.
+export interface MoneyTotals {
+  held: MoneyTotal;
+  moved: MoneyTotal;
+  attacker: MoneyTotal;
+  voided: MoneyTotal;
+}
+
+export function moneyTotals(runs: readonly RunSummary[]): MoneyTotals {
+  const totals: MoneyTotals = {
+    held: { cents: 0, runs: 0 },
+    moved: { cents: 0, runs: 0 },
+    attacker: { cents: 0, runs: 0 },
+    voided: { cents: 0, runs: 0 },
+  };
+  for (const run of runs) {
+    const placed = placeOf(run);
+    if (!placed) continue;
+    const total =
+      placed.place === "moved" && placed.tone === "attacker"
+        ? totals.attacker
+        : totals[placed.place];
+    total.cents += placed.cents;
+    total.runs += 1;
+  }
+  return totals;
+}

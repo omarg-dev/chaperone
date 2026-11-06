@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation } from "react-router";
 import { vi } from "vitest";
 import { App } from "./App";
 import type { ResultsList, RunSummary, ScenarioInfo } from "./api";
+import { loadGridChunks } from "./grid";
 import type { Payee, RunEvent } from "./run/events";
 import { ThemeProvider } from "./theme/ThemeProvider";
 
@@ -183,5 +184,5 @@ export const escalated = {
 // test file can take longer than a test waits when many files run at once. Calling this in a
 // `beforeAll` makes that load happen before any test starts the clock. The dashboard is a lazy page
 // of its own as well.
-export const loadGrid = () => import("./grid/DataGrid");
+export const loadGrid = () => loadGridChunks();
 export const loadDashboard = () => Promise.all([import("./dashboard/Dashboard"), loadGrid()]);

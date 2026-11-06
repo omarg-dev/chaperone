@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import type { RunSummary } from "../api";
 import {
@@ -11,16 +11,20 @@ import {
   PageRoute,
   Pill,
   Station,
+  Toggle,
   Vault,
 } from "../design";
 import { formatTime } from "../format";
 import {
   type CellProps,
   DataGrid,
+  ENTERPRISE,
   type GridColumn,
+  type GridHandle,
   type GridSort,
   type HeaderProps,
 } from "../grid";
+import { evidenceFileName, evidenceIntro, exportCell } from "../runs/export";
 import {
   applyFilters,
   type Filters,
@@ -31,7 +35,7 @@ import {
   outcomeCounts,
   parseFilters,
 } from "../runs/filters";
-import { heldRightNow, type MoneyPlace, placeOf } from "../runs/money";
+import { heldRightNow, type MoneyPlace, moneyIn, moneyTotals, placeOf } from "../runs/money";
 import { useRuns } from "../runs/RunsProvider";
 import {
   compareRuns,
@@ -53,6 +57,7 @@ import {
   outcomeOf,
   paymentsLabel,
 } from "../runs/state";
+import { parseGrouped, withGrouping } from "../runs/view";
 
 // The outcome as a glyph and a word. Money that reached an attacker is the one filled pill.
 function Outcome({ run }: { run: RunSummary }) {
@@ -104,7 +109,40 @@ function Firewall({ run }: { run: RunSummary }) {
   );
 }
 
-const RunCell = ({ data, titles }: CellProps<RunSummary> & { titles: Record<string, string> }) => {
+// A scenario's row when the history is grouped: its name, how many runs it has, and the control that
+// opens them.
+function GroupCell({ node, value }: CellProps<RunSummary>) {
+  const [expanded, setExpanded] = useState(node.expanded);
+  useEffect(() => {
+    const update = () => setExpanded(node.expanded);
+    node.addEventListener("expandedChanged", update);
+    return () => node.removeEventListener("expandedChanged", update);
+  }, [node]);
+  const runs = node.allChildrenCount ?? 0;
+  return (
+    <div className="cell-open">
+      <button
+        type="button"
+        className="row-toggle"
+        aria-expanded={expanded}
+        aria-label={`${expanded ? "Hide" : "Show"} the runs of ${value}`}
+        onClick={() => node.setExpanded(!expanded)}
+      >
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <path d="M5.5 3.5 10.5 8l-5 4.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+      </button>
+      <div className="cell-stack">
+        <span className="cell-title group-title">{String(value)}</span>
+        <span className="t-data">{runs === 1 ? "1 run" : `${runs} runs`}</span>
+      </div>
+    </div>
+  );
+}
+
+const RunCell = (props: CellProps<RunSummary> & { titles: Record<string, string> }) => {
+  const { data, titles } = props;
+  if (props.node.group) return <GroupCell {...props} />;
   if (!data) return null;
   const title = data.scenarioId ? titles[data.scenarioId] : undefined;
   return (
@@ -143,7 +181,15 @@ const FirewallCell = ({ data }: CellProps<RunSummary>) => data && <Firewall run=
 const OutcomeCell = ({ data }: CellProps<RunSummary>) => data && <Outcome run={data} />;
 
 // A money column writes the run's amount if its money is in this column, and nothing otherwise.
-const MoneyCell = ({ data, place }: CellProps<RunSummary> & { place: MoneyPlace }) => {
+const MoneyCell = ({ data, node, value, place }: CellProps<RunSummary> & { place: MoneyPlace }) => {
+  // A scenario's row adds up its runs' money in this place, and says nothing where there is none.
+  if (node.group) {
+    return typeof value === "number" && value > 0 ? (
+      <span className="money-cell">
+        <Amount cents={value} />
+      </span>
+    ) : null;
+  }
   const placed = data ? placeOf(data) : null;
   if (!placed || placed.place !== place) return null;
   return (
@@ -170,10 +216,12 @@ const MoneyHead = ({ place }: HeaderProps<{ place: MoneyPlace }>) => (
 // The grid sorts with the same comparison the tests pin (`compareRuns`): each column hands AG the
 // run itself, and AG hands the pair back to it.
 const sortBy =
-  (column: SortColumn, titles: Record<string, string>) => (a: RunSummary, b: RunSummary) =>
-    compareRuns(a, b, column, titles);
+  (column: SortColumn, titles: Record<string, string>) =>
+  (a: RunSummary | undefined, b: RunSummary | undefined) =>
+    // A group row has no run of its own, and keeps the order its runs give it.
+    a && b ? compareRuns(a, b, column, titles) : 0;
 
-function columnsFor(titles: Record<string, string>): GridColumn<RunSummary>[] {
+function columnsFor(titles: Record<string, string>, grouped: boolean): GridColumn<RunSummary>[] {
   const column = (column: SortColumn): GridColumn<RunSummary> => ({
     colId: column,
     valueGetter: ({ data }) => data,
@@ -189,6 +237,9 @@ function columnsFor(titles: Record<string, string>): GridColumn<RunSummary>[] {
     sortable: false,
     width,
     minWidth: width,
+    // The cents in this column for a run, which a scenario's row adds up.
+    valueGetter: ({ data }) => (data ? moneyIn(data, place) : null),
+    aggFunc: grouped ? "sum" : undefined,
     cellRenderer: MoneyCell,
     cellRendererParams: { place },
     // The three money columns are ruled off from the rest and from each other.
@@ -196,6 +247,20 @@ function columnsFor(titles: Record<string, string>): GridColumn<RunSummary>[] {
     headerClass: "col-money",
   });
   return [
+    // The scenario the history is grouped by, a column of its own and hidden, so a group's key is the
+    // scenario's name and not something a header shows twice.
+    ...(grouped
+      ? [
+          {
+            colId: "scenarioGroup",
+            headerName: "Scenario",
+            rowGroup: true,
+            hide: true,
+            valueGetter: ({ data }: { data?: RunSummary }) =>
+              data ? scenarioName(data, titles) || "No scenario" : "",
+          } satisfies GridColumn<RunSummary>,
+        ]
+      : []),
     {
       ...column("verdict"),
       headerName: "Outcome",
@@ -208,6 +273,8 @@ function columnsFor(titles: Record<string, string>): GridColumn<RunSummary>[] {
     {
       ...column("scenario"),
       headerName: "Scenario",
+      // The group rows are drawn in this column, where the scenarios' names are.
+      ...(grouped ? { showRowGroup: "scenarioGroup" } : {}),
       // The scenario stays in view when the other columns scroll past it.
       pinned: "left",
       lockPinned: true,
@@ -271,13 +338,18 @@ export function Runs() {
   const { status, runs, scenarioTitles, reload } = useRuns();
   const [params, setParams] = useSearchParams();
   const filters = useMemo(() => parseFilters(params), [params]);
+  // Whether the runs are drawn under their scenario. It is in the address like the filters, but it
+  // says how the runs are drawn and not which, so it is kept apart from them.
+  const grouped = ENTERPRISE && parseGrouped(params);
 
   // The URL is the filters' home, so a filtered view can be shared; replacing keeps the back button
   // for leaving the page rather than for undoing each filter.
   const update = useCallback(
     (patch: Partial<Filters>) =>
-      setParams(filtersToParams({ ...filters, ...patch }), { replace: true }),
-    [filters, setParams],
+      setParams(withGrouping(filtersToParams({ ...filters, ...patch }), grouped), {
+        replace: true,
+      }),
+    [filters, grouped, setParams],
   );
 
   // The search box is typed into at its own pace, and writes the URL once the typing pauses.
@@ -303,7 +375,7 @@ export function Runs() {
     [runs, filters, scenarioTitles],
   );
   const filtered = isFiltered(filters);
-  const columns = useMemo(() => columnsFor(scenarioTitles), [scenarioTitles]);
+  const columns = useMemo(() => columnsFor(scenarioTitles, grouped), [scenarioTitles, grouped]);
 
   // The sort lives in the address like the filters do. The grid shows it and reports a click on a
   // header; the address is what it is kept in.
@@ -332,7 +404,9 @@ export function Runs() {
       variant="secondary"
       small
       onClick={() =>
-        setParams(filtersToParams({ ...NO_FILTERS, sort: filters.sort }), { replace: true })
+        setParams(withGrouping(filtersToParams({ ...NO_FILTERS, sort: filters.sort }), grouped), {
+          replace: true,
+        })
       }
     >
       Clear filters
@@ -344,6 +418,18 @@ export function Runs() {
     [runs, filters, scenarioTitles],
   );
   const held = useMemo(() => heldRightNow(runs), [runs]);
+  // Where the money of the runs the filters leave is, for the strip under the grid.
+  const totals = useMemo(() => moneyTotals(matching), [matching]);
+  const grid = useRef<GridHandle<RunSummary>>(null);
+  const download = () => {
+    const now = new Date();
+    grid.current?.exportExcel({
+      fileName: evidenceFileName(now),
+      sheetName: "Runs",
+      intro: evidenceIntro(filters, matching.length, runs.length, scenarioTitles, now),
+      cell: (run, colId) => exportCell(run, colId, scenarioTitles),
+    });
+  };
   const countText =
     matching.length === 0
       ? "No runs match."
@@ -463,6 +549,17 @@ export function Runs() {
                 <option value="attack">Attack</option>
                 <option value="benign">Benign</option>
               </Select>
+              {ENTERPRISE && (
+                <div className="filter-clear">
+                  <Toggle
+                    checked={grouped}
+                    onChange={(on) => setParams(withGrouping(params, on), { replace: true })}
+                    hint="One row for each scenario, with the money of its runs in each place. Open a row for its runs."
+                  >
+                    Group by scenario
+                  </Toggle>
+                </div>
+              )}
               {filtered && <div className="filter-clear">{clear}</div>}
             </search>
           </Station>
@@ -475,6 +572,13 @@ export function Runs() {
               </>
             }
             className="runs-grid"
+            note={
+              ENTERPRISE && matching.length > 0 ? (
+                <Button variant="secondary" small onClick={download}>
+                  Download the evidence
+                </Button>
+              ) : undefined
+            }
           >
             {matching.length === 0 ? (
               <div className="runs-none">
@@ -493,12 +597,44 @@ export function Runs() {
                 sort={sort}
                 onSortChange={sortChanged}
                 onRowActivate={openRun}
+                handle={grid}
+                statusBar={<MoneyStatus totals={totals} />}
               />
             )}
           </Station>
         </>
       )}
     </PageRoute>
+  );
+}
+
+// The strip under the grid: where the money of the runs the filters leave is, in four places. They
+// are worked out from the runs by `moneyTotals`, never read back from the grid, so they follow the
+// filters and add up to the money of the runs shown. Red is only for what reached an attacker.
+function MoneyStatus({ totals }: { totals: ReturnType<typeof moneyTotals> }) {
+  const places: { key: keyof typeof totals; label: string; glyph: MoneyState }[] = [
+    { key: "held", label: "Held right now", glyph: "held" },
+    { key: "moved", label: "Moved to sellers", glyph: "captured" },
+    { key: "attacker", label: "Paid to attackers", glyph: "attacker" },
+    { key: "voided", label: "Voided", glyph: "voided" },
+  ];
+  return (
+    <dl className="money-status" aria-label="Where the money of these runs is">
+      {places.map(({ key, label, glyph }) => (
+        <div key={key} className={`money-status-item money-status-${key}`}>
+          <dt>
+            <MoneyGlyph state={glyph} size={16} />
+            {label}
+          </dt>
+          <dd>
+            <Amount cents={totals[key].cents} tone={key === "attacker" ? "attacker" : "plain"} />
+            <span className="t-meta">
+              {totals[key].runs === 1 ? "1 run" : `${totals[key].runs} runs`}
+            </span>
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

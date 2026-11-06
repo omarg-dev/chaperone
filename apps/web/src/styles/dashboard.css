@@ -472,3 +472,47 @@
 .cell-detail-note {
   margin: 0;
 }
+
+/* A group row's figure under one setting: how many of its runs got through. Red only when money
+   reached an attacker. */
+.group-figure {
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.group-figure strong {
+  font-family: var(--font-display);
+  font-size: var(--text-item);
+  color: var(--ink);
+}
+
+.group-figure-attacker strong {
+  color: var(--attacker);
+}
+
+/* A chart drawn from the table's cells, in the page under the toolbar. */
+.chart-actions {
+  gap: var(--space-2);
+}
+
+.chart-panel {
+  margin-bottom: var(--space-4);
+  padding: var(--space-4) var(--space-5);
+  border-top: 2px solid var(--ink);
+  background: var(--surface);
+}
+
+.chart-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.chart-head h3 {
+  margin: 0;
+}
+
+.chart-box {
+  height: 380px;
+}

@@ -42,6 +42,14 @@
   white-space: normal;
 }
 
+/* A group's name may take two lines, like a scenario's title. */
+.cell-stack .group-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  white-space: normal;
+}
+
 .cell-title,
 .cell-stack .run-link {
   font-size: var(--text-body);
@@ -55,6 +63,11 @@
 /* The row whose detail is open, and the detail under it. */
 .data-grid .ag-row.is-open {
   background-color: var(--hold-tint);
+}
+
+.data-grid .ag-row.is-group {
+  background-color: var(--sunk);
+  font-weight: 700;
 }
 
 .data-grid .ag-row.is-detail {

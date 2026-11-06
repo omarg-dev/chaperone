@@ -521,3 +521,159 @@ describe("where the money is", () => {
     expect(within(outcomeGroup()).queryByRole("radio", { name: /^Approved/ })).toBeNull();
   });
 });
+
+describe("the strip under the history", () => {
+  const runs = [
+    run("run_held", "sc_b01", "2026-10-24T11:03:00Z", {
+      kind: "benign",
+      ...escalated.waiting,
+      reviews: ["full"],
+      heldCents: 10999,
+    }),
+    run("run_paid", "sc_a01", "2026-10-24T11:02:00Z", {
+      kind: "attack",
+      decidedBy: "no_review",
+      attackerPaid: true,
+      reviews: ["off"],
+      heldCents: 7999,
+      paidTo: ["Keyhaven Direct"],
+    }),
+    run("run_blocked", "sc_a01", "2026-10-24T11:01:00Z", {
+      kind: "attack",
+      verdict: "block",
+      decidedBy: "review",
+      reviews: ["full"],
+      heldCents: 13900,
+    }),
+    run("run_approved", "sc_b01", "2026-10-24T11:00:00Z", {
+      kind: "benign",
+      verdict: "approve",
+      decidedBy: "review",
+      reviews: ["full"],
+      heldCents: 22900,
+      paidTo: ["Copperline Outfitters"],
+    }),
+  ];
+  const scenarios = [
+    { scenarioId: "sc_a01", title: "Wireless keyboard", request: "x" },
+    { scenarioId: "sc_b01", title: "Water bottle", request: "x" },
+  ];
+  const strip = () => screen.getByLabelText("Where the money of these runs is");
+  // The place's amount (written once for the eye and once for a screen reader) and its run count.
+  const said = (label: string) => {
+    const item = within(strip()).getByText(label).closest("div") as HTMLElement;
+    return {
+      amount: item.querySelector(".amt")?.textContent ?? "",
+      runs: item.querySelector(".t-meta")?.textContent,
+    };
+  };
+  const isSaid = (label: string, amount: string, runs: string) => {
+    const got = said(label);
+    expect(got.amount).toContain(amount);
+    expect(got.runs).toBe(runs);
+  };
+
+  it("says where the money of the runs is, in four places", async () => {
+    mockServer({ runs, scenarios });
+    renderApp("/runs");
+    await gridDrawn();
+    await waitFor(() => isSaid("Held right now", "$109.99", "1 run"));
+    isSaid("Moved to sellers", "$229.00", "1 run");
+    isSaid("Paid to attackers", "$79.99", "1 run");
+    isSaid("Voided", "$139.00", "1 run");
+  });
+
+  it("follows the filters, and is the page's own sum, not the grid's", async () => {
+    const user = userEvent.setup();
+    mockServer({ runs, scenarios });
+    renderApp("/runs?kind=attack");
+    await gridDrawn();
+    await waitFor(() => isSaid("Held right now", "$0.00", "0 runs"));
+    isSaid("Paid to attackers", "$79.99", "1 run");
+    isSaid("Voided", "$139.00", "1 run");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "");
+    await waitFor(() => isSaid("Held right now", "$109.99", "1 run"));
+  });
+});
+
+describe("grouping the history by scenario", () => {
+  const runs = [
+    run("run_a1", "sc_a01", "2026-10-24T11:03:00Z", {
+      kind: "attack",
+      verdict: "block",
+      decidedBy: "review",
+      reviews: ["full"],
+      heldCents: 13900,
+    }),
+    run("run_a2", "sc_a01", "2026-10-24T11:02:00Z", {
+      kind: "attack",
+      verdict: "block",
+      decidedBy: "review",
+      reviews: ["full"],
+      heldCents: 4000,
+    }),
+    run("run_b1", "sc_b01", "2026-10-24T11:01:00Z", {
+      kind: "benign",
+      verdict: "approve",
+      decidedBy: "review",
+      reviews: ["full"],
+      heldCents: 22900,
+      paidTo: ["Copperline Outfitters"],
+    }),
+  ];
+  const scenarios = [
+    { scenarioId: "sc_a01", title: "Wireless keyboard", request: "x" },
+    { scenarioId: "sc_b01", title: "Water bottle", request: "x" },
+  ];
+  const groupRows = () => document.querySelectorAll<HTMLElement>(".ag-row.is-group");
+
+  it("is a toggle, kept in the address, that draws a row for each scenario with its money", async () => {
+    const user = userEvent.setup();
+    mockServer({ runs, scenarios });
+    renderApp("/runs");
+    await gridDrawn();
+    await user.click(screen.getByRole("checkbox", { name: "Group by scenario" }));
+    await waitFor(() => expect(groupRows()).toHaveLength(2));
+    expect(screen.getByTestId("location")).toHaveTextContent("/runs?group=scenario");
+    const keyboard = Array.from(groupRows()).find((row) =>
+      row.textContent?.includes("Wireless keyboard"),
+    ) as HTMLElement;
+    expect(keyboard).toHaveTextContent("2 runs");
+    // The scenario's voided money is the sum of its two runs, $139 and $40.
+    expect(keyboard.querySelector('[col-id="voided"]')).toHaveTextContent("$179.00");
+    await user.click(screen.getByRole("checkbox", { name: "Group by scenario" }));
+    await waitFor(() => expect(groupRows()).toHaveLength(0));
+    expect(screen.getByTestId("location")).toHaveTextContent(/^\/runs$/);
+  });
+
+  it("opens grouped from the address, and keeps the grouping when the filters are cleared", async () => {
+    const user = userEvent.setup();
+    mockServer({ runs, scenarios });
+    renderApp("/runs?group=scenario&kind=attack");
+    await waitFor(() => expect(groupRows()).toHaveLength(1));
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    await waitFor(() => expect(groupRows()).toHaveLength(2));
+    expect(screen.getByTestId("location")).toHaveTextContent("/runs?group=scenario");
+  });
+});
+
+describe("downloading the evidence", () => {
+  // The file itself (zipped by the browser's CompressionStream, which jsdom doesn't have) was checked
+  // in Chromium; what goes in it is `exportCell` and `evidenceIntro`, tested in runs/export.test.ts.
+  it("is offered while there are runs shown, as a button in the history's heading", async () => {
+    mockServer({
+      runs: [run("run_a", "sc_a01", "2026-10-24T11:03:00Z", { verdict: "block", heldCents: 100 })],
+    });
+    renderApp("/runs");
+    await gridDrawn();
+    const heading = screen.getByRole("button", { name: "Download the evidence" });
+    expect(heading).toBeEnabled();
+  });
+
+  it("is not offered when no run matches", async () => {
+    mockServer({ runs: [run("run_a", "sc_a01", "2026-10-24T11:03:00Z")] });
+    renderApp("/runs?q=zzz");
+    await screen.findByText("No runs match these filters.");
+    expect(screen.queryByRole("button", { name: "Download the evidence" })).not.toBeInTheDocument();
+  });
+});
