@@ -44,6 +44,40 @@ describe("the run view", () => {
     expect(document.querySelector(".pill-attacker")).toBeNull();
   });
 
+  it("outlines what Gate 1 flagged in red, in the seller column only, and fills nothing", async () => {
+    await open(fixtures.escalated);
+    const timeline = screen.getByRole("region", { name: "Timeline of the run" });
+    const outlined = [
+      ...timeline.querySelectorAll(".tl-passage mark, .tl-crosses-flagged, .tl-tone-attacker"),
+    ];
+    // The passages it copied, the chip and the card.
+    expect(timeline.querySelectorAll(".tl-passage mark").length).toBeGreaterThan(0);
+    expect(timeline.querySelectorAll(".tl-crosses-flagged")).toHaveLength(1);
+    expect(timeline.querySelectorAll("article.tl-tone-attacker")).toHaveLength(1);
+    for (const el of outlined) {
+      expect(el.closest('[data-zone="seller"]'), el.outerHTML).not.toBeNull();
+    }
+    // The red that is filled is for money that reached an attacker, and none did.
+    expect(document.querySelector(".pill-attacker")).toBeNull();
+    expect(document.querySelector(".run-money-attacker")).toBeNull();
+  });
+
+  it("outlines nothing when Gate 1 found nothing to flag", async () => {
+    await open(fixtures.approved);
+    expect(document.querySelector(".tl-crosses-flagged")).toBeNull();
+    expect(document.querySelector(".tl-tone-attacker")).toBeNull();
+    expect(document.querySelector(".tl-passage mark")).toBeNull();
+  });
+
+  it("says which words of the request were not made a rule", async () => {
+    await open(fixtures.approved);
+    const mandate = screen.getByLabelText("The locked mandate");
+    expect(within(mandate).getByText("Not enforced")).toBeInTheDocument();
+    expect(within(mandate).getByText("mid-range")).toBeInTheDocument();
+    expect(within(mandate).getByText("In your request, but not made a rule")).toBeInTheDocument();
+    expect(within(mandate).queryByText("Not captured")).toBeNull();
+  });
+
   it("keeps a block neutral", async () => {
     await open(fixtures.blocked);
     expect(screen.getByRole("img", { name: "Verdict: Blocked" })).toHaveClass("pill-block");

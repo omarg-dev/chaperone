@@ -12,7 +12,7 @@ describe("the gate state pill", () => {
     expect(pill).toHaveClass(`pill-${state}`);
   });
 
-  it("covers the five states, and red belongs to the paid attacker alone", () => {
+  it("covers the five states, and a filled red pill belongs to the paid attacker alone", () => {
     expect(GATE_STATES).toEqual(["approve", "held", "escalate", "block", "attacker"]);
     expect(GATE_STATE_LABELS.attacker).toBe("Paid attacker");
   });

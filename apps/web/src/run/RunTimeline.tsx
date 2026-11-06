@@ -232,10 +232,11 @@ function toTimelineItem(item: RunItem): TimelineItem {
         kind: "event",
         tag: "Read again, in quarantine",
         title: item.title,
-        tone: tone(item.verdict),
+        // Red, as an outline, when Gate 1 flagged the page: where the attacker's money would have come from.
+        tone: item.flagged ? "attacker" : tone(item.verdict),
         body: (
           <>
-            <span className="tl-crosses">
+            <span className={`tl-crosses${item.flagged ? " tl-crosses-flagged" : ""}`}>
               <svg width="18" height="12" viewBox="0 0 18 12" aria-hidden="true" focusable="false">
                 <path
                   d="M17 6 H2 M6.5 1.5 L2 6 L6.5 10.5"

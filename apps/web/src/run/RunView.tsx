@@ -163,6 +163,7 @@ export function RunView() {
                   <div key={term.label}>
                     <dt>{term.label}</dt>
                     <dd>{term.value}</dd>
+                    {term.hint && <dd className="run-term-hint">{term.hint}</dd>}
                   </div>
                 ))}
               </dl>
