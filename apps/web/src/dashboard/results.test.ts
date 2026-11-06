@@ -145,6 +145,8 @@ const out = (over: Partial<CellView["outcomes"][number]>) => ({
   verdict: null,
   money: "captured" as const,
   toAttackersCents: 0,
+  gates: [],
+  skipped: [],
   costUsd: 0,
   latencyMs: 0,
   failed: null,

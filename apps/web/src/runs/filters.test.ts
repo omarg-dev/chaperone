@@ -6,8 +6,6 @@ import {
   filtersToParams,
   isFiltered,
   NO_FILTERS,
-  PAGE_SIZE,
-  paginate,
   parseFilters,
 } from "./filters";
 
@@ -17,7 +15,7 @@ const filter = (patch: Partial<Filters>): Filters => ({ ...NO_FILTERS, ...patch 
 
 describe("the filters in the address", () => {
   it("reads every filter, and writes them back the same way", () => {
-    const query = "outcome=blocked&firewall=full&scenario=sc_a01&kind=attack&q=mvsq&page=3";
+    const query = "outcome=blocked&firewall=full&scenario=sc_a01&kind=attack&q=mvsq&sort=-scenario";
     const filters = parse(query);
     expect(filters).toEqual({
       outcome: "blocked",
@@ -25,7 +23,7 @@ describe("the filters in the address", () => {
       scenario: "sc_a01",
       kind: "attack",
       query: "mvsq",
-      page: 3,
+      sort: { column: "scenario", direction: "desc" },
     });
     expect(filtersToParams(filters).toString()).toBe(query);
   });
@@ -34,14 +32,28 @@ describe("the filters in the address", () => {
     expect(parse("")).toEqual(NO_FILTERS);
     expect(filtersToParams(NO_FILTERS).toString()).toBe("");
     expect(isFiltered(NO_FILTERS)).toBe(false);
-    expect(isFiltered(filter({ page: 4 }))).toBe(false);
+    // A sort changes the order, not which runs are shown.
+    expect(isFiltered(filter({ sort: { column: "verdict", direction: "asc" } }))).toBe(false);
     expect(isFiltered(filter({ kind: "benign" }))).toBe(true);
   });
 
   it("leaves out a value that means nothing, such as one from an old link", () => {
-    expect(parse("outcome=exploded&firewall=max&kind=both&page=-2&q=%20%20")).toEqual(NO_FILTERS);
-    expect(parse("page=abc").page).toBe(1);
-    expect(parse("page=2.5").page).toBe(1);
+    expect(parse("outcome=exploded&firewall=max&kind=both&sort=cost&q=%20%20")).toEqual(NO_FILTERS);
+    expect(parse("sort=-").sort).toEqual(NO_FILTERS.sort);
+  });
+
+  it("ignores the page an old link names, since the history isn't paged any more", () => {
+    expect(parse("outcome=blocked&page=3")).toEqual(filter({ outcome: "blocked" }));
+    expect(filtersToParams(parse("page=3&kind=attack")).toString()).toBe("kind=attack");
+  });
+
+  it("writes a sort only when it differs from newest first", () => {
+    expect(filtersToParams(filter({ sort: { column: "started", direction: "desc" } })).size).toBe(
+      0,
+    );
+    expect(
+      filtersToParams(filter({ sort: { column: "started", direction: "asc" } })).toString(),
+    ).toBe("sort=started");
   });
 });
 
@@ -108,29 +120,20 @@ describe("applying the filters", () => {
     expect(ids({ query: "nothing" })).toEqual([]);
   });
 
+  it("searches a scenario by its ID or the title it is shown under", () => {
+    const titles = { sc_a01: "Wireless tactile keyboard", sc_b01: "Tactile keyboard under $120" };
+    const found = (query: string) =>
+      applyFilters(runs, filter({ query }), titles).map((r) => r.runId);
+    expect(found("wireless")).toEqual(["run_ab12", "run_cd34"]);
+    expect(found("UNDER $120")).toEqual(["run_ef56", "run_gh78", "run_kl12", "run_mn34"]);
+    expect(found("sc_a")).toEqual(["run_ab12", "run_cd34"]);
+    // Without the titles it still finds a run by its IDs, and a run with no scenario by its own.
+    expect(applyFilters(runs, filter({ query: "wireless" }))).toEqual([]);
+    expect(found("ij90")).toEqual(["run_ij90"]);
+  });
+
   it("combines them", () => {
     expect(ids({ kind: "attack", config: "full" })).toEqual(["run_cd34"]);
     expect(ids({ kind: "benign", outcome: "blocked" })).toEqual([]);
-  });
-});
-
-describe("paging", () => {
-  const items = Array.from({ length: 130 }, (_, i) => i);
-
-  it("shows a page at a time, and says which", () => {
-    const first = paginate(items, 1);
-    expect(first.items).toHaveLength(PAGE_SIZE);
-    expect(first).toMatchObject({ page: 1, pages: 3, total: 130, from: 1, to: 50 });
-    expect(paginate(items, 3)).toMatchObject({ from: 101, to: 130 });
-    expect(paginate(items, 3).items).toHaveLength(30);
-  });
-
-  it("falls back to the last page when the address asks for one past the end", () => {
-    expect(paginate(items, 9)).toMatchObject({ page: 3, from: 101 });
-    expect(paginate(items, 0).page).toBe(1);
-  });
-
-  it("has a single empty page with nothing in it", () => {
-    expect(paginate([], 1)).toEqual({ items: [], page: 1, pages: 1, total: 0, from: 0, to: 0 });
   });
 });

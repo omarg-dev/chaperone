@@ -16,9 +16,10 @@ import { z } from "zod";
 // What it would have taken from them, the schema version, the firewall configurations and the
 // verdicts, is written out below, and `view.test.ts` checks each against the original.
 
-// The harness's `SCHEMA_VERSION`, `FIREWALL_CONFIGS` and the gates' `VERDICTS`.
+// The harness's `SCHEMA_VERSION`, `FIREWALL_CONFIGS`, the gates' `GATES` and their `VERDICTS`.
 export const SCHEMA_VERSION_READ = 1;
 export const CONFIGS_READ = ["off", "gate0", "full"] as const;
+export const GATES_READ = ["gate0", "gate1", "gate2", "gate3"] as const;
 export const VERDICTS_READ = ["approve", "escalate", "block"] as const;
 
 const nullable = <T extends z.ZodType>(type: T) => type.nullable();
@@ -96,11 +97,25 @@ const metrics = z.object({
   configs: z.array(configMetrics),
 });
 
+const gateName = z.enum(GATES_READ);
+
+// How each gate spoke inside one setting's review: its verdict, what it cost and how long it took.
+// Its reasons aren't kept, which are sentences the gate's code wrote for the run view to show.
+const gate = z.object({
+  gate: gateName,
+  verdict: z.enum(VERDICTS_READ),
+  costUsd: z.number(),
+  latencyMs: z.number(),
+});
+
 const outcome = z.object({
   config,
   verdict: nullable(z.enum(VERDICTS_READ)),
   money,
   toAttackersCents: z.number(),
+  // The gates that ran, in order, and the ones the tree didn't reach (and why: a block ends it).
+  gates: z.array(gate),
+  skipped: z.array(z.object({ gate: gateName, reason: z.string() })),
   costUsd: z.number(),
   latencyMs: z.number(),
   failed: nullable(z.string()),

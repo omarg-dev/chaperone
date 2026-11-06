@@ -162,11 +162,13 @@ describe("the dashboard, with results", () => {
   it("opens the result a shared address names, and the newest for one the server doesn't have", async () => {
     mockServer({ results: { list, files } });
     renderApp(`/dashboard?result=${OLDEST}`);
+    // Two grids are drawn in this test, which takes longer than a wait does when the machine is busy.
+    const slow = { timeout: 10_000 };
     expect(
-      await screen.findByText("Development numbers, not a sandbox result."),
+      await screen.findByText("Development numbers, not a sandbox result.", {}, slow),
     ).toBeInTheDocument();
     renderApp("/dashboard?result=nowhere");
-    expect((await screen.findAllByText(/Sandbox result/)).length).toBeGreaterThan(0);
+    expect((await screen.findAllByText(/Sandbox result/, {}, slow)).length).toBeGreaterThan(0);
   });
 
   it("says why a file the server refused couldn't be shown", async () => {
@@ -249,6 +251,135 @@ describe("the table of runs", () => {
     const second = table.querySelector('.ag-row[row-index="1"]') as HTMLElement;
     expect(second).toHaveTextContent("Not on this server");
     expect(within(second).queryByRole("link")).not.toBeInTheDocument();
+  });
+});
+
+describe("the drill-down under a run", () => {
+  const onlyFake = { list: { ...list, results: [list.results[1] as never] }, files };
+  const rowOf = (table: HTMLElement, index: number) =>
+    table.querySelector(`.ag-row[row-index="${index}"]`) as HTMLElement;
+  const opened = () => screen.queryByRole("region", { name: /under each setting/ });
+
+  async function openTable() {
+    mockServer({
+      results: onlyFake,
+      scenarios: [
+        { scenarioId: "sc_a01", title: "Wireless keyboard", request: "x" },
+        { scenarioId: "sc_a02", title: "Wired keyboard", request: "x" },
+      ],
+    });
+    renderApp("/dashboard");
+    const table = await screen.findByRole("region", { name: "Every run in this matrix" });
+    await waitFor(() => expect(table.querySelectorAll(".ag-row").length).toBeGreaterThan(0));
+    return table;
+  }
+
+  it("opens the cell under off, Gate 0 only and the full tree when its row is clicked", async () => {
+    const user = userEvent.setup();
+    const table = await openTable();
+    expect(opened()).toBeNull();
+    const toggle = within(rowOf(table, 0)).getByRole("button", { name: /under each setting/ });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(within(rowOf(table, 0)).getByText("Wireless keyboard"));
+    const detail = await screen.findByRole("region", {
+      name: "Wireless keyboard, seed 1, under each setting",
+    });
+    // A column for each setting, in the page's order, with what each is.
+    const headers = within(detail).getAllByRole("columnheader");
+    expect(headers.map((h) => h.textContent)).toEqual([
+      "OffNo review",
+      "Gate 0 onlyRules, no model",
+      "Full treeEvery gate",
+    ]);
+    // Gate 0 blocked this checkout, so the full tree stopped there and Gates 1 and 2 never ran.
+    const gate0 = within(detail).getByRole("row", { name: /^Gate 0 / });
+    expect(within(gate0).getAllByRole("img", { name: "Verdict: Block" })).toHaveLength(2);
+    expect(
+      within(within(detail).getByRole("row", { name: /^Gate 1/ })).getByText("Didn't run"),
+    ).toBeVisible();
+    expect(
+      within(detail).getByText(
+        "Gate 1 and Gate 2 didn't run under Full tree. Gate 0 blocked, which ends the review.",
+      ),
+    ).toBeVisible();
+    const verdict = within(detail).getByRole("row", { name: /^Verdict/ });
+    expect(within(verdict).getByText("No review")).toBeVisible();
+    expect(within(verdict).getAllByRole("img", { name: "Verdict: Block" })).toHaveLength(2);
+    expect(within(detail).getByRole("row", { name: /^Review time/ })).toHaveTextContent("1 ms");
+    // The open row says so.
+    expect(
+      within(rowOf(table, 0)).getByRole("button", { name: /under each setting/ }),
+    ).toHaveAttribute("aria-expanded", "true");
+    // Blocking is neutral: nothing in the drill-down is the attacker's red.
+    expect(detail.querySelector(".pill-attacker")).toBeNull();
+  });
+
+  it("shows what each gate cost where the full tree ran its model gates", async () => {
+    const user = userEvent.setup();
+    const table = await openTable();
+    // An attack the unverified-seller rule can't see: Gate 0 passes it and the model gates judge it.
+    const index = Array.from(table.querySelectorAll(".ag-row[row-index]")).findIndex((row) =>
+      row.textContent?.includes("Sent to a person"),
+    );
+    expect(index).toBeGreaterThanOrEqual(0);
+    await user.click(within(rowOf(table, index)).getByText(/keyboard/));
+    const detail = await screen.findByRole("region", { name: /under each setting/ });
+    const gate2 = within(detail).getByRole("row", { name: /^Gate 2/ });
+    expect(gate2).toHaveTextContent(/Escalate.*\$0\.\d{4}/);
+    expect(within(detail).getByRole("row", { name: /^Review cost/ })).toHaveTextContent(
+      /\$0\.\d{4}/,
+    );
+  });
+
+  it("closes from its button, from the same row, and when another row is opened", async () => {
+    const user = userEvent.setup();
+    const table = await openTable();
+    await user.click(within(rowOf(table, 0)).getByText("Wireless keyboard"));
+    await user.click(await screen.findByRole("button", { name: "Close" }));
+    await waitFor(() => expect(opened()).toBeNull());
+
+    await user.click(within(rowOf(table, 0)).getByText("Wireless keyboard"));
+    await screen.findByRole("region", { name: /under each setting/ });
+    await user.click(within(rowOf(table, 0)).getByText("Wireless keyboard"));
+    await waitFor(() => expect(opened()).toBeNull());
+
+    await user.click(within(rowOf(table, 0)).getByText("Wireless keyboard"));
+    await screen.findByRole("region", { name: "Wireless keyboard, seed 1, under each setting" });
+    // Opening the next row (the second seed of the same scenario) closes the first.
+    const next = (await waitFor(() => {
+      const row = table.querySelector('.ag-row[row-id^="sc_a01:2:"]');
+      expect(row).not.toBeNull();
+      return row;
+    })) as HTMLElement;
+    await user.click(within(next).getByText("Wireless keyboard"));
+    expect(
+      await screen.findByRole("region", { name: "Wireless keyboard, seed 2, under each setting" }),
+    ).toBeVisible();
+    expect(screen.getAllByRole("region", { name: /under each setting/ })).toHaveLength(1);
+  });
+
+  it("opens from the keyboard: Enter on the row's cell", async () => {
+    const user = userEvent.setup();
+    const table = await openTable();
+    // A click focuses the cell and opens it; Enter on the focused cell closes it, and opens it again.
+    await user.click(within(rowOf(table, 0)).getByText("Wireless keyboard"));
+    await screen.findByRole("region", { name: /under each setting/ });
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(opened()).toBeNull());
+    await user.keyboard("{Enter}");
+    expect(await screen.findByRole("region", { name: /under each setting/ })).toBeVisible();
+  });
+
+  it("keeps the other columns, filters and links as they were", async () => {
+    const user = userEvent.setup();
+    const table = await openTable();
+    await user.click(within(rowOf(table, 0)).getByText("Wireless keyboard"));
+    await screen.findByRole("region", { name: /under each setting/ });
+    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
+    // The open row isn't a benign one any more, so its detail goes with it.
+    await waitFor(() => expect(opened()).toBeNull());
+    expect(screen.getByText("44 of 60 runs")).toBeInTheDocument();
   });
 });
 

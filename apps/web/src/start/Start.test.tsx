@@ -3,14 +3,17 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LiveStatus, MandateRow, MandateView } from "../api";
-import { mockDevice, mockServer, renderApp, run } from "../test-utils";
+import { loadGrid, mockDevice, mockServer, renderApp, run } from "../test-utils";
 import { SDK_EXAMPLE } from "./snippet";
 
 // The repo's root, from this file (a path, since the DOM's URL isn't the one fs reads).
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "../../../..");
 
+// The Runs page it links to draws an AG grid, which loads on demand.
+vi.setConfig({ testTimeout: 30_000 });
+beforeAll(loadGrid, 60_000);
 beforeEach(() => mockDevice(false));
 afterEach(() => vi.unstubAllGlobals());
 
@@ -486,8 +489,10 @@ describe("getting to the page", () => {
       scenarios: SCENARIOS,
     });
     renderApp("/runs");
-    const list = await screen.findByRole("list", { name: "Runs" });
-    const rows = within(list).getAllByRole("listitem");
+    await screen.findByRole("grid");
+    const drawn = () => screen.getAllByRole("row").filter((row) => row.getAttribute("row-id"));
+    await waitFor(() => expect(drawn()).toHaveLength(3));
+    const rows = drawn();
     expect(within(rows[0] as HTMLElement).getByText("Practice money")).toBeVisible();
     expect(within(rows[1] as HTMLElement).getByText("Sandbox")).toBeVisible();
     expect(within(rows[2] as HTMLElement).queryByText(/Practice money|Sandbox/)).toBeNull();

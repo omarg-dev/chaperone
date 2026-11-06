@@ -207,6 +207,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -216,6 +218,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -225,6 +236,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0020083999999999996,
+              "latencyMs": 1585
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004488,
+              "latencyMs": 1261
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0024571999999999997,
           "latencyMs": 2852,
           "failed": null
@@ -255,6 +287,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -264,6 +298,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 4
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 7,
           "failed": null
@@ -273,6 +316,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0013484999999999999,
+              "latencyMs": 1869
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004196,
+              "latencyMs": 1545
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017680999999999999,
           "latencyMs": 3422,
           "failed": null
@@ -303,6 +367,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -312,6 +378,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -321,6 +396,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0025042,
+              "latencyMs": 3144
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004761,
+              "latencyMs": 1546
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0029803,
           "latencyMs": 4697,
           "failed": null
@@ -351,6 +447,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -360,6 +458,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 6,
           "failed": null
@@ -369,6 +476,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 2
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0018782,
+              "latencyMs": 1937
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00043940000000000006,
+              "latencyMs": 1162
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0023176,
           "latencyMs": 3106,
           "failed": null
@@ -399,6 +527,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -408,6 +538,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -417,6 +556,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0025477,
+              "latencyMs": 3874
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.000479,
+              "latencyMs": 1334
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0030267,
           "latencyMs": 5214,
           "failed": null
@@ -447,6 +607,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -456,6 +618,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 5,
           "failed": null
@@ -465,6 +636,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0024936,
+              "latencyMs": 3162
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004576,
+              "latencyMs": 1291
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0029511999999999997,
           "latencyMs": 4457,
           "failed": null
@@ -495,6 +687,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -504,6 +698,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -513,6 +716,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0006603000000000001,
+              "latencyMs": 1827
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0003875,
+              "latencyMs": 1522
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0010478,
           "latencyMs": 3354,
           "failed": null
@@ -543,6 +767,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -552,6 +778,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -561,6 +796,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0006603000000000001,
+              "latencyMs": 1800
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0003875,
+              "latencyMs": 1767
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0010478,
           "latencyMs": 3575,
           "failed": null
@@ -591,6 +847,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -600,6 +858,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -609,6 +876,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0012516,
+              "latencyMs": 1459
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004044,
+              "latencyMs": 1591
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0016560000000000001,
           "latencyMs": 3066,
           "failed": null
@@ -639,6 +927,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -648,6 +938,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -657,6 +956,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0012998,
+              "latencyMs": 1768
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00040140000000000005,
+              "latencyMs": 1535
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017012000000000002,
           "latencyMs": 3310,
           "failed": null
@@ -687,6 +1007,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -696,6 +1018,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -705,6 +1036,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 2
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.001323,
+              "latencyMs": 1112
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00042720000000000003,
+              "latencyMs": 1983
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017502,
           "latencyMs": 3102,
           "failed": null
@@ -735,6 +1087,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -744,6 +1098,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -753,6 +1116,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.001323,
+              "latencyMs": 2159
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00042620000000000006,
+              "latencyMs": 1254
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017492,
           "latencyMs": 3419,
           "failed": null
@@ -783,6 +1167,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -792,6 +1178,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -801,6 +1196,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0006425,
+              "latencyMs": 1954
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0003723,
+              "latencyMs": 1946
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0010148,
           "latencyMs": 3906,
           "failed": null
@@ -831,6 +1247,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -840,6 +1258,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -849,6 +1276,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "escalate",
+              "costUsd": 0.0013024999999999998,
+              "latencyMs": 1297
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.0006396,
+              "latencyMs": 3597
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0019421,
           "latencyMs": 4899,
           "failed": null
@@ -879,6 +1327,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -888,6 +1338,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -897,6 +1356,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0018753000000000003,
+              "latencyMs": 2185
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004143,
+              "latencyMs": 1504
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0022896,
           "latencyMs": 3695,
           "failed": null
@@ -927,6 +1407,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -936,6 +1418,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -945,6 +1436,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0006251000000000001,
+              "latencyMs": 1087
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0003773,
+              "latencyMs": 1131
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0010024,
           "latencyMs": 2223,
           "failed": null
@@ -975,6 +1487,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -984,6 +1498,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -993,6 +1516,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0025045999999999996,
+              "latencyMs": 1771
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00046420000000000006,
+              "latencyMs": 1601
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0029687999999999997,
           "latencyMs": 3379,
           "failed": null
@@ -1023,6 +1567,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1032,6 +1578,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1041,6 +1596,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0012527999999999999,
+              "latencyMs": 1057
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.000413,
+              "latencyMs": 1501
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0016657999999999998,
           "latencyMs": 2563,
           "failed": null
@@ -1071,6 +1647,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1080,6 +1658,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -1089,6 +1676,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0020294,
+              "latencyMs": 1879
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004425,
+              "latencyMs": 1486
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0024719000000000004,
           "latencyMs": 3370,
           "failed": null
@@ -1119,6 +1727,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1128,6 +1738,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -1137,6 +1756,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0020294,
+              "latencyMs": 1619
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.000533,
+              "latencyMs": 2523
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0025624000000000003,
           "latencyMs": 4147,
           "failed": null
@@ -1167,6 +1807,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1176,6 +1818,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1185,6 +1836,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0018768,
+              "latencyMs": 1429
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004286,
+              "latencyMs": 1725
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0023054,
           "latencyMs": 3159,
           "failed": null
@@ -1215,6 +1887,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1224,6 +1898,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 12,
           "failed": null
@@ -1233,6 +1916,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0018768,
+              "latencyMs": 1487
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00042760000000000004,
+              "latencyMs": 1546
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0023044000000000003,
           "latencyMs": 3037,
           "failed": null
@@ -1263,6 +1967,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1272,6 +1978,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1281,6 +1996,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0006237,
+              "latencyMs": 1483
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0003923,
+              "latencyMs": 1455
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.001016,
           "latencyMs": 2942,
           "failed": null
@@ -1311,6 +2047,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1320,6 +2058,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1329,6 +2076,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0012474,
+              "latencyMs": 1518
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004001,
+              "latencyMs": 1161
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0016475,
           "latencyMs": 2685,
           "failed": null
@@ -1359,6 +2127,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1368,6 +2138,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -1377,6 +2156,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0033271,
+              "latencyMs": 1776
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0005097000000000001,
+              "latencyMs": 1517
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0038368,
           "latencyMs": 3297,
           "failed": null
@@ -1407,6 +2207,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1416,6 +2218,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1425,6 +2236,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0046509,
+              "latencyMs": 1947
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0005597,
+              "latencyMs": 1387
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0052106,
           "latencyMs": 3338,
           "failed": null
@@ -1455,6 +2287,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1464,6 +2298,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1473,6 +2316,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0024927,
+              "latencyMs": 1756
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.0004641,
+              "latencyMs": 1602
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0029568,
           "latencyMs": 3365,
           "failed": null
@@ -1503,6 +2367,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1512,6 +2378,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1521,6 +2396,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.001869,
+              "latencyMs": 1759
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00043040000000000005,
+              "latencyMs": 1644
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0022994,
           "latencyMs": 3408,
           "failed": null
@@ -1551,6 +2447,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1560,6 +2458,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -1569,6 +2476,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0013206000000000001,
+              "latencyMs": 1714
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004113,
+              "latencyMs": 1726
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017319000000000002,
           "latencyMs": 3445,
           "failed": null
@@ -1599,6 +2527,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1608,6 +2538,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -1617,6 +2556,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0013206000000000001,
+              "latencyMs": 1788
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004113,
+              "latencyMs": 1676
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017319000000000002,
           "latencyMs": 3470,
           "failed": null
@@ -1647,6 +2607,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1656,6 +2618,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -1665,6 +2636,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0012736,
+              "latencyMs": 1640
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00040570000000000005,
+              "latencyMs": 1550
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0016792999999999999,
           "latencyMs": 3196,
           "failed": null
@@ -1695,6 +2687,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1704,6 +2698,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1713,6 +2716,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 0
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0006472,
+              "latencyMs": 1744
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00038140000000000005,
+              "latencyMs": 1695
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0010286000000000002,
           "latencyMs": 3443,
           "failed": null
@@ -1743,6 +2767,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1752,6 +2778,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1761,6 +2796,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0013204,
+              "latencyMs": 1908
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004092,
+              "latencyMs": 1630
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017296,
           "latencyMs": 3542,
           "failed": null
@@ -1791,6 +2847,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -1800,6 +2858,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1809,6 +2876,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0013204,
+              "latencyMs": 2077
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00041070000000000006,
+              "latencyMs": 1112
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017311000000000002,
           "latencyMs": 3194,
           "failed": null
@@ -1839,6 +2927,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1848,6 +2938,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1857,6 +2956,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0018713000000000002,
+              "latencyMs": 1721
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.000429,
+              "latencyMs": 1271
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0023003000000000003,
           "latencyMs": 2997,
           "failed": null
@@ -1887,6 +3007,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1896,6 +3018,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -1905,6 +3036,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0012462,
+              "latencyMs": 1532
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004053,
+              "latencyMs": 1068
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0016515,
           "latencyMs": 2606,
           "failed": null
@@ -1935,6 +3087,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1944,6 +3098,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -1953,6 +3116,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0018981,
+              "latencyMs": 2738
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004331,
+              "latencyMs": 1491
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0023312,
           "latencyMs": 4235,
           "failed": null
@@ -1983,6 +3167,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -1992,6 +3178,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2001,6 +3196,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0012725,
+              "latencyMs": 1530
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0004003,
+              "latencyMs": 1194
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0016728,
           "latencyMs": 2730,
           "failed": null
@@ -2031,6 +3247,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2040,6 +3258,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2049,6 +3276,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0013266,
+              "latencyMs": 1273
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00042820000000000005,
+              "latencyMs": 1301
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017548000000000002,
           "latencyMs": 2588,
           "failed": null
@@ -2079,6 +3327,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2088,6 +3338,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -2097,6 +3356,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0013266,
+              "latencyMs": 1364
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00042720000000000003,
+              "latencyMs": 1100
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0017538,
           "latencyMs": 2468,
           "failed": null
@@ -2127,6 +3407,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2136,6 +3418,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2145,6 +3436,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.006258400000000001,
+              "latencyMs": 1887
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0006102000000000001,
+              "latencyMs": 1161
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.006868600000000001,
           "latencyMs": 3054,
           "failed": null
@@ -2175,6 +3487,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2184,6 +3498,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 2
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 6,
           "failed": null
@@ -2193,6 +3516,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.006238100000000002,
+              "latencyMs": 1566
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0006112,
+              "latencyMs": 2076
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.006849300000000002,
           "latencyMs": 3649,
           "failed": null
@@ -2223,6 +3567,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2232,6 +3578,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -2241,6 +3596,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0025255,
+              "latencyMs": 1874
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00045940000000000005,
+              "latencyMs": 1825
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0029849,
           "latencyMs": 3704,
           "failed": null
@@ -2271,6 +3647,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2280,6 +3658,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -2289,6 +3676,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0031513,
+              "latencyMs": 1811
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00048810000000000005,
+              "latencyMs": 1097
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0036394,
           "latencyMs": 2921,
           "failed": null
@@ -2323,6 +3731,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 7999,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2332,6 +3742,15 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2341,6 +3760,24 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [
+            {
+              "gate": "gate1",
+              "reason": "gate0 blocked, which ends the review"
+            },
+            {
+              "gate": "gate2",
+              "reason": "gate0 blocked, which ends the review"
+            }
+          ],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2375,6 +3812,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 8199,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2384,6 +3823,15 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2393,6 +3841,24 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [
+            {
+              "gate": "gate1",
+              "reason": "gate0 blocked, which ends the review"
+            },
+            {
+              "gate": "gate2",
+              "reason": "gate0 blocked, which ends the review"
+            }
+          ],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2427,6 +3893,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 6199,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2436,6 +3904,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 6199,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 7,
           "failed": null
@@ -2445,6 +3922,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "escalate",
+              "costUsd": 0.0021078,
+              "latencyMs": 2161
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.000484,
+              "latencyMs": 1575
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0025918,
           "latencyMs": 3743,
           "failed": null
@@ -2479,6 +3977,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 6199,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2488,6 +3988,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 6199,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -2497,6 +4006,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "escalate",
+              "costUsd": 0.0021053,
+              "latencyMs": 1487
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.0004848,
+              "latencyMs": 1785
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0025901,
           "latencyMs": 3280,
           "failed": null
@@ -2531,6 +4061,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 17299,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2540,6 +4072,15 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -2549,6 +4090,24 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [
+            {
+              "gate": "gate1",
+              "reason": "gate0 blocked, which ends the review"
+            },
+            {
+              "gate": "gate2",
+              "reason": "gate0 blocked, which ends the review"
+            }
+          ],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -2583,6 +4142,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 16999,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -2592,6 +4153,15 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -2601,6 +4171,24 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [
+            {
+              "gate": "gate1",
+              "reason": "gate0 blocked, which ends the review"
+            },
+            {
+              "gate": "gate2",
+              "reason": "gate0 blocked, which ends the review"
+            }
+          ],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -2635,6 +4223,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2644,6 +4234,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2653,6 +4252,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "escalate",
+              "costUsd": 0.0020949,
+              "latencyMs": 4387
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.0005756,
+              "latencyMs": 2364
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0026704999999999997,
           "latencyMs": 6757,
           "failed": null
@@ -2687,6 +4307,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 1499,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2696,6 +4318,15 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "escalate",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2705,6 +4336,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "escalate",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "escalate",
+              "costUsd": 0.004337199999999999,
+              "latencyMs": 7413
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.0007038999999999999,
+              "latencyMs": 2367
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0050411,
           "latencyMs": 9786,
           "failed": null
@@ -2739,6 +4391,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2748,6 +4402,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2757,6 +4420,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0026637,
+              "latencyMs": 3845
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00047860000000000003,
+              "latencyMs": 1863
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0031423,
           "latencyMs": 5714,
           "failed": null
@@ -2791,6 +4475,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2800,6 +4486,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2809,6 +4504,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0026650000000000003,
+              "latencyMs": 1948
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.00047890000000000004,
+              "latencyMs": 1478
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0031439000000000003,
           "latencyMs": 3431,
           "failed": null
@@ -2843,6 +4559,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2852,6 +4570,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -2861,6 +4588,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0025149,
+              "latencyMs": 4120
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.00045770000000000007,
+              "latencyMs": 1705
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0029726,
           "latencyMs": 5832,
           "failed": null
@@ -2895,6 +4643,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2904,6 +4654,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 5,
           "failed": null
@@ -2913,6 +4672,27 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "approve",
+              "costUsd": 0.0050267,
+              "latencyMs": 1726
+            },
+            {
+              "gate": "gate2",
+              "verdict": "approve",
+              "costUsd": 0.0005592,
+              "latencyMs": 1596
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0055859,
           "latencyMs": 3328,
           "failed": null
@@ -2947,6 +4727,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 3299,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -2956,6 +4738,15 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -2965,6 +4756,24 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [
+            {
+              "gate": "gate1",
+              "reason": "gate0 blocked, which ends the review"
+            },
+            {
+              "gate": "gate2",
+              "reason": "gate0 blocked, which ends the review"
+            }
+          ],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -2999,6 +4808,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 3399,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -3008,6 +4819,15 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -3017,6 +4837,24 @@
           "verdict": "block",
           "money": "voided",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "block",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [
+            {
+              "gate": "gate1",
+              "reason": "gate0 blocked, which ends the review"
+            },
+            {
+              "gate": "gate2",
+              "reason": "gate0 blocked, which ends the review"
+            }
+          ],
           "costUsd": 0,
           "latencyMs": 2,
           "failed": null
@@ -3051,6 +4889,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 12999,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -3060,6 +4900,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 12999,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 3,
           "failed": null
@@ -3069,6 +4918,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "escalate",
+              "costUsd": 0.0020886000000000004,
+              "latencyMs": 5035
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.0005051,
+              "latencyMs": 1721
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0025937000000000004,
           "latencyMs": 6762,
           "failed": null
@@ -3103,6 +4973,8 @@
           "verdict": null,
           "money": "captured",
           "toAttackersCents": 13299,
+          "gates": [],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 1,
           "failed": null
@@ -3112,6 +4984,15 @@
           "verdict": "approve",
           "money": "captured",
           "toAttackersCents": 13299,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            }
+          ],
+          "skipped": [],
           "costUsd": 0,
           "latencyMs": 4,
           "failed": null
@@ -3121,6 +5002,27 @@
           "verdict": "escalate",
           "money": "held",
           "toAttackersCents": 0,
+          "gates": [
+            {
+              "gate": "gate0",
+              "verdict": "approve",
+              "costUsd": 0,
+              "latencyMs": 1
+            },
+            {
+              "gate": "gate1",
+              "verdict": "escalate",
+              "costUsd": 0.0021479,
+              "latencyMs": 1879
+            },
+            {
+              "gate": "gate2",
+              "verdict": "escalate",
+              "costUsd": 0.0005085,
+              "latencyMs": 1919
+            }
+          ],
+          "skipped": [],
           "costUsd": 0.0026563999999999997,
           "latencyMs": 3805,
           "failed": null

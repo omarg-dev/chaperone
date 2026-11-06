@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { FIREWALL_CONFIGS, VERDICTS } from "@firewall/firewall";
+import { FIREWALL_CONFIGS, GATES, VERDICTS } from "@firewall/firewall";
 import { describe, expect, it } from "vitest";
 import type { MatrixRun } from "./matrix.js";
 import { buildResults, type PaymentAdapterName } from "./results.js";
@@ -7,6 +7,7 @@ import { cell } from "./test-helpers.js";
 import { SCHEMA_VERSION } from "./types.js";
 import {
   CONFIGS_READ,
+  GATES_READ,
   isResultsName,
   newestFirst,
   parseResults,
@@ -46,6 +47,36 @@ const build = (
 
 const text = (value: unknown) => JSON.stringify(value);
 
+// Cells whose full tree ran some gates and skipped others, as a result file has them.
+const gated = [
+  cell({
+    full: {
+      verdict: "approve",
+      gates: [
+        { gate: "gate0", verdict: "approve", costUsd: 0, latencyMs: 1, reasons: ["a rule passed"] },
+        {
+          gate: "gate1",
+          verdict: "approve",
+          costUsd: 0.0004,
+          latencyMs: 900,
+          reasons: ["read it"],
+        },
+      ],
+    },
+  }),
+  cell({
+    kind: "attack",
+    fooled: true,
+    full: {
+      verdict: "block",
+      gates: [
+        { gate: "gate0", verdict: "block", costUsd: 0, latencyMs: 2, reasons: ["unverified"] },
+      ],
+      skipped: [{ gate: "gate1", reason: "gate0 blocked, which ends the review" }],
+    },
+  }),
+];
+
 describe("the results reader", () => {
   it("reads what the writer writes, with the rates the harness computed", () => {
     const written = build();
@@ -74,11 +105,39 @@ describe("the results reader", () => {
   });
 
   it("leaves out what a headline page doesn't draw", () => {
-    const parsed = parseResults(text(build()));
+    const parsed = parseResults(text(build("fake", gated)));
     if (!parsed.ok) throw new Error(parsed.error);
-    const outcome = parsed.results.cells[0]?.outcomes[0];
-    expect(outcome).not.toHaveProperty("gates");
+    const full = parsed.results.cells[0]?.outcomes.find((o) => o.config === "full");
+    // What each gate said, cost and took is kept, for the dashboard's drill-down; its reasons aren't.
+    expect(full?.gates.length).toBeGreaterThan(0);
+    for (const gate of full?.gates ?? []) {
+      expect(Object.keys(gate).sort()).toEqual(["costUsd", "gate", "latencyMs", "verdict"]);
+    }
+    expect(full).not.toHaveProperty("reviewEventId");
     expect(parsed.results.cells[0]?.run).not.toHaveProperty("trajectory");
+  });
+
+  it("keeps each setting's gates and the ones the tree skipped, as the writer wrote them", () => {
+    const written = build("fake", gated);
+    const parsed = parseResults(text(written));
+    if (!parsed.ok) throw new Error(parsed.error);
+    expect(parsed.results.cells[1]?.outcomes.find((o) => o.config === "full")?.skipped).toEqual([
+      { gate: "gate1", reason: "gate0 blocked, which ends the review" },
+    ]);
+    for (const [i, cell] of written.cells.entries()) {
+      for (const [j, outcome] of cell.outcomes.entries()) {
+        const read = parsed.results.cells[i]?.outcomes[j];
+        expect(read?.gates).toEqual(
+          outcome.gates.map(({ gate, verdict, costUsd, latencyMs }) => ({
+            gate,
+            verdict,
+            costUsd,
+            latencyMs,
+          })),
+        );
+        expect(read?.skipped).toEqual(outcome.skipped);
+      }
+    }
   });
 
   it("says why it refused a file, without echoing it", () => {
@@ -104,6 +163,7 @@ describe("the results reader", () => {
   it("keeps the values it hard-codes equal to the harness's", () => {
     expect(SCHEMA_VERSION_READ).toBe(SCHEMA_VERSION);
     expect([...CONFIGS_READ]).toEqual([...FIREWALL_CONFIGS]);
+    expect([...GATES_READ]).toEqual([...GATES]);
     expect([...VERDICTS_READ]).toEqual([...VERDICTS]);
   });
 });
