@@ -145,8 +145,10 @@ jobs:
           IMAGE_TAG: ci
         run: |
           ./backup.sh
-          ls -l data/backups
-          test "$(ls data/backups/events-*.db | wc -l)" = 1
+          # The backups folder belongs to the container's user and is private to it, so it is
+          # listed from inside the container rather than by the runner.
+          docker compose exec -T app ls -l /data/backups
+          test "$(docker compose exec -T app sh -c 'ls /data/backups/events-*.db | wc -l')" = 1
       - name: Runs export and import in the container
         working-directory: deploy
         env:
