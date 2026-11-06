@@ -34,11 +34,24 @@ const list = async () => {
 function run(
   runId: string,
   scenarioId: string | null,
-  options: { seed?: string; configs?: string[]; paid?: string[]; verdict?: string | null } = {},
+  options: {
+    seed?: string;
+    configs?: string[];
+    paid?: string[];
+    verdict?: string | null;
+    heldCents?: number;
+  } = {},
 ) {
-  const at = (lane: "arena" | "review", type: string, payload: unknown) =>
+  const at = (lane: "arena" | "review" | "payments", type: string, payload: unknown) =>
     log.append({ runId, scenarioId, lane, type, provenance: "system", payload });
   at("arena", "run_started", { seed: options.seed ?? "1", request: "x" });
+  if (options.heldCents !== undefined) {
+    at("payments", "payment_call", {
+      operation: "authorize_order",
+      input: ["ORDER-1", {}],
+      result: { orderId: "ORDER-1", authorizationId: "AUTH-1", amountCents: options.heldCents },
+    });
+  }
   for (const config of options.configs ?? ["full"]) {
     at("review", "review_started", { config });
     at("review", "review_finished", { config, verdict: options.verdict ?? "approve" });
@@ -98,5 +111,23 @@ describe("GET /events/runs", () => {
       decidedBy: "review",
     });
     expect(runs.run_cell).not.toHaveProperty("paidPayees");
+  });
+
+  it("says how much the hold was for, and which stores were paid, by name", async () => {
+    run("run_paid", "sc_a01", { paid: ["attacker_1"], heldCents: 7999 });
+    run("run_unpaid", "sc_a01", { verdict: "block", heldCents: 13900 });
+    run("run_early", "sc_a01");
+    const runs = await list();
+    expect(runs.run_paid).toMatchObject({ heldCents: 7999 });
+    expect(runs.run_unpaid).toMatchObject({ heldCents: 13900, paidTo: [] });
+    expect(runs.run_early).toMatchObject({ heldCents: null, paidTo: [] });
+    // The name is the store's, as the payees route gives it for the same run.
+    const res = await createApp({ log, arena: createArenaService({ log }) }).request(
+      "/events/runs/run_paid/payees",
+    );
+    const payees = (await res.json()) as { payeeKey: string; sellerName: string }[];
+    const attacker = payees.find((p) => p.payeeKey === "attacker_1");
+    expect(attacker?.sellerName).toBeTruthy();
+    expect(runs.run_paid).toMatchObject({ paidTo: [attacker?.sellerName] });
   });
 });

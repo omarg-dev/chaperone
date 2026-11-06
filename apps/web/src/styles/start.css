@@ -1,22 +1,19 @@
-/* The Start a run page: two tabs, and on the first a short sequence (choose, mandate, run). */
+/* The Start a run page: the steps are stations on the route (choose, mandate, run), and the run step
+   is the page's vault. Two tabs sit at the title's right, as plain links. */
 
 .tabs {
   display: flex;
-  gap: 2px;
-  margin-bottom: var(--space-5);
-  border-bottom: 1px solid var(--line);
+  gap: 28px;
 }
 
 .tab {
-  min-height: 42px;
-  padding: 0 var(--space-4);
-  margin-bottom: -1px;
+  min-height: 44px;
+  padding: 8px 0;
   border: 0;
-  border-bottom: 2px solid transparent;
   background: transparent;
   color: var(--muted);
-  font-size: 14.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 650;
   cursor: pointer;
 }
 
@@ -26,84 +23,29 @@
 
 .tab[aria-selected="true"] {
   color: var(--ink);
-  border-bottom-color: var(--hold);
+  text-decoration: underline;
+  text-decoration-color: var(--spine);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 10px;
 }
 
 .start {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  max-width: 880px;
 }
 
-/* The three steps, as a row: where the person is, and what they have done. */
-.steps {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-5);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+.start > .station-section {
+  margin-top: 56px;
 }
 
-.step {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.step-number {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1.5px var(--line-strong);
-  font-size: 12.5px;
-}
-
-.step-current {
-  color: var(--ink);
-}
-
-.step-current .step-number {
-  background: var(--hold);
-  color: var(--surface);
-  box-shadow: none;
-}
-
-.step-done {
-  color: var(--ink-2);
-}
-
-.step-done .step-number {
-  background: var(--hold-tint);
-  color: var(--hold);
-  box-shadow: inset 0 0 0 1.5px var(--hold);
-}
-
-.start-step {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-5);
-  border: 1px solid var(--line-strong);
-  border-radius: var(--radius-xl);
-  background: var(--surface);
-}
-
-.start-step-done {
-  border-color: var(--line);
+.start > .station-section:first-of-type {
+  margin-top: 36px;
 }
 
 .start-body {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: 18px;
 }
 
 .start-summary {
@@ -111,6 +53,7 @@
   flex-wrap: wrap;
   align-items: baseline;
   gap: var(--space-2);
+  font-size: 17px;
 }
 
 .choice-group {
@@ -127,34 +70,37 @@
 
 .choice-help {
   margin-bottom: var(--space-3);
+  font-size: var(--text-meta);
+  font-weight: 700;
+  color: var(--muted);
 }
 
 /* The arena has about thirty tasks: the list scrolls in a box of its own, so the firewall setting
    and the button stay in view. */
 .choices {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  column-gap: 24px;
   max-height: 420px;
   overflow-y: auto;
-  padding: 2px;
 }
 
 .firewall-options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-3);
-  margin-top: var(--space-3);
+  max-width: 900px;
+  margin-top: var(--space-2);
 }
 
+/* A task: its title, and the person's words under it. */
 .choice {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
   cursor: pointer;
 }
 
@@ -164,21 +110,31 @@
 
 .choice:has(:focus-visible) {
   outline: 2px solid var(--focus);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 
 .choice-on {
+  border-top: 2px solid var(--spine);
   background: var(--hold-tint);
-  box-shadow: inset 0 0 0 2px var(--hold);
 }
 
 .choice input {
-  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  margin: 3px 0 0;
   accent-color: var(--hold);
 }
 
+/* The setting is a box of its own, as an option, not a row of a list. */
 .choice-compact {
-  flex: 1 1 200px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius);
+}
+
+.choice-compact.choice-on {
+  border-color: var(--ink);
+  background: var(--surface);
 }
 
 .choice-text {
@@ -189,14 +145,16 @@
 }
 
 .choice-title {
-  font-size: 15px;
   font-weight: 700;
 }
 
+.choice-compact .t-meta {
+  font-weight: 400;
+  color: var(--ink-2);
+}
+
 .choice-request {
-  font-family: var(--font-serif);
-  font-size: 1.0625rem;
-  font-style: italic;
+  font-size: 15px;
   line-height: 1.4;
   color: var(--ink-2);
 }
@@ -208,28 +166,51 @@
   gap: var(--space-3) var(--space-4);
 }
 
+.start-actions .btn:first-child {
+  min-height: 56px;
+  padding: 0 26px;
+  font-size: 17px;
+}
+
+.start-actions .t-meta {
+  font-weight: 400;
+}
+
 .start-problem {
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
   background: var(--sunk);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  box-shadow: inset 0 0 0 1.5px var(--line-strong);
   color: var(--ink);
   font-weight: 600;
 }
 
 .start-note {
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
   background: var(--escalate-tint);
   color: var(--escalate-ink);
   font-weight: 600;
 }
 
-/* The mandate's terms, one to a row: the label, what it says, and a way to change it. */
-.terms {
-  flex: 1 1 100%;
+/* The mandate: the person's request in their own words, and each term a row of a two column list. */
+.start-brief {
   display: flex;
   flex-direction: column;
+  gap: 18px;
+}
+
+.start-request {
+  display: block;
+  max-width: 32ch;
+  margin-top: 4px;
+  font-size: 32px;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.terms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 48px;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -237,32 +218,57 @@
 
 .term {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) auto;
+  grid-template-columns: 140px minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--space-3);
-  min-height: 48px;
-  padding: var(--space-2) 0;
-  border-top: 1px solid var(--z-cat-line);
-}
-
-.term:first-child {
-  border-top: 0;
+  min-height: 56px;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
 }
 
 .term-label {
-  font-size: 12.5px;
+  font-size: var(--text-meta);
   font-weight: 700;
-  color: var(--z-cat-ink);
+  color: var(--muted);
 }
 
 .term-value {
   display: flex;
   flex-direction: column;
+  font-size: 17px;
   font-weight: 600;
 }
 
+/* A term's Change, and an edit's Cancel, are links; Save is the one button. */
+.term .btn-secondary {
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--hold);
+  font-size: 14px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.term .btn-secondary:hover {
+  background: none;
+  color: var(--ink);
+}
+
+.term-form .btn-secondary {
+  color: var(--ink-2);
+}
+
+.term-uncovered {
+  text-decoration: underline dotted;
+  text-underline-offset: 5px;
+}
+
 .term-note {
+  font-size: 13px;
   font-weight: 400;
+  color: var(--muted);
 }
 
 .term-form {
@@ -275,62 +281,161 @@
 
 .term-input {
   flex: 1 1 260px;
-  background: var(--surface);
 }
 
 .term-hint {
   flex: 1 1 100%;
+  font-weight: 400;
 }
 
-.locked-line {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
+/* The price ceiling is the one amount: it goes last, across both columns, ruled in the route's colour. */
+.term-ceiling {
+  grid-column: 1 / -1;
+  order: 99;
+  min-height: 84px;
+  border-top: 2px solid var(--spine);
+}
+
+.term-money {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.term-each {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* Editing it: a tinted band with the amount as a big field. */
+.term-editing {
+  grid-column: 1 / -1;
+  order: 99;
+  align-items: start;
+  padding: 16px;
   background: var(--hold-tint);
-  color: var(--ink);
+  border-top: 2px solid var(--spine);
+}
+
+.term-editing .term-label {
+  padding-top: 14px;
+  color: var(--hold);
+}
+
+.term-editing .term-form {
+  align-items: flex-start;
+}
+
+.term-dollar {
+  padding-top: 4px;
+  font-size: 40px;
+  color: var(--muted);
+}
+
+.term-input-money {
+  flex: 0 1 280px;
+  min-height: 56px;
+  border-bottom: 2.5px solid var(--ink);
+  font-size: 40px;
+}
+
+.start-seal {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* The run step is the vault. Until the mandate is locked it is drawn held back. */
+.launch-vault {
+  margin-top: 56px;
+  --vault-pt: 28px;
+  padding-bottom: 32px;
+}
+
+.launch {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.launch-held-back {
+  opacity: 0.62;
+}
+
+.launch-says {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.launch-says .t-headline {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-wrap: pretty;
 }
 
 .launch-facts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--space-3);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 32px;
   margin: 0;
 }
 
-.launch-facts > div {
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
 .launch-facts dt {
-  font-size: 12.5px;
+  font-size: var(--text-meta);
   font-weight: 700;
-  color: var(--muted);
+  color: var(--vault-muted);
 }
 
 .launch-facts dd {
   display: flex;
   flex-direction: column;
-  margin: 0;
-  font-weight: 600;
+  margin: 4px 0 0;
+  font-weight: 650;
 }
 
 .launch-detail {
+  font-size: 13px;
   font-weight: 400;
+  color: var(--vault-muted);
+}
+
+.launch .start-actions .t-meta {
+  color: var(--vault-muted);
+}
+
+.launch .start-problem {
+  background: var(--vault-2);
+  box-shadow: inset 0 0 0 1.5px var(--vault-line);
+  color: var(--vault-ink);
+}
+
+.launch .start-note {
+  background: var(--vault-2);
+  color: var(--v-escalate);
 }
 
 /* Connect your own agent. */
 .agent-tab {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
-  max-width: 880px;
+}
+
+.agent-vault {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 980px;
+}
+
+.agent-tab > .station-section {
+  margin-top: 56px;
 }
 
 .agent-lede {
   font-size: 1.0625rem;
-  color: var(--ink-2);
+  color: var(--vault-ink);
   max-width: 64ch;
 }
 
@@ -364,7 +469,6 @@
   margin: 0;
   padding: var(--space-4) var(--space-5);
   overflow-x: auto;
-  border-radius: var(--radius-lg);
   background: var(--sunk);
   box-shadow: inset 0 0 0 1px var(--line);
   font-family: var(--font-mono);
@@ -389,7 +493,10 @@ code {
     grid-column: 1 / -1;
   }
 
-  .choices {
+  .terms,
+  .choices,
+  .firewall-options,
+  .launch-facts {
     grid-template-columns: minmax(0, 1fr);
   }
 }

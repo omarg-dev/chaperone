@@ -8,26 +8,33 @@ import { themeQuartz } from "ag-grid-community";
 // This is the one place AG's look is set. A licensed theme (or a different grid) replaces this file.
 export const gridTheme = themeQuartz.withParams({
   accentColor: "var(--hold)",
-  backgroundColor: "var(--surface)",
+  backgroundColor: "var(--bg)",
   foregroundColor: "var(--ink)",
   borderColor: "var(--line)",
-  headerBackgroundColor: "var(--sunk)",
+  // The rows are ruled by a hairline, and the header by a 2px rule in the ink: the table is read as
+  // a ledger, not drawn as a box. No wrapper border, and nearly square corners.
+  headerBackgroundColor: "var(--bg)",
   headerTextColor: "var(--muted)",
-  headerFontWeight: 600,
+  headerFontWeight: 700,
   headerFontSize: "var(--text-meta)",
+  headerFontFamily: "var(--font-ui)",
+  headerRowBorder: "2px solid var(--ink)",
+  rowBorder: "1px solid var(--line)",
+  columnBorder: false,
+  wrapperBorder: false,
+  wrapperBorderRadius: "var(--radius)",
+  borderRadius: "var(--radius)",
   rowHoverColor: "var(--sunk)",
   selectedRowBackgroundColor: "var(--hold-tint)",
-  fontFamily: "var(--font-sans)",
+  fontFamily: "var(--font-ui)",
   fontSize: "var(--text-body)",
-  wrapperBorderRadius: "var(--radius-lg)",
-  borderRadius: "var(--radius-sm)",
-  cellHorizontalPadding: "var(--space-4)",
-  rowHeight: 56,
-  headerHeight: 40,
-  // The pinned column (the scenario) is told apart from the ones that scroll under it by a line, and
-  // a column's edge shows where it can be dragged.
+  cellHorizontalPadding: 12,
+  rowHeight: 62,
+  headerHeight: 46,
+  // The pinned columns (the outcome and the scenario) are told apart from the ones that scroll under
+  // them by a line, and a column's edge is still dragged to resize it, with no line drawn on it.
   pinnedColumnBorder: "1px solid var(--line-strong)",
-  headerColumnResizeHandleColor: "var(--line-strong)",
+  headerColumnResizeHandleColor: "transparent",
   // A table that draws every row (the dashboard's) is a page of its own at 60 runs: past this it
   // scrolls inside itself. The Runs history sets its own height and draws only what is in view.
   autoHeightMaxBodyHeight: 616,

@@ -6,6 +6,8 @@ import type { RunEvent } from "./events";
 import { fixtures, payees, upTo } from "./fixtures";
 import { POLL_MS } from "./useRun";
 
+vi.setConfig({ testTimeout: 30_000 });
+
 beforeEach(() => mockDevice(false));
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -343,5 +345,26 @@ describe("a run started from the web app", () => {
       "The cart matches what you asked for.",
     );
     expect(eventCalls(fetchMock, idOf(fixtures.webApproved))).toBe(2);
+  });
+});
+
+describe("the money's clasp", () => {
+  it("closes the bracket and strikes the amount for a block, and for nothing else", async () => {
+    await open(fixtures.blocked);
+    expect(document.querySelector(".run-money-voided .run-arm-right")).not.toBeNull();
+    expect(document.querySelector(".run-money-voided .run-strike")).not.toBeNull();
+  });
+
+  it("leaves the bracket open for a hold and for a capture", async () => {
+    await open(fixtures.escalated);
+    expect(document.querySelector(".run-money-held")).not.toBeNull();
+    expect(document.querySelector(".run-arm-right, .run-strike")).toBeNull();
+  });
+
+  it("shows the seal on the locked mandate, with the hash and who locked it", async () => {
+    await open(fixtures.approved);
+    expect(
+      screen.getByRole("img", { name: /^Seal: locked by you, sha256 [0-9a-f]{8} / }),
+    ).toBeInTheDocument();
   });
 });

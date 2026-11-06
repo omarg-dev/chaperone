@@ -1,3 +1,5 @@
+/* The design system's parts (src/design/). Colours, type, radius and space come from tokens.css. */
+
 /* Buttons: the one filled button is the primary action on a screen. */
 .btn {
   display: inline-flex;
@@ -5,13 +7,13 @@
   justify-content: center;
   gap: var(--space-2);
   min-height: 48px;
-  padding: 0 var(--space-5);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--ink);
+  padding: 0 22px;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--ink);
   background: var(--ink);
   color: var(--on-ink);
   font-size: 15.5px;
-  font-weight: 700;
+  font-weight: 650;
   cursor: pointer;
   text-decoration: none;
 }
@@ -29,7 +31,6 @@
 .btn-secondary {
   background: transparent;
   color: var(--ink);
-  border-color: var(--line-strong);
 }
 
 .btn-secondary:hover {
@@ -39,54 +40,192 @@
 }
 
 .btn-small {
-  min-height: 36px;
-  padding: 0 var(--space-4);
+  min-height: 40px;
+  padding: 0 16px;
   font-size: 14px;
 }
 
-/* Gate state pill. Five silhouettes, so a state reads in greyscale and without its label. */
+/* On the vault the buttons take the vault's inks. */
+.vault .btn {
+  border-color: var(--vault-ink);
+  background: var(--vault-ink);
+  color: var(--vault);
+}
+
+.vault .btn-secondary {
+  background: transparent;
+  color: var(--vault-ink);
+}
+
+.vault .btn-secondary:hover {
+  background: var(--vault-2);
+  color: var(--vault-ink);
+}
+
+/* The money-state glyphs take the colour of their state; on the vault, the state's colour for a dark
+   ground. Anywhere else they take the text's own colour. */
+.glyph {
+  flex: none;
+}
+
+.glyph-held {
+  color: var(--hold);
+}
+
+.glyph-person {
+  color: var(--escalate);
+}
+
+.glyph-captured {
+  color: var(--approve);
+}
+
+.glyph-voided {
+  color: var(--block);
+}
+
+.glyph-released,
+.glyph-none {
+  color: var(--muted);
+}
+
+.glyph-attacker {
+  color: var(--attacker);
+}
+
+.glyph-off {
+  color: var(--ink-2);
+}
+
+.vault .glyph-held {
+  color: var(--vault-ink);
+}
+
+.vault .glyph-person {
+  color: var(--v-escalate);
+}
+
+.vault .glyph-captured {
+  color: var(--v-approve);
+}
+
+.vault .glyph-voided {
+  color: var(--v-block);
+}
+
+.vault .glyph-released,
+.vault .glyph-none {
+  color: var(--vault-muted);
+}
+
+.vault .glyph-attacker {
+  color: var(--v-attacker);
+}
+
+.vault .glyph-off {
+  color: var(--vault-ink);
+}
+
+/* A gate's or a review's state: a glyph and a word, with no tint. The one filled pill is "Paid
+   attacker", since red only means money reached an attacker. */
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 26px;
-  padding: 0 10px 0 6px;
-  border-radius: var(--radius-sm);
-  font-size: 12.5px;
+  gap: 8px;
+  font-size: 14px;
   font-weight: 700;
   white-space: nowrap;
 }
 
 .pill-approve {
-  background: var(--approve-tint);
   color: var(--approve-ink);
 }
 
 .pill-escalate {
-  background: var(--escalate-tint);
   color: var(--escalate-ink);
 }
 
 .pill-held {
-  background: var(--hold-tint);
   color: var(--hold);
-  box-shadow: inset 0 0 0 1px var(--hold);
 }
 
 .pill-block {
-  background: var(--block-tint);
   color: var(--block);
 }
 
 .pill-attacker {
+  height: 28px;
+  padding: 0 10px 0 6px;
+  border-radius: var(--radius);
   background: var(--attacker);
+  color: var(--on-attacker);
+  font-size: 13.5px;
+}
+
+.pill-attacker .glyph {
   color: var(--on-attacker);
 }
 
-/* Zones: the catalog is plain, the route is tinted, seller text sits behind a hatch. */
+/* Amounts: Besley 800, tabular, the fraction at half size raised to the cap line. */
+.amt {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums lining-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.amt-c {
+  position: relative;
+  top: -0.72em;
+  margin-left: 0.03em;
+  font-size: 0.5em;
+}
+
+.amt-sm {
+  font-size: 22px;
+}
+
+.amt-md {
+  font-size: 40px;
+}
+
+.amt-lg {
+  font-size: 56px;
+}
+
+.amt-xl {
+  font-size: 64px;
+}
+
+.amt-hero {
+  font-size: 104px;
+}
+
+/* Money nobody got is struck through, and money that reached an attacker is red. */
+.amt-voided {
+  color: var(--muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+}
+
+.amt-attacker {
+  color: var(--attacker);
+}
+
+.vault .amt-voided {
+  color: var(--v-block);
+}
+
+.vault .amt-attacker {
+  color: var(--v-attacker);
+}
+
+/* Zones: the catalog sits on its blue-grey ground, the route is the vault, seller text sits behind
+   the hatch. The hatch means seller-written text and nothing else. */
 .zone {
   padding: var(--space-4) var(--space-5);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
 }
 
 .zone-label {
@@ -106,20 +245,17 @@
 }
 
 .zone-route {
-  background: var(--z-route);
+  background: var(--vault);
+  color: var(--vault-ink);
 }
 
 .zone-route .zone-label {
-  color: var(--z-route-ink);
+  color: var(--vault-muted);
 }
 
 .zone-seller {
   background-color: var(--z-seller);
-  background-image: repeating-linear-gradient(
-    135deg,
-    var(--hatch) 0 1px,
-    transparent 1px 6px
-  );
+  background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 7px);
   box-shadow: inset 0 0 0 1px var(--line-strong);
 }
 
@@ -128,7 +264,7 @@
 .zone-seller .zone-text {
   display: inline-block;
   padding: 0 4px;
-  border-radius: 4px;
+  border-radius: var(--radius);
   background: var(--z-seller);
   color: var(--z-seller-ink);
 }
@@ -139,7 +275,7 @@
   align-items: center;
   height: 22px;
   padding: 0 7px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius);
   font-size: 11.5px;
   font-weight: 700;
 }
@@ -152,11 +288,7 @@
 
 .read-seller {
   background-color: var(--z-seller);
-  background-image: repeating-linear-gradient(
-    135deg,
-    var(--hatch) 0 1px,
-    transparent 1px 6px
-  );
+  background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 7px);
   color: var(--z-seller-ink);
   box-shadow: inset 0 0 0 1px var(--z-seller-ink);
 }
@@ -215,79 +347,57 @@
   color: var(--ink-2);
 }
 
-/* Money is Newsreader, wherever it appears. */
-.money {
-  font-family: var(--font-serif);
-  font-weight: 500;
-  font-variant-numeric: lining-nums tabular-nums;
-  letter-spacing: -0.01em;
-}
-
-.money-sm {
-  font-size: 1.0625rem;
-}
-
-.money-md {
-  font-size: 1.625rem;
-}
-
-.money-lg {
-  font-size: var(--text-money);
-}
-
-.money-xl {
-  font-size: 4.125rem;
-  line-height: 1;
-}
-
-/* Empty state: says what will appear here, and when. */
+/* Empty state: the vault with nothing in it, saying what will appear here and when. */
 .empty {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-3);
-  max-width: 56ch;
-  padding: var(--space-7) 0;
+  gap: 14px;
+  max-width: 980px;
+}
+
+.empty .empty-label {
+  color: var(--vault-muted);
 }
 
 .empty-title {
-  font-family: var(--font-serif);
-  font-size: 1.75rem;
-  font-weight: 500;
-  line-height: 1.2;
+  font-size: 44px;
 }
 
 .empty-body {
-  color: var(--ink-2);
+  max-width: 56ch;
+  font-size: 16px;
+  color: var(--vault-muted);
+}
+
+.empty a:not(.btn) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--vault-ink);
+  font-weight: 700;
+  text-underline-offset: 4px;
 }
 
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
-  border: 1px dashed var(--line-strong);
-  border-radius: var(--radius-xs);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--muted);
-}
-
-.count {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 20px;
-  height: 20px;
   padding: 0 6px;
-  border-radius: 10px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius);
   font-size: 11.5px;
   font-weight: 700;
-  background: var(--sunk);
   color: var(--ink-2);
 }
 
+/* A count that needs an eye is amber text; it is not a pill. */
+.count {
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--muted);
+}
+
 .count-live {
-  background: var(--escalate-tint);
   color: var(--escalate-ink);
 }
 
@@ -299,9 +409,39 @@
 }
 
 .wordmark-name {
-  font-family: var(--font-serif);
-  font-size: 23px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.012em;
   line-height: 1;
+}
+
+/* The seal: the clasp shut around the hash. */
+.seal {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 220px;
+  padding: 16px 18px;
+  border: 5px solid var(--hold);
+  border-radius: var(--radius-clasp);
+  background: var(--hold-tint);
+}
+
+.seal-title {
+  font-weight: 800;
+  color: var(--hold);
+}
+
+.seal-hash {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink);
+}
+
+.seal-date {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
 }

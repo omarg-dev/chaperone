@@ -1,30 +1,28 @@
-/* The run view: the header, the brief, the decision, and the contents of the timeline's cards. */
-
-.page-wide {
-  max-width: 1440px;
-}
-
-.run {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-}
+/* The run view: the header (the headline and the money in its clasp), the brief, the decision, and the
+   contents of the timeline's cards. */
 
 .run-crumbs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  height: 24px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.run-crumbs > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .run-crumbs a {
-  color: var(--muted);
-  text-decoration: none;
+  color: var(--hold);
 }
 
-.run-crumbs a:hover {
-  color: var(--ink);
-  text-decoration: underline;
+.run-crumbs .t-data,
+.run-crumbs span {
+  font-weight: 400;
 }
 
 .icon-button {
@@ -34,7 +32,7 @@
   min-width: 28px;
   min-height: 28px;
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--muted);
   cursor: pointer;
@@ -46,19 +44,12 @@
 }
 
 .run-top {
-  display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-4) var(--space-7);
 }
 
-.run-headline {
-  display: flex;
-  flex-direction: column;
+.run-top .route-title-text {
   align-items: flex-start;
-  gap: var(--space-3);
-  min-width: 0;
   max-width: 680px;
 }
 
@@ -66,33 +57,57 @@
   height: 26px;
 }
 
-.run-lede {
-  max-width: 60ch;
-  font-size: 1.125rem;
-  line-height: 1.45;
-  color: var(--ink-2);
-}
-
-/* The money, said once: how much, and where it is. */
-.run-money {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
-.run-money-glyph {
+.run-replaying {
+  border-color: var(--hold);
   color: var(--hold);
+}
+
+/* The money, said once: how much, and where it is, inside the clasp. The bracket's left arm is always
+   there; the right arm closes it when the hold is voided. */
+.run-money {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  padding: 28px 8px 28px 72px;
+}
+
+.run-arm {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 64px;
+  border: 9px solid var(--clasp);
+  pointer-events: none;
+}
+
+.run-arm-left {
+  left: 0;
+  border-right: 0;
+  border-radius: 26px 0 0 26px;
+}
+
+.run-arm-right {
+  right: 0;
+  border-left: 0;
+  border-radius: 0 26px 26px 0;
+  transform-origin: top;
+  animation: arm-draw 320ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.run-money-voided {
+  padding-inline-end: 72px;
 }
 
 .run-money-text {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 6px;
+  min-width: 0;
 }
 
 .run-money-label {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 14px;
+  font-weight: 800;
   color: var(--ink-2);
 }
 
@@ -100,24 +115,117 @@
   color: var(--hold);
 }
 
-.run-money-voided .money,
-.run-money-voided .run-money-label {
-  color: var(--block);
+.run-money-figure {
+  position: relative;
+  display: inline-block;
+  align-self: flex-start;
 }
 
-.run-money-voided .money {
-  text-decoration: line-through;
-  text-decoration-thickness: 3px;
+/* Voided money is struck through, drawn from the left as the arm closes. */
+.run-money-voided .amt,
+.run-money-voided .run-money-label {
+  color: var(--muted);
+}
+
+.run-strike {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 6px;
+  margin-top: -3px;
+  background: var(--block);
+  transform-origin: left;
+  animation: strike 260ms cubic-bezier(0.2, 0.8, 0.2, 1) 320ms both;
+}
+
+/* Captured money has left the clasp: the bracket is empty, a line runs out of it and the amount is
+   out past the line, slid there as the capture happened. */
+.run-money-captured .run-money-text,
+.run-money-attacker .run-money-text {
+  padding-inline-start: 104px;
+  position: relative;
+}
+
+.run-money-captured .run-money-text::before,
+.run-money-attacker .run-money-text::before {
+  content: "";
+  position: absolute;
+  bottom: 28px;
+  left: -8px;
+  width: 96px;
+  height: 3px;
+  background: var(--approve);
+}
+
+.run-money-captured .amt,
+.run-money-attacker .amt {
+  animation: token-out 500ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.run-money-captured .run-money-label,
+.run-money-captured .amt {
+  color: var(--approve-ink);
 }
 
 /* Red is the attacker's: filled where money reached one (this, the pill), outlined on the seller
    text Gate 1 flagged (the passages, the chip and the card, below). */
-.run-money-attacker .money,
+.run-money-attacker .run-money-text::before {
+  background: var(--attacker);
+}
+
+.run-money-attacker .amt,
 .run-money-attacker .run-money-label {
   color: var(--attacker);
 }
 
-/* What was asked, and what was locked. */
+@keyframes arm-draw {
+  from {
+    transform: scaleY(0);
+  }
+
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes strike {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes token-out {
+  from {
+    opacity: 0;
+    transform: translateX(-120px);
+  }
+
+  40% {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* With reduced motion the end state is simply there. */
+@media (prefers-reduced-motion: reduce) {
+  .run-arm-right,
+  .run-strike,
+  .run-money-captured .amt,
+  .run-money-attacker .amt {
+    animation: none;
+  }
+}
+
+/* What was asked, and what was locked: the request in the person's own words, the terms, the seal. */
 .run-brief {
   display: flex;
   flex-wrap: wrap;
@@ -126,41 +234,47 @@
   gap: var(--space-4) var(--space-6);
 }
 
+.run-brief-words {
+  display: flex;
+  flex: 1 1 520px;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
 .run-request {
-  flex: 1 1 340px;
   max-width: 52ch;
-  font-family: var(--font-serif);
-  font-size: 1.1875rem;
-  font-style: italic;
-  line-height: 1.4;
-  color: var(--ink-2);
+  font-size: 22px;
+  line-height: 1.35;
 }
 
 .run-terms {
-  flex: 2 1 480px;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: 0;
   margin: 0;
 }
 
 .run-terms > div {
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--z-cat-line);
+  padding: 4px 20px 4px 0;
+  margin-right: 20px;
+  border-right: 1px solid var(--line);
+}
+
+.run-terms > div:last-child {
+  border-right: 0;
 }
 
 .run-terms dt {
-  font-size: 11.5px;
+  font-size: var(--text-meta);
   font-weight: 700;
-  color: var(--z-cat-ink);
+  color: var(--muted);
 }
 
 .run-terms dd {
   margin: 0;
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 650;
 }
 
 .run-terms .run-term-hint {
@@ -169,34 +283,48 @@
   color: var(--muted);
 }
 
+.run-earlier {
+  font-weight: 400;
+}
+
 .run-live {
   text-align: center;
+  font-weight: 400;
 }
 
 /* The decision: the held cart and the two ways out. */
 .decision {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--space-4) var(--space-5);
-  padding: var(--space-5);
-  border-radius: var(--radius-xl);
-  background: var(--z-route);
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  margin-top: 44px;
+  align-items: center;
+  gap: var(--space-4);
+  padding: 20px 24px;
+  background: var(--hold-tint);
+}
+
+.decision > .station-ring {
+  top: 50%;
+  margin-top: -9px;
+}
+
+.decision-heading {
+  flex: 1 1 200px;
+  margin: 0;
 }
 
 .decision-cart {
   display: flex;
+  flex: 1 1 260px;
   flex-direction: column;
   justify-content: center;
   gap: var(--space-3);
-  padding: var(--space-4) var(--space-5);
-  border-radius: 14px;
-  background: var(--surface);
 }
 
 .decision-lines {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -204,35 +332,53 @@
 
 .decision-lines li {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
   gap: var(--space-3);
+  padding: 10px 0;
+  border-top: 1px solid var(--line-strong);
+}
+
+.vault .decision-lines li {
+  border-top-color: var(--vault-line);
 }
 
 .decision-lines li > div {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
 }
 
 .decision-seller {
-  font-size: 14px;
+  font-size: 13.5px;
   color: var(--ink-2);
+}
+
+.vault .decision-seller {
+  color: var(--vault-muted);
 }
 
 .decision-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-4);
+  gap: 10px;
 }
 
+/* A choice is its title and, small under it, what it does to the money. */
 .decision-actions .btn {
-  min-height: 72px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 64px;
+  padding: 8px 24px;
+  text-align: start;
 }
 
 .decision-choice {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 2px;
 }
 
@@ -267,10 +413,11 @@
 .decision-problem {
   grid-column: 1 / -1;
   padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   background: var(--surface);
-  box-shadow: inset 0 0 0 1px var(--line-strong);
+  box-shadow: inset 0 0 0 1.5px var(--line-strong);
   font-weight: 600;
+  color: var(--ink);
 }
 
 /* Cards in the timeline. A card's tag takes its verdict's ink; a block stays graphite. */
@@ -293,7 +440,7 @@
 .tl-own-words {
   display: block;
   margin-top: 4px;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-style: italic;
   font-size: 14.5px;
   color: var(--ink-2);
@@ -384,7 +531,7 @@
 
 .tl-passage {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 14.5px;
   line-height: 1.5;
   color: var(--ink-2);
@@ -392,7 +539,7 @@
 
 .tl-passage-label {
   display: block;
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
   font-size: 11.5px;
   font-weight: 700;
   color: var(--z-seller-ink);
@@ -433,7 +580,7 @@
 
 .tl-quote blockquote {
   margin: 0;
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: 17px;
   line-height: 1.35;
 }
@@ -491,7 +638,7 @@
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius);
   background: var(--surface);
   box-shadow: 0 6px 24px rgba(30, 22, 32, 0.14);
 }
@@ -511,7 +658,7 @@
   min-height: 36px;
   padding: 0 var(--space-4);
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   background: var(--surface);
   color: var(--ink);
   font-size: 14px;
@@ -551,7 +698,7 @@
   margin: 0;
   padding: 0;
   border: 1px solid var(--line-strong);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius);
   overflow: hidden;
 }
 

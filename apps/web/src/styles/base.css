@@ -12,9 +12,9 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
   font-size: var(--text-body);
-  line-height: 1.55;
+  line-height: 1.45;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -54,27 +54,42 @@ button {
   border: 0;
 }
 
-/* Type roles. Newsreader speaks, Host Grotesk works, Fragment Mono records. */
+/* Type roles. Besley speaks, Archivo works, Fragment Mono records. No role sets a width: the
+   interface face is Archivo at its normal width everywhere. */
 .t-display {
-  font-family: var(--font-serif);
+  font-family: var(--font-display);
   font-size: var(--text-display);
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.02;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.012em;
 }
 
-.t-page-title {
-  font-family: var(--font-serif);
-  font-size: var(--text-page-title);
-  font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: -0.015em;
+.t-headline {
+  font-family: var(--font-display);
+  font-size: var(--text-headline);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+
+/* What a person said, in their own words: Besley italic, and only that. */
+.t-voice {
+  font-family: var(--font-voice);
+  font-style: italic;
+  font-weight: 400;
 }
 
 .t-section {
   font-size: var(--text-section);
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.25;
+}
+
+.t-lede {
+  font-size: var(--text-lede);
+  line-height: 1.45;
+  color: var(--ink-2);
 }
 
 .t-item {
@@ -85,7 +100,7 @@ button {
 
 .t-meta {
   font-size: var(--text-meta);
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.4;
   color: var(--muted);
 }

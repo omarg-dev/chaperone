@@ -10,9 +10,8 @@ import {
   postStart,
   type ScenarioInfo,
 } from "../api";
-import { buttonClass, EmptyState } from "../design";
+import { buttonClass, EmptyState, PageRoute, Station } from "../design";
 import { formatTime } from "../format";
-import { PageHeader } from "../pages/Page";
 import { useRuns } from "../runs/RunsProvider";
 import { AgentTab } from "./AgentTab";
 import { ChooseTask } from "./ChooseTask";
@@ -30,21 +29,17 @@ export function stepState(index: number, current: number): "done" | "current" | 
   return index < current ? "done" : index === current ? "current" : "next";
 }
 
+// The steps' progress for assistive technology: the stations say where the person is to the eye, and
+// this list says it to everything else (the current step, and which are done).
 function Steps({ current }: { current: number }) {
   return (
-    <ol className="steps" aria-label="Steps">
+    <ol className="visually-hidden" aria-label="Steps">
       {STEPS.map((label, index) => {
         const state = stepState(index, current);
         return (
-          <li
-            key={label}
-            className={`step step-${state}`}
-            aria-current={state === "current" ? "step" : undefined}
-          >
-            <span className="step-number" aria-hidden="true">
-              {state === "done" ? "✓" : index + 1}
-            </span>
-            <span className="step-label">{label}</span>
+          <li key={label} aria-current={state === "current" ? "step" : undefined}>
+            <span aria-hidden="true">{state === "done" ? "✓" : index + 1}</span>
+            <span>{label}</span>
             {state === "done" && <span className="visually-hidden">, done</span>}
           </li>
         );
@@ -70,39 +65,40 @@ export function Start() {
   };
 
   return (
-    <>
-      <PageHeader
-        title="Start a run"
-        lede="Give a shopping agent a task, say what it may buy, and watch Chaperone check the purchase before any money moves."
-      />
-      <div className="tabs" role="tablist" aria-label="What to do">
-        <button
-          type="button"
-          role="tab"
-          id="tab-run"
-          aria-selected={tab === "run"}
-          aria-controls="panel-run"
-          className="tab"
-          onClick={() => setTab("run")}
-        >
-          Run a shopper here
-        </button>
-        <button
-          type="button"
-          role="tab"
-          id="tab-agent"
-          aria-selected={tab === "agent"}
-          aria-controls="panel-agent"
-          className="tab"
-          onClick={() => setTab("agent")}
-        >
-          Connect your own agent
-        </button>
-      </div>
+    <PageRoute
+      title="Start a run"
+      lede="Give a shopping agent a task, say what it may buy, and watch Chaperone check the purchase before any money moves."
+      aside={
+        <div className="tabs" role="tablist" aria-label="What to do">
+          <button
+            type="button"
+            role="tab"
+            id="tab-run"
+            aria-selected={tab === "run"}
+            aria-controls="panel-run"
+            className="tab"
+            onClick={() => setTab("run")}
+          >
+            Run a shopper here
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-agent"
+            aria-selected={tab === "agent"}
+            aria-controls="panel-agent"
+            className="tab"
+            onClick={() => setTab("agent")}
+          >
+            Connect your own agent
+          </button>
+        </div>
+      }
+    >
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === "run" ? <RunTab /> : <AgentTab />}
       </div>
-    </>
+    </PageRoute>
   );
 }
 
@@ -244,8 +240,7 @@ function RunTab() {
     <div className="start">
       <Steps current={current} />
 
-      <section className={`start-step${current === 0 ? "" : " start-step-done"}`}>
-        <h2 className="t-section">1. Choose a task</h2>
+      <Station heading="Choose a task" step={1} className="start-step">
         {current === 0 ? (
           <ChooseTask
             scenarios={scenarios}
@@ -264,27 +259,30 @@ function RunTab() {
             <span className="t-meta"> To choose a different task, reject the mandate.</span>
           </p>
         )}
-      </section>
+      </Station>
 
       {mandate && (
-        <section className={`start-step${current === 1 ? "" : " start-step-done"}`}>
-          <h2 className="t-section">2. Set the mandate</h2>
+        <Station
+          heading={
+            mandate.state === "locked" ? "The mandate, locked" : "Review and lock the mandate"
+          }
+          step={2}
+          note={`${mandate.runId} \u00b7 ${mandate.state === "locked" ? "locked" : "draft"}`}
+          className="start-step"
+        >
           <MandatePanel mandate={mandate} onChange={setMandate} onRejected={forget} />
-        </section>
+        </Station>
       )}
 
-      {mandate?.state === "locked" && (
-        <section className="start-step">
-          <h2 className="t-section">3. Run</h2>
-          <LaunchPanel
-            live={live}
-            firewall={firewall}
-            starting={starting}
-            problem={problem}
-            onStart={start}
-          />
-        </section>
-      )}
+      <LaunchPanel
+        live={live}
+        firewall={firewall}
+        starting={starting}
+        // What went wrong before the lock is said where it happened, not in the held-back step.
+        problem={mandate?.state === "locked" ? problem : null}
+        ready={mandate?.state === "locked"}
+        onStart={start}
+      />
     </div>
   );
 }

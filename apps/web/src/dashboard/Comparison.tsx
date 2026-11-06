@@ -1,5 +1,5 @@
 import type { ResultsView } from "@firewall/eval/view";
-import { formatPercent } from "../format";
+import { Rate } from "../design";
 import {
   type AttackTally,
   attackTally,
@@ -84,12 +84,17 @@ export function Comparison({ results }: { results: ResultsView }) {
           const tally = attackTally(c);
           return (
             <div key={c.config} className={`cmp-cell cmp-attack cmp-${c.config}`}>
-              <span
-                className={`cmp-big${c.attackSuccesses > 0 ? " cmp-big-attacker" : ""}`}
+              {c.attackSuccessRate === null ? (
+                <span className="cmp-big cmp-na">n/a</span>
+              ) : (
                 // The picture below carries the counts, so the number alone is the headline.
-              >
-                {formatPercent(c.attackSuccessRate)}
-              </span>
+                <Rate
+                  percent={c.attackSuccessRate * 100}
+                  size="inherit"
+                  tone={c.attackSuccesses > 0 ? "attacker" : "plain"}
+                  className={`cmp-big${c.attackSuccesses > 0 ? " cmp-big-attacker" : ""}`}
+                />
+              )}
               <span className="t-meta">
                 {tally.total === 0
                   ? "No attack runs"
@@ -111,11 +116,7 @@ export function Comparison({ results }: { results: ResultsView }) {
                 key={configs[i]?.config}
                 className={`cmp-cell cmp-value cmp-${configs[i]?.config}`}
               >
-                <span
-                  className={`t-data cmp-figure${configs[i]?.config === "full" ? " cmp-figure-full" : ""}`}
-                >
-                  {value}
-                </span>
+                <Figure value={value} />
               </div>
             ))}
           </div>
@@ -127,5 +128,21 @@ export function Comparison({ results }: { results: ResultsView }) {
         {failed && ` ${failed}`}
       </p>
     </section>
+  );
+}
+
+// A measure's value in Besley, with what it is out of ("8.2% (4 of 49)") small beside it.
+function Figure({ value }: { value: string }) {
+  const found = /^(.+?) \((.+)\)$/.exec(value);
+  return (
+    <span className="cmp-figure">
+      {found ? (
+        <>
+          <span>{found[1]}</span> <span className="cmp-of">({found[2]})</span>
+        </>
+      ) : (
+        value
+      )}
+    </span>
   );
 }

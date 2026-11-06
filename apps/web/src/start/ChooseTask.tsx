@@ -29,8 +29,8 @@ export function ChooseTask({
   return (
     <div className="start-body">
       <fieldset className="choice-group">
-        <legend className="t-item">Pick a shopping task</legend>
-        <p className="t-meta choice-help">
+        <legend className="t-meta">Pick a shopping task</legend>
+        <p className="choice-help">
           An agent will try to buy it. Chaperone then checks the purchase against what you confirm
           next.
         </p>
@@ -49,7 +49,7 @@ export function ChooseTask({
               />
               <span className="choice-text">
                 <span className="choice-title">{scenario.title}</span>
-                <q className="choice-request">{scenario.request}</q>
+                <q className="choice-request t-voice">{scenario.request}</q>
               </span>
             </label>
           ))}
@@ -57,7 +57,7 @@ export function ChooseTask({
       </fieldset>
 
       <fieldset className="choice-group">
-        <legend className="t-item">Chaperone setting</legend>
+        <legend className="t-meta">Chaperone setting</legend>
         <div className="firewall-options">
           {FIREWALL_OPTIONS.map((option) => (
             <label

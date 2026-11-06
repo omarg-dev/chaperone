@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { Station } from "../design";
 import { useRuns } from "../runs/RunsProvider";
 import { liveCounts, liveStats } from "./live";
 
@@ -8,13 +9,11 @@ export function LiveStrip() {
   const { status, runs } = useRuns();
   const counts = liveCounts(runs);
   return (
-    <section className="live" aria-labelledby="live-title">
-      <div className="live-head">
-        <h2 id="live-title" className="t-item">
-          This server's runs
-        </h2>
-        <span className="t-meta">Counted from the run log here, not from the eval.</span>
-      </div>
+    <Station
+      heading="This server's runs"
+      note="Counted from the run log here, not from the eval."
+      className="live"
+    >
       {status === "error" && runs.length === 0 ? (
         <p className="t-meta" role="status">
           The server's runs couldn't be read.
@@ -37,6 +36,6 @@ export function LiveStrip() {
           ))}
         </ul>
       )}
-    </section>
+    </Station>
   );
 }

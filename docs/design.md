@@ -1,99 +1,81 @@
 # Design
 
-The look is **Spine**, approved by Omar on Oct 28. The mockups are in [design/spine/](design/spine/): `Main.dc.html` is the brand board (mark, colour, type, zones, verdicts, voice), and `Spine-Run.dc.html`, `Spine-Decision.dc.html` and `Spine-Dashboard.dc.html` are the run view, the escalation screen and the dashboard that the later web steps build. They are HTML mockups with inline styles, kept as the source of truth. They load Google Fonts and a `support.js` that isn't kept here, so they show best in the design canvas; the app itself self-hosts its fonts.
+The look is **Clasp, round two**, approved by Omar on Nov 3. It replaces Spine (Oct 28), whose rules carry over. The boards are in [design/clasp/](design/clasp/): `R2Signature` (the four carriers), `R2Type` (the display face), `R2Start` and `R2StartDark`, `R2Runs` and `R2RunsDark`, `R2Inbox`, `R2Dash` and `R2Empty`, with round one's `ClaspRun` (the run view) and `ClaspSpec` (the motion and the glyphs). They are HTML with inline styles, kept as the source of truth; they load Google Fonts and a `support.js` that isn't kept here, so they show best in the design canvas. The app self-hosts its fonts. Screenshots of the built pages, light and dark, are in [screenshots/clasp/](screenshots/clasp/).
 
-The code is in `apps/web`: tokens in `src/styles/tokens.css`, the components in `src/design/`, the theme in `src/theme/`.
+The code is in `apps/web`: tokens in `src/styles/tokens.css`, the components in `src/design/`, the route and vault styles in `src/styles/route.css`, the theme in `src/theme/`.
 
 ## The idea
 
-Chaperone is the pause before money moves. The run view is one vertical timeline whose spine is the money's route, with the gates as stations on it. Aubergine appears only where Chaperone is holding something.
+Chaperone is the pause before money moves. Every page is the money's route drawn down its left side, and the one dark surface on a screen is where the money is right now. Cover the logo and the product is still itself: four carriers appear on every page, none of them the mark.
+
+## The four carriers
+
+1. **The route line.** A 3px aubergine spine (`--spine`) runs 68px in from the page's edge, from the title to the foot. The title is a filled station and each section a ring station joined to its heading by a short branch. `PageRoute` draws the spine and the title, and `Station` draws a section's ring and heading (`step` numbers it, `note` sits at its far end in Fragment Mono). **Sections are stations**: no cards, no dividers. A page is `PageRoute` and nothing else; a test renders every page and checks it.
+2. **One vault per screen.** `Vault` is the dark aubergine surface (`--vault`, `--vault-2`, `--vault-ink`, `--vault-muted`, `--vault-line`, with the states' inks on it as `--v-approve`, `--v-escalate`, `--v-attacker`, `--v-block`). It holds only where the money is right now, the spine passes through it turned light, and a screen has exactly one: Runs holds what is held right now ("$171.98, 2 runs waiting on you"), Start the run step, the inbox the oldest hold's cart and its two buttons (later holds sit on the page's own ground), the dashboard the full tree's column, a run's page the timeline's money column, and an empty page an empty vault (`EmptyState`). The Connect your own agent tab holds what the SDK does with a checkout.
+3. **Money-state glyphs.** `MoneyGlyph` draws eight states on the bracket's geometry (24 unit grid): held, held for a person (hollow dot), captured (short bracket, a line, a dot past it), voided (the bracket shut, a bar through it), released (the shut bracket, dashed, empty), paid attacker (like captured, a larger dot), firewall off (the line and the dot, no bracket) and not reviewed (dashed bracket and a dot). They are the outcome cell, the filter chips, the place-column headers and the run view's exits, and they replace the tinted pills: `Pill` is now a glyph and a word with no tint, except **Paid attacker, which stays a filled red pill**. Each silhouette is different, so a state reads in greyscale and without its label. `moneyStateOf(run)` maps a run's outcome to one.
+4. **Amounts.** `Amount` is Besley 800 with tabular figures and the fraction at half size raised to the cap line (`$109` and a small `.99`); `Rate` sets 68.8% as 68 and a raised `.8%`. **An amount is written once, in its place column**: the Runs grid has Held, Moved and Voided, and `placeOf(run)` (`runs/money.ts`, pure) says which one a run's money is in, from the money and not the verdict (an open hold is held; paid out is moved; a closed hold nobody was paid from is voided, which includes a hold released with no decision). Attacker money is red in Moved, voided money is struck through. Screen readers get the whole amount once.
+
+## The bracket
+
+The bracket stays where Clasp put it, and nowhere else: the mark in the top bar; the run view's big bracket around the held amount, with its dark money column (the vault); the locked mandate's **seal** (`Seal`: the bracket closed around the hash, "Locked by you, sha256 ..., date", on Start when the mandate is locked and on the run view's mandate); and the brackets round the reviewed runs' dots on the dashboard. Its corner radius is 14px (`--radius-clasp`); everything else is 2px (`--radius`).
+
+## Motion
+
+The clasp moment is plain CSS driven by the run's state and the replay position (`run.css`, `timeline.css`; pinned by `run/motion.test.ts`). The header's money block is keyed by its state, so a replay that crosses into a new state plays that state's motion. Block draws the bracket's right arm down in 320ms and strikes the amount through; approve slides the money out of the bracket in 500ms; escalate gives one amber ring pulse on the money's dot. All use `cubic-bezier(.2,.8,.2,1)`, none loops, and `prefers-reduced-motion` shows the end state.
 
 ## Rules
 
-- **Red means an attacker.** `--attacker` is filled where money reached one: the amount, the payout path and the "Paid attacker" pill. It is outlined, never filled, on the seller text Gate 1 flagged as steering the purchase: the passages it copied, the "Fact crosses" chip and its card in the seller column. That outline is what points to the cause: "you would've lost your money here, but we caught it for you". Not errors, not warnings, not a blocked cart. Omar's decision, Oct 29, replacing "red only means money reached an attacker".
-- **A block is neutral.** A block is the firewall working, so it is graphite (`--block`), not red. A blocked run is a good outcome.
-- **Seller text always sits behind the hatch.** Anything a seller wrote goes in a `seller` zone, which draws the hatch and gives the text its own ground. Only Gate 1 reads it, and nothing else on a screen quotes it outside that zone.
-- **Each fact is said once.** A screen doesn't repeat a verdict, an amount or a reason in a second place. A summary row can open to detail, but the detail doesn't restate the summary.
-- **A state reads without colour.** The five states have five silhouettes, so they read in greyscale, at 16px and without their label.
-- **Copy is short, in sentence case, with no em dashes.** Say what happened, then what is the person's to decide. Never scold the agent and never alarm the person: "We've paused this purchase. Nothing has been charged."
-- **English only, desktop first, no sign-in.** The top bar wraps below 760px and a grid scrolls sideways with its scenario column pinned, but desktop is what is designed and screenshotted.
+- **Red means an attacker.** `--attacker` is filled where money reached one: the amount, the Moved column, the payout path and the "Paid attacker" pill. It is outlined, never filled, on the seller text Gate 1 flagged as steering the purchase: the passages it copied, the "Fact crosses" chip and its card in the seller column. Not errors, not warnings, not a blocked cart (Omar's decision, Oct 29).
+- **A block is neutral.** A block is the firewall working, so it is graphite (`--block`), not red.
+- **Seller text always sits behind the hatch.** Anything a seller wrote goes in a `seller` zone, which draws the hatch and gives the text its own ground. The hatch means seller-written text and is **not a brand texture**: it appears nowhere else.
+- **Each fact is said once.** A screen doesn't repeat a verdict, an amount or a reason in a second place. An amount is written once, in its place column; a summary row can open to detail, but the detail doesn't restate it.
+- **A state reads without colour.** The eight glyphs have eight silhouettes.
+- **Copy is short, in sentence case, with no em dashes.** Say what happened, then what is the person's to decide.
+- **English only, desktop first, no sign-in.** The top bar wraps below 760px and the route's offsets shrink, but desktop is what is designed and screenshotted.
+- No PayPal branding in the product's name, logo or graphics.
 
 ## Tokens
 
-Defined once in `tokens.css`, light and dark. Components use these names and never raw colours. Light is the default, dark follows the device, and the theme switch overrides both (below).
+Defined once in `tokens.css`, light and dark; components use the names and never raw values. Light is the default, dark follows the device, and the theme switch overrides both.
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| `--bg` | #F5F3F4 | #141015 | Page ground |
-| `--surface` | #FFFFFF | #1C171E | Panels, rows |
-| `--sunk` | #EEEAED | #110D12 | Recessed areas, hover |
-| `--ink` | #1E1620 | #F1ECF0 | Text, the primary button |
-| `--ink-2` | #4D4250 | #CFC5CE | Secondary text |
-| `--muted` | #675B6A | #A396A5 | Meta text |
-| `--line` | #E5DFE3 | #2E2630 | Dividers |
-| `--line-strong` | #CBC2C9 | #463B48 | Outlines |
-| `--on-ink` | #FFFFFF | #141015 | Text on `--ink` |
-| `--focus` | #4A2348 | #D2AACB | Focus ring |
-| `--hold` | #4A2348 | #D2AACB | The hold, and the mark (aubergine, mauve) |
-| `--hold-tint` | #F1E8F0 | #2B202C | Held ground |
-| `--approve` | #1F6A55 | #6CCBAF | Approve |
-| `--approve-tint` | #E2F0E9 | #16271F | Approve ground |
-| `--approve-ink` | #185443 | #8ADBC2 | Approve text |
-| `--escalate` | #8A5700 | #E7B55A | Escalate, the person |
-| `--escalate-tint` | #F7EBD6 | #30271A | Escalate ground |
-| `--escalate-ink` | #6E4600 | #F0C774 | Escalate text |
-| `--block` | #2F2A31 | #E2DCE3 | Block |
-| `--block-tint` | #E9E6EA | #2A242C | Block ground |
-| `--attacker` | #B3261E | #FF7B6E | An attacker: filled for paid money, outlined on flagged seller text. Never an error, a warning or a block |
-| `--attacker-tint` | #FBE9E7 | #3A1E1D | Paid attacker ground (the flagged outline needs no tint) |
-| `--on-attacker` | #FFFFFF | #141015 | Text on `--attacker` |
-| `--z-cat` | #F1F5FA | #10171F | Catalog zone ground |
-| `--z-cat-ink` | #2B4A6B | #A9C3E0 | Catalog label |
-| `--z-cat-line` | #D3DFEC | #22303F | Catalog outline |
-| `--z-route` | #ECE2EB | #2A1E2C | Route zone ground |
-| `--z-route-ink` | #4A2348 | #D2AACB | Route label |
-| `--z-seller` | #EFEAE4 | #1E1B17 | Seller zone ground |
-| `--z-seller-ink` | #5C4F42 | #CDBFAE | Seller label |
-| `--hatch` | rgba(110, 92, 74, .2) | rgba(190, 172, 150, .13) | The seller hatch lines |
-
-Not colour: `--font-serif`, `--font-sans` and `--font-mono`; the type sizes `--text-display` (64), `--text-page-title` (42), `--text-money` (42 to 66), `--text-section` (22), `--text-item` (17), `--text-body` (15), `--text-meta` (12.5) and `--text-data` (12.5); the radii `--radius-xs` (6) to `--radius-xl` (18); and the spacing steps `--space-1` (4) to `--space-8` (64).
+| Group | Tokens |
+|---|---|
+| Ground and text | `--bg` #F3F1F4 / #120E14, `--surface`, `--sunk`, `--ink`, `--ink-2`, `--muted`, `--line`, `--line-strong`, `--on-ink`, `--focus` |
+| Route | `--hold` #4A2348 / #D2AACB, `--hold-tint`, `--spine` (the route line), `--clasp` (the bracket's stroke) |
+| Vault | `--vault` #2B1530 / #2C1732, `--vault-2`, `--vault-ink`, `--vault-muted`, `--vault-line`, `--v-approve`, `--v-escalate`, `--v-attacker`, `--v-block` |
+| States | `--approve`, `--escalate`, `--block` with `-tint` and `-ink`; `--attacker`, `--attacker-tint`, `--on-attacker` |
+| Zones | `--z-cat`, `--z-cat-ink`, `--z-cat-line`, `--z-seller`, `--z-seller-ink`, `--hatch` |
+| Type | `--font-display`, `--font-voice` (Besley, italic 400), `--font-ui` (Archivo), `--font-mono` (Fragment Mono); sizes `--text-display` 64, `--text-headline` 46, `--text-section` 20, `--text-lede`, `--text-item`, `--text-body`, `--text-meta`, `--text-data` |
+| Route geometry | `--spine-width` 3px, `--spine-left` 68px, `--route-gutter` 112px, `--station-title` 24px, `--station-ring` 18px, `--station-ring-stroke` 3.5px |
+| Radius, space | `--radius-clasp` 14px, `--radius` 2px; `--space-1` (4) to `--space-8` (64) |
 
 ### Type
 
-**Newsreader** speaks: headlines, verdict sentences and money. **Host Grotesk** works: the interface. **Fragment Mono** records: run IDs, times and other data. All three are self-hosted from `@fontsource` packages, so the hosted demo needs no request to a font service. The `.t-display`, `.t-page-title`, `.t-section`, `.t-item`, `.t-meta` and `.t-data` classes in `base.css` set each step of the scale.
+**Besley** speaks: page titles and verdict sentences (700), money and rates (800), and what the person said, in italic (`.t-voice`). **Archivo at its normal width** works: the interface, 400 to 800. No `font-stretch` or width axis is used anywhere (the font is loaded from its weight-axis file only). **Fragment Mono** records: run IDs, hashes, times. All three are self-hosted from `@fontsource` packages, so the hosted demo needs no request to a font service.
 
 ### Theme
 
-The theme follows the device until the person picks one. The switch has three options: match the device, light and dark. An explicit pick is stored in this browser (`localStorage`, key `chaperone-theme`) and written to `<html data-theme>`; matching the device removes both, so the `prefers-color-scheme` rules in `tokens.css` decide. A small script in `index.html` applies a stored pick before the first paint. The dark values appear twice in `tokens.css`, once for the device and once for `data-theme="dark"`; keep them identical.
+The theme follows the device until the person picks one. The switch has three options: match the device, light and dark. An explicit pick is stored in this browser (`localStorage`, key `chaperone-theme`) and written to `<html data-theme>`; matching the device removes both, so the `prefers-color-scheme` rules in `tokens.css` decide.
 
 ## The mark and the wordmark
 
-The mark is the **Hold**: a rounded bracket holding a dot, "the pause before money moves". `src/design/Mark.tsx` builds it from its construction rule on a 48 unit grid:
-
-- the corner radius equals the dot's width (11);
-- the stroke is half the dot (5.5);
-- the dot sits a little toward the opening: held, not trapped;
-- clear space is one dot on every side.
-
-Below 20px a hand-cut version on a 16 unit grid replaces it, since the full mark's strokes blur. The mark takes its colour from `--hold`: aubergine in light, mauve in dark. `public/favicon.svg` is the 16px cut, switching colour with the device.
-
-The wordmark (`Wordmark.tsx`) is the mark and "Chaperone" in Newsreader 500, tracked at -0.02em.
-
-The product's name, logo and graphics never use PayPal's name or logo. "Built on PayPal" as plain text in a description is fine.
+The mark is the **Hold**: a rounded bracket holding a dot, "the pause before money moves". `src/design/Mark.tsx` builds it from its construction rule on a 48 unit grid (the corner radius equals the dot's width, the stroke is half the dot, the dot sits a little toward the opening, clear space is one dot), with a hand-cut version below 20px. It takes its colour from `--hold`. The wordmark is the mark and "Chaperone" in Besley 700. The product's name, logo and graphics never use PayPal's name or logo; "built on PayPal" as plain text is fine.
 
 ## Components
 
 | Component | What it is for |
 |---|---|
-| `Pill` | A gate's or a review's state: `approve`, `held`, `escalate`, `block` or `attacker` ("Paid attacker"). Each has its own silhouette and an accessible name ("Verdict: Approve"). |
-| `StateGlyph` | The five silhouettes alone, for places where a pill is too big. |
-| `Zone` | One of the three grounds: `catalog` (plain), `route` (tinted) or `seller` (hatched, with the text on its own ground). |
-| `ReadChip` | What a gate reads: the catalog, seller text in quarantine, never seller text, or the facts it writes. |
-| `Disclosure` | A row with a one-line summary that opens to detail ("10 checks passed"). The detail waits behind it. |
-| `Money` | An amount in whole cents, in Newsreader, in four sizes. `formatMoney` is the same without the element. |
-| `Button` | The primary action is the one filled button on a screen; everything else is secondary. `buttonClass` styles a link as a button. |
-| `EmptyState` | A page with nothing on it yet. It names what will appear there. |
-| `Mark`, `Wordmark` | The brand, as above. |
+| `PageRoute`, `Station` | The route line: the spine, the title station, a section's ring and heading. |
+| `Vault` | The page's one dark surface, with the spine through it. `bare` is for a column of a table. |
+| `MoneyGlyph` | The eight money-state glyphs. `StateGlyph` draws a gate's state as the money state it leads to. |
+| `Pill` | A glyph and a word for a gate's or a review's state; filled red only for `attacker`, "Paid attacker". Its accessible name is "Verdict: ...". |
+| `Amount`, `Rate` | Besley 800 with the raised fraction; `tone` is `plain`, `voided` (struck through) or `attacker` (red). `formatMoney` is the same as text, for sentences. |
+| `Seal` | The bracket closed round a locked mandate's hash. |
+| `Zone`, `ReadChip` | The catalog's ground, the route (the vault) and the seller hatch; what a gate reads. |
+| `Disclosure` | A row with a one-line summary that opens to detail. |
+| `Button` | The primary action is the one filled button on a screen. `buttonClass` styles a link as a button. |
+| `EmptyState` | An empty vault saying what will appear there. |
+| `Mark`, `Wordmark` | The brand. |
 
 ## Grids
 
@@ -111,7 +93,7 @@ Every table is AG Grid Community, through one wrapper and one theme, and the pag
 
 ## The run view
 
-`/runs/:runId` (`src/run/`) draws one run as the Spine-Run mockup does. `timeline.ts` is the pure mapping from the run's events to a model (the outcome, the money, the items), tested over real logs; `RunTimeline.tsx` draws the model with the generic timeline in `src/timeline/`, whose items are only a time, a zone, a kind, a title and a body, so a different vertical timeline could replace it.
+`/runs/:runId` (`src/run/`) draws one run as the round-one `ClaspRun` board does, in Besley: the headline, the held amount in its bracket, the mandate with its seal, the decision as a station in the hold's tint, and the timeline whose money column is the vault, with the route drawn as the bracket's long arm. `timeline.ts` is the pure mapping from the run's events to a model (the outcome, the money, the items), tested over real logs; `RunTimeline.tsx` draws the model with the generic timeline in `src/timeline/`, whose items are only a time, a zone, a kind, a title and a body, so a different vertical timeline could replace it.
 
 - **Where a finding goes is the zone it read.** Gate 0's rule results are a card in the catalog column beside its station, Gate 1's reading is a card in the seller column (with the passages it copied), and Gate 2's judgement is a card in the catalog column. The station on the spine holds only the verdict and what the gate reads.
 - **The seller column is the only place seller words appear**, including the passages Gate 1 copied and the page text they are marked in. Titles, reasons and the header never quote them; the cells carry `data-zone`, and a test checks it.
@@ -120,7 +102,7 @@ Every table is AG Grid Community, through one wrapper and one theme, and the pag
 - **Outlined red is given by Gate 1.** The passages it copied as steering (the `marked` segments), the "Fact crosses" chip and its card get a 1.5px `--attacker` outline, as the mockup draws the poisoned review. It shows on any run where Gate 1 flagged something, whatever the verdict, since it says where an attacker's money would have come from; the page doesn't have to know whose review is poisoned, only what the extractor flagged. The outline sits on the seller text and its card, so it never reaches the header or the route. It is at least 5:1 against the seller ground in light and dark, so it needs no tint.
 - **The mandate says what it didn't enforce.** The terms row "Not enforced" lists words from the request that weren't made a rule ("mid-range"), with the hint "In your request, but not made a rule".
 - **The route ends in three exits**: capture and pay the seller, to the person, void the hold. The one taken is solid, the others dashed.
-- **An escalated run shows the held cart and the two options** from the Spine-Decision screen, with Reject as the filled button. They post to `POST /events/runs/:runId/decision`.
+- **An escalated run shows the held cart and the two options** from the `R2Inbox` and round-one boards, with Reject as the filled button. They post to `POST /events/runs/:runId/decision`.
 - **A page Gate 1 copied a passage from is open**, so the outlined passage is seen where it was written and not behind a closed row; the pages with nothing flagged stay closed.
 - **A run in progress is read again every 1.5 seconds** until its money is settled, a gate broke, or a person has to decide.
 
@@ -136,6 +118,10 @@ Every table is AG Grid Community, through one wrapper and one theme, and the pag
 - **Held for a person follows the money.** An escalated run is one of four things, from whether a person decided and whether the platform's hold is still open (`escalationOf` in `@firewall/events`, which the server's run list, the web's `isHeldForPerson` and the run view's `buildRun` all use, so none can disagree): *waiting* (nobody decided, hold open), *unfinished* (a person decided, but the hold is still open or the payouts never finished), *released* (hold closed with nobody deciding) and *decided* (a person decided, hold closed). Waiting and unfinished are "held for a person": they are the filter, the top bar's count and the inbox. A released run is its own outcome, "Hold released", with no pill and no decision to make: the eval voids the hold of every escalated cell when it settles it, and those aren't waiting on anyone. An unfinished run shows the escalate pill and "Decision not finished" in the grid.
 - **The firewall column says which setting the outcome comes from**, the last review's, and, small beside it, which settings reviewed the same checkout before it ("after Off, Gate 0 only"): an eval cell is reviewed under off, gate0 and full. The firewall filter is on that last setting.
 - **Attack or benign comes from the arena**, not the run's name: the server answers it from the scenario (`kind`), as it answers whether an attacker was paid (`attackerPaid`, rebuilt from the scenario and seed, never guessed). The scenario cell marks an attack scenario with a small "Attack" badge, and says "Practice money" or "Sandbox" quietly when the run recorded which. This is an operator's view, like the payees.
+
+### Runs: the money columns
+
+The grid reads, left to right: Outcome (a glyph and a word, or the filled pill) and Scenario pinned left, Firewall, then **Held, Moved and Voided**, Started and the run's ID. A run's amount is in exactly one of the three (`placeOf`), with what it is under it ("waiting on you", "to Larkspur Goods", "voided"); a run that has had no money has none. Above the grid, the outcome is a row of glyph chips with the count each would show among the other filters (real radio buttons), and the page opens on the vault of what is held right now. The mockup's Newer and Older buttons are not built: the history scrolls and isn't paged. The grid's theme sets a 2px ink rule under the header, a 62px row, no wrapper border and a 2px radius, through AG's parameters only; the money columns are ruled off by a cell class.
 
 ## Replay
 
@@ -165,12 +151,12 @@ A finished run (or one waiting on a person) has "Replay this run" above its time
 
 ## Dashboard
 
-`/dashboard` ("How it's doing", `src/dashboard/`) is the Spine-Dashboard mockup with the strip of this server's runs added. It is two things that must not be mistaken for each other, so they sit apart and the first says what it is.
+`/dashboard` ("How it's doing", `src/dashboard/`) is the `R2Dash` board with the strip of this server's runs added. It is two things that must not be mistaken for each other, so they sit apart and the first says what it is.
 
 - **This server's runs** is a small strip at the top: runs, waiting on you, paid an attacker, blocked, approved, holds released, counted from the run log by the Runs page's own rules (`live.ts`; waiting is `isHeldForPerson`, the top bar's count). It says "Counted from the run log here, not from the eval". Each number links to the runs it counts. Red is the attacker count above zero, amber is a person waiting, and zero is neutral.
 - **The eval** is one results file at a time: the newest, or an older one from the picker (`?result=<name>` keeps the choice in the address; a name the server doesn't list is the newest). `results.ts` is the pure side and takes the rates from the file as the harness wrote them (`metrics.configs`, `@firewall/eval/view`); it never counts one again.
 - **Every view of a result states where it came from**: payment adapter, agent and its model, gate model, seeds, date, how many runs and what they cost, and when a spend cap stopped the matrix early. A `fake` result carries a banner, "Development numbers, not a sandbox result", in the escalate amber: not red, since nothing reached an attacker by the numbers being fake, and amber is the colour of "look at this". The picker names the adapter on every option.
-- **The comparison** has a column for each setting on its own ground (Off the sunk ground, Gate 0 only the catalog ground, the full tree the route ground) and a row for attack success: the number in Newsreader, red above zero and neutral at zero, with a dot for each attack run (red outside the bracket reached the attacker, aubergine inside it was held or blocked, grey was never fooled; a bracket means someone reviewed the cart). Under it, false blocks, false escalations, sent to a person, review cost and review time. The sentence over it ("With the full tree, no attack reached the attacker.") is said from the file's counts, and says so when some did.
+- **The comparison** has a column for each setting on its own ground (Off the sunk ground, Gate 0 only the catalog ground, the full tree the vault) and a row for attack success: the number in Besley, red above zero and neutral at zero, with a dot for each attack run (red outside the bracket reached the attacker, aubergine inside it was held or blocked, grey was never fooled; a bracket means someone reviewed the cart). Under it, false blocks, false escalations, sent to a person, review cost and review time. The sentence over it ("With the full tree, no attack reached the attacker.") is said from the file's counts, and says so when some did.
 - **The table of every run** is AG Grid Community, one row for each cell of the matrix, attacks first: scenario (pinned left), seed, kind, what the agent did, what each setting did to the money (the Runs page's pills: red "Paid attacker", neutral "Blocked", amber "Sent to a person", green "Paid seller") and a link. Columns sort, worst outcome first. The filters above it are ours (kind, "Ended as" with "Under" a setting, a search), the same selects as the Runs page, so the grid only draws the rows that pass. A run links to the run view only when this server holds it: the eval's runs live in the results' own event log, so otherwise the cell says "Not on this server". An attack that succeeded without paying an attacker (the agent was fooled and the money captured, to an honest seller) says "Attack succeeded" in plain bold, since red means money reached an attacker.
 - **A row opens its cell under each setting.** A click on a row (or Enter or Space on it, or the arrow at its start) opens it directly underneath, and opening another closes the first. The panel is the matrix cell read three ways: a column each for Off, Gate 0 only and the full tree, a row for each gate that ran or was skipped in any of them (the gate's verdict, how long it took and what it cost when it called a model), then the review's verdict, its cost and its time. Where the tree stopped, a gate says "Didn't run" and one line under the table says why, once ("Gate 1 and Gate 2 didn't run under Full tree. Gate 0 blocked, which ends the review."). All of it is the results file's own numbers, worded by `dashboard/detail.ts`. The row above already says what the money did, so the panel doesn't say it again: it says why. Blocks are neutral pills and nothing in it is red. A review that failed says so and has no verdict. Screenshots are in `docs/screenshots/ag-grid/`.
 - **Empty**: "This server has no results folder." when `RESULTS_DIR` points nowhere, "No eval results yet." when the folder is empty, and a note naming any file in it that couldn't be read and why.
@@ -181,7 +167,7 @@ A finished run (or one waiting on a person) has "Replay this run" above its time
 `/start` (`src/start/`) is where a person starts a live run, reached from the "Start a run" button in the top bar (the page's one filled action) and from the empty Runs page. Screenshots are in `docs/screenshots/onboarding/`. It has two tabs, "Run a shopper here" and "Connect your own agent" (`?tab=agent`).
 
 - **Three steps, one sequence.** Choose a task, set the mandate, run: a row of three numbered steps above three stacked panels, the current one numbered in aubergine and the done ones ticked and folded to a summary line. Not a wizard: nothing is hidden behind a Next, and the address keeps the draft's run (`?run=`) and the setting (`?firewall=`), so a reload picks the person up where they were.
-- **Choose a task.** Each scenario is a radio card with its title and the person's request in Newsreader italics, in a box of its own that scrolls (the arena has about thirty), so the firewall setting (Full, the default; Gate 0 only; Off) and "Draft the mandate" stay in view. Nothing on the page says which tasks are attacks, because seeing whether Chaperone catches one is the point; a test checks the page never says "attack" or "benign".
+- **Choose a task.** Each scenario is a radio card with its title and the person's request in Besley italics, in a box of its own that scrolls (the arena has about thirty), so the firewall setting (Full, the default; Gate 0 only; Off) and "Draft the mandate" stay in view. Nothing on the page says which tasks are attacks, because seeing whether Chaperone catches one is the point; a test checks the page never says "attack" or "benign".
 - **Set the mandate.** The request and every term, in a catalog zone, one to a row: label, what it says, and a Change button on each term the builder supports editing (category, requirements, brands, price ceiling, quantity, extras, price tolerance). Change opens one text box that starts from the current value, with the server's hint under it, which is the command line's own `parseEdit` text; what can't be read or doesn't fit the catalog comes back in the server's words and keeps the box open. "Not covered" says "In your request, but not made a rule", as the run view does. "Lock this mandate" is the one filled button (disabled, with the reason, until there is a price ceiling); "Reject and start over" is secondary. A locked mandate stays on screen with its hash and no Change buttons.
 - **Run.** One panel says what is about to happen once: the agent, the firewall setting, the money ("Practice money" or "Sandbox", with a line on what that means) and the cost, with what is left of today's budget and when it starts again. "Start the run" is the one filled button; it goes to the run view, which follows the run.
 - **When live runs can't start** the page says so in an `EmptyState` and nothing else: "Live runs are off on this server." with the server's reason (no model key) and "Recorded runs still replay, and everything else works", or "Today's live runs are used up." with when the budget starts again. Both link to the Runs page. A run already in progress holds the Start button back with an amber note, and the page reads the status again every three seconds until it ends. The refusals of a click (a 409, a 429) are shown in the server's own words under the buttons.

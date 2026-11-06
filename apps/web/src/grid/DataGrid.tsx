@@ -1,10 +1,12 @@
 import {
   type CellKeyDownEvent,
+  CellStyleModule,
   ClientSideRowModelModule,
   type ColDef,
   ColumnApiModule,
   type GridOptions,
   type ICellRendererParams,
+  type IHeaderParams,
   type IRowNode,
   ModuleRegistry,
   RowApiModule,
@@ -35,6 +37,8 @@ ModuleRegistry.registerModules([
   ColumnApiModule,
   // `getRowClass`, which marks the row whose detail is open.
   RowStyleModule,
+  // `cellClass`, which rules off a column.
+  CellStyleModule,
   // `getRowNode` and `ensureNodeVisible`, which find an opened detail and bring it into view.
   RowApiModule,
   ScrollApiModule,
@@ -47,6 +51,8 @@ ModuleRegistry.registerModules([
 // the alias: a page says `GridColumn` and never `ColDef`.
 export type GridColumn<Row> = ColDef<Row>;
 export type CellProps<Row, Value = unknown> = ICellRendererParams<Row, Value>;
+// What a custom header gets: the column's name, and whatever the column definition passed it.
+export type HeaderProps<Params = object> = IHeaderParams & Params;
 
 // Which column is sorted, and which way. `null` is no sort.
 export interface GridSort {

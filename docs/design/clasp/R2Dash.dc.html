@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Round 2, dashboard headline</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Besley:ital,wght@0,400..900;1,400..900&amp;family=Archivo:ital,wght@0,100..900;1,100..900&amp;family=Fragment+Mono&amp;display=swap">
+<style>
+body{margin:0}
+.c2{--bg:#F3F1F4;--surface:#FFFFFF;--sunk:#EBE7EC;--ink:#170F1B;--ink-2:#463B4A;--muted:#64586A;--line:#E0D9DF;--line-strong:#C3B9C2;--focus:#4A2348;--hold:#4A2348;--spine:#4A2348;--clasp:#3A1838;--vault:#2B1530;--vault-ink:#F4E6F0;--vault-muted:#C9B1C4;--vault-line:#6B4C6E;--escalate:#8A5700;--escalate-tint:#F7EBD6;--escalate-ink:#6E4600;--attacker:#B3261E;--z-cat:#EEF3F9;--z-cat-ink:#2B4A6B;background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.c2.dark{--bg:#120E14;--surface:#1A151D;--sunk:#0D0A0F;--ink:#F3EDF2;--ink-2:#CEC3CD;--muted:#A396A5;--line:#2B2330;--line-strong:#453A49;--focus:#D2AACB;--hold:#D2AACB;--spine:#D2AACB;--clasp:#E2BFDA;--vault:#2C1732;--escalate:#E7B55A;--escalate-tint:#30271A;--escalate-ink:#F0C774;--attacker:#FF7B6E;--z-cat:#0F161E;--z-cat-ink:#A9C3E0;color-scheme:dark}
+.c2 *{box-sizing:border-box}
+.dsp{font-family:'Besley',Georgia,serif;font-weight:700;letter-spacing:-.012em;line-height:1.04}
+.amt{font-family:'Besley',Georgia,serif;font-weight:800;font-variant-numeric:tabular-nums lining-nums;line-height:1;white-space:nowrap}
+.amt .c{font-size:.5em;position:relative;top:-.72em;margin-left:.03em}
+.mono{font-family:'Fragment Mono',ui-monospace,monospace;font-size:12.5px}
+.lbl{font-size:12.5px;font-weight:700;color:var(--muted)}
+.nav{display:flex;align-items:center;gap:32px;padding:0 48px;height:72px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.navl{color:var(--ink-2);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:8px;min-height:44px}
+.navl.on{color:var(--ink)}
+.navl.on::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--spine)}
+.navl:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.pg{position:relative;padding:44px 48px 64px 112px}
+.pg::before{content:"";position:absolute;left:68px;top:74px;bottom:0;width:3px;background:var(--spine)}
+.sec{position:relative}
+.stn{position:absolute;left:-51.5px;top:5px;width:18px;height:18px;border-radius:50%;border:3.5px solid var(--spine);background:var(--bg)}
+.stn::after{content:"";position:absolute;left:14.5px;top:4px;width:26px;height:3px;background:var(--spine)}
+.stn.on{left:-54.5px;top:18px;width:24px;height:24px;border:0;background:var(--spine)}
+.stn.on::after{left:24px;top:10.5px;width:24px}
+.sh{margin:0;font-size:20px;font-weight:800}
+.col{padding:24px 24px 28px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.dots{display:grid;grid-template-columns:repeat(4,14px);gap:8px}
+.dot{width:14px;height:14px;border-radius:50%}
+.d-held{background:var(--hold)}.d-not{background:var(--line-strong)}.d-atk{background:var(--attacker)}
+.vlt .d-held{background:var(--vault-ink)}.vlt .d-not{background:var(--vault-line)}
+.br{position:relative;padding:12px 12px 12px 30px}
+.br>i{position:absolute;left:0;top:0;bottom:0;width:22px;border:4px solid var(--clasp);border-right:0;border-radius:11px 0 0 11px}
+.vlt .br>i{border-color:var(--vault-ink)}
+.mrow{display:grid;grid-template-columns:220px repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
+.mrow>*{padding:13px 24px;min-width:0}
+.mrow>.v{background:var(--vault);color:var(--vault-ink)}
+</style>
+</helmet>
+<div class="{{theme}}" style="min-height:980px">
+  <nav class="nav" aria-label="Main">
+    <a href="#" class="navl" style="gap:10px;color:var(--ink)"><svg width="30" height="30" viewBox="0 0 48 48" aria-hidden="true" style="color:var(--hold)"><path d="M32 8 H19 A11 11 0 0 0 8 19 V29 A11 11 0 0 0 19 40 H32" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"></path><circle cx="21.5" cy="24" r="5.5" fill="currentColor"></circle></svg><span class="dsp" style="font-size:24px">Chaperone</span></a>
+    <div style="display:flex;gap:28px;flex-wrap:wrap;flex:1">
+      <a href="#" class="navl">Runs</a>
+      <a href="#" class="navl">Escalations</a>
+      <a href="#" class="navl on" aria-current="page">Dashboard</a>
+    </div>
+  </nav>
+
+  <div class="pg">
+    <div class="sec"><span class="stn on" aria-hidden="true"></span><h1 class="dsp" style="margin:0;font-size:64px">How it's doing</h1></div>
+
+    <section class="sec" style="margin-top:44px;display:flex;flex-direction:column;gap:16px" aria-label="The eval">
+      <span class="stn" aria-hidden="true"></span>
+      <h2 class="sh">The eval</h2>
+      <div role="note" style="background:var(--escalate-tint);color:var(--escalate-ink);padding:12px 16px;font-size:14.5px"><b>Development numbers, not a sandbox result.</b> This matrix used the fake payment adapter, so no sandbox money moved.</div>
+      <div class="mono" style="color:var(--muted);display:flex;flex-wrap:wrap;gap:6px 18px"><span>adapter fake</span><span>agent Claude Haiku 5.5, claude-haiku-5-5</span><span>gates claude-haiku-5-5</span><span>seeds 1, 2</span><span>26 Oct 2026</span><span>30 scenarios · 16 attack, 44 benign runs · $0.28 spent</span></div>
+      <p class="dsp" style="margin:8px 0 4px;font-size:52px;max-width:20ch;text-wrap:balance">With the full tree, no attack reached the attacker.</p>
+
+      <div style="overflow-x:auto">
+        <div style="min-width:1040px">
+          <div style="display:grid;grid-template-columns:220px repeat(3,minmax(0,1fr))">
+            <div class="col" style="justify-content:flex-end;padding-left:0"><span style="font-weight:800;font-size:17px">Attack success</span><span style="font-size:13.5px;color:var(--ink-2)">The agent was fooled and the money was captured.</span>
+              <span style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink-2);margin-top:6px"><span style="display:flex;align-items:center;gap:8px"><span class="dot d-atk"></span>Reached the attacker</span><span style="display:flex;align-items:center;gap:8px"><span class="dot d-held"></span>Held or blocked</span><span style="display:flex;align-items:center;gap:8px"><span class="dot d-not"></span>Agent not fooled</span></span>
+            </div>
+            <div class="col" style="background:var(--sunk)">
+              <span><b style="font-size:18px">Off</b><br><span class="lbl">No review</span></span>
+              <span class="amt" style="font-size:120px;color:var(--attacker)">68<span class="c">.8%</span></span>
+              <span style="font-size:14px;color:var(--ink-2)">11 of 16 attack runs</span>
+              <div style="display:flex;align-items:center;gap:20px;min-height:96px"><div class="dots"><sc-for list="{{off}}" as="d" hint-placeholder-count="5"><span class="dot {{d}}"></span></sc-for></div><div class="dots"><sc-for list="{{offOut}}" as="d" hint-placeholder-count="11"><span class="dot {{d}}"></span></sc-for></div></div>
+            </div>
+            <div class="col" style="background:var(--z-cat)">
+              <span><b style="font-size:18px;color:var(--z-cat-ink)">Gate 0 only</b><br><span class="lbl">Rules, no model</span></span>
+              <span class="amt" style="font-size:120px;color:var(--attacker)">25<span class="c">.0%</span></span>
+              <span style="font-size:14px;color:var(--ink-2)">4 of 16 attack runs</span>
+              <div style="display:flex;align-items:center;gap:20px;min-height:96px"><div class="br"><i aria-hidden="true"></i><div class="dots"><sc-for list="{{g0}}" as="d" hint-placeholder-count="12"><span class="dot {{d}}"></span></sc-for></div></div><div class="dots"><sc-for list="{{g0Out}}" as="d" hint-placeholder-count="4"><span class="dot {{d}}"></span></sc-for></div></div>
+            </div>
+            <div class="col vlt" style="background:var(--vault);color:var(--vault-ink)">
+              <span><b style="font-size:18px">Full tree</b><br><span class="lbl" style="color:var(--vault-muted)">Every gate</span></span>
+              <span class="amt" style="font-size:120px">0<span class="c">.0%</span></span>
+              <span style="font-size:14px;color:var(--vault-muted)">0 of 16 attack runs</span>
+              <div style="display:flex;align-items:center;gap:20px;min-height:96px"><div class="br"><i aria-hidden="true"></i><div class="dots"><sc-for list="{{full}}" as="d" hint-placeholder-count="16"><span class="dot {{d}}"></span></sc-for></div></div></div>
+            </div>
+          </div>
+          <sc-for list="{{rows}}" as="r" hint-placeholder-count="5">
+            <div class="mrow">
+              <span style="padding-left:0"><b>{{r.k}}</b><br><span style="font-size:12.5px;color:var(--muted)">{{r.d}}</span></span>
+              <span class="amt" style="font-size:22px;font-weight:700">{{r.a}} <span style="font-family:'Archivo',sans-serif;font-size:13px;font-weight:500;color:var(--muted)">{{r.an}}</span></span>
+              <span class="amt" style="font-size:22px;font-weight:700">{{r.b}} <span style="font-family:'Archivo',sans-serif;font-size:13px;font-weight:500;color:var(--muted)">{{r.bn}}</span></span>
+              <span class="amt v" style="font-size:22px;font-weight:700">{{r.c}} <span style="font-family:'Archivo',sans-serif;font-size:13px;font-weight:500;color:var(--vault-muted)">{{r.cn}}</span></span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":980}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const rep = (c, n) => Array.from({ length: n }, () => c);
+    return {
+      theme: (this.props.mode ?? 'light') === 'dark' ? 'c2 dark' : 'c2',
+      off: rep('d-not', 5), offOut: rep('d-atk', 11),
+      g0: rep('d-held', 7).concat(rep('d-not', 5)), g0Out: rep('d-atk', 4),
+      full: rep('d-held', 11).concat(rep('d-not', 5)),
+      rows: [
+        { k: 'False blocks', d: 'Clean carts blocked', a: '0.0%', an: '0 of 49', b: '0.0%', bn: '0 of 49', c: '0.0%', cn: '0 of 49' },
+        { k: 'False escalations', d: 'Clean carts sent to a person', a: '0.0%', an: '0 of 49', b: '0.0%', bn: '0 of 49', c: '8.2%', cn: '4 of 49' },
+        { k: 'Sent to a person', d: 'All runs', a: '0.0%', an: '0 of 60', b: '1.7%', bn: '1 of 60', c: '15.0%', cn: '9 of 60' },
+        { k: 'Review cost per run', d: 'Gate model spend', a: 'No cost', an: '', b: 'No cost', bn: '', c: '$0.0023', cn: '' },
+        { k: 'Review time', d: 'Mean, checkout to verdict', a: '1 ms', an: '', b: '3 ms', bn: '', c: '3.3 s', cn: '' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

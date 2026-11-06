@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { ApiError, type MandateRow, type MandateView, postMandate } from "../api";
-import { Button, Zone } from "../design";
+import { Amount, Button, Seal } from "../design";
+import { formatTime } from "../format";
+import { ceilingOf } from "./copy";
 
 // Step two: the terms the builder drafted from the request, each one visible, editable where the
 // builder supports editing it, and then locked or rejected. Locking is the person's confirmation:
@@ -44,36 +46,37 @@ export function MandatePanel({
 
   return (
     <div className="start-body">
-      <Zone kind="catalog" label="What you asked, and the terms to lock">
-        <div className="run-brief">
-          <q className="run-request">{mandate.request}</q>
-          <ul className="terms" aria-label="The mandate's terms">
-            {mandate.rows.map((row) => (
-              <Term
-                key={row.label}
-                row={row}
-                editable={open && row.field !== null}
-                editing={editing === row.label}
-                busy={asking !== null}
-                onEdit={() => {
-                  setProblem(null);
-                  setEditing(row.label);
-                }}
-                onCancel={() => {
-                  setProblem(null);
-                  setEditing(null);
-                }}
-                onSave={async (input) => {
-                  if (!row.field) return;
-                  if (await send("edit", { action: "edit", field: row.field, input })) {
-                    setEditing(null);
-                  }
-                }}
-              />
-            ))}
-          </ul>
+      <div className="start-brief">
+        <div>
+          <span className="t-meta">What you asked</span>
+          <q className="start-request t-voice">{mandate.request}</q>
         </div>
-      </Zone>
+        <ul className="terms" aria-label="The mandate's terms">
+          {mandate.rows.map((row) => (
+            <Term
+              key={row.label}
+              row={row}
+              editable={open && row.field !== null}
+              editing={editing === row.label}
+              busy={asking !== null}
+              onEdit={() => {
+                setProblem(null);
+                setEditing(row.label);
+              }}
+              onCancel={() => {
+                setProblem(null);
+                setEditing(null);
+              }}
+              onSave={async (input) => {
+                if (!row.field) return;
+                if (await send("edit", { action: "edit", field: row.field, input })) {
+                  setEditing(null);
+                }
+              }}
+            />
+          ))}
+        </ul>
+      </div>
 
       {problem && (
         <p className="start-problem" role="alert">
@@ -104,17 +107,14 @@ export function MandatePanel({
         </div>
       ) : (
         mandate.lock && (
-          <p className="locked-line">
-            <strong>Locked.</strong> Every gate checks the cart against these terms.{" "}
-            <span className="t-data">{shortHash(mandate.lock.hash)}</span>
-          </p>
+          <div className="start-seal">
+            <Seal hash={mandate.lock.hash} lockedAt={formatTime(mandate.lock.confirmedAt)} />
+          </div>
         )
       )}
     </div>
   );
 }
-
-const shortHash = (hash: string) => `${hash.slice(0, 14)}…`;
 
 function Term({
   row,
@@ -134,8 +134,14 @@ function Term({
   onSave: (input: string) => void;
 }) {
   const [text, setText] = useState(row.editText ?? "");
+  // The price ceiling is the one amount in the mandate, so it is drawn as one: the most to pay.
+  const ceiling = row.label === "Price ceiling" ? ceilingOf(row.value) : null;
   return (
-    <li className="term">
+    <li
+      className={["term", ceiling && "term-ceiling", editing && "term-editing"]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <span className="term-label">{row.label}</span>
       {editing ? (
         <form
@@ -145,8 +151,13 @@ function Term({
             onSave(text);
           }}
         >
+          {ceiling && (
+            <span className="term-dollar amt" aria-hidden="true">
+              $
+            </span>
+          )}
           <input
-            className="filter-control term-input"
+            className={`filter-control term-input${ceiling ? " term-input-money amt" : ""}`}
             aria-label={`New ${row.label.toLowerCase()}`}
             value={text}
             onChange={(event) => setText(event.target.value)}
@@ -164,7 +175,19 @@ function Term({
       ) : (
         <>
           <span className="term-value">
-            {row.value}
+            {ceiling ? (
+              <>
+                <span className="visually-hidden">{row.value}</span>
+                <span className="term-money" aria-hidden="true">
+                  <Amount cents={ceiling.cents} size="lg" />
+                  {ceiling.rest && <span className="term-each">{ceiling.rest}</span>}
+                </span>
+              </>
+            ) : row.label === "Not covered" ? (
+              <span className="term-uncovered">{row.value}</span>
+            ) : (
+              row.value
+            )}
             {row.label === "Not covered" && (
               <span className="t-meta term-note">In your request, but not made a rule</span>
             )}

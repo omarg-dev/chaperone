@@ -24,9 +24,32 @@ describe("facetsOf", () => {
       seed: null,
       reviews: [],
       paidPayees: [],
+      heldCents: null,
       origin: null,
       payments: null,
     });
+  });
+
+  it("reads what the hold is for from the latest authorization, and nothing a failed call said", () => {
+    const call = (operation: string, body: Record<string, unknown>): OutcomeEvent => ({
+      lane: "payments",
+      type: "payment_call",
+      payload: { operation, ...body },
+    });
+    expect(
+      facetsOf([
+        call("create_order", { result: { amountCents: 1 } }),
+        call("authorize_order", { result: { amountCents: 10999, authorizationId: "AUTH-1" } }),
+      ]).heldCents,
+    ).toBe(10999);
+    expect(
+      facetsOf([
+        call("authorize_order", { result: { amountCents: 10999, authorizationId: "AUTH-1" } }),
+        call("reauthorize", { result: { amountCents: 10999, authorizationId: "AUTH-2" } }),
+        call("authorize_order", { error: { message: "refused" } }),
+      ]).heldCents,
+    ).toBe(10999);
+    expect(facetsOf([call("create_order", { result: { amountCents: 5 } })]).heldCents).toBeNull();
   });
 
   it("reads the configurations in the order the reviews ran", () => {

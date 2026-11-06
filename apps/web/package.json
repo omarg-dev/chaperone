@@ -10,8 +10,8 @@
   "dependencies": {
     "@firewall/eval": "workspace:*",
     "@firewall/events": "workspace:*",
-    "@fontsource-variable/host-grotesk": "5.3.0",
-    "@fontsource-variable/newsreader": "5.3.0",
+    "@fontsource-variable/archivo": "5.3.0",
+    "@fontsource-variable/besley": "5.3.0",
     "@fontsource/fragment-mono": "5.3.0",
     "ag-grid-community": "36.2.0",
     "ag-grid-react": "36.2.0",

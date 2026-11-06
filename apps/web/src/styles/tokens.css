@@ -1,33 +1,48 @@
 /*
- * Chaperone design tokens, from the approved Spine design (docs/design/spine/, explained in
- * docs/design.md). Light is the default; dark follows the device unless the person picked a theme,
+ * Chaperone design tokens: Clasp, round two (docs/design/clasp/, explained in docs/design.md). This
+ * is the one place colours, type, radius and spacing are defined; components use these names and
+ * never raw values. Light is the default; dark follows the device unless the person picked a theme,
  * which the theme switch stores as data-theme on <html>.
  *
- * Components use these names and never raw colours. The dark set appears twice, once for the device
- * preference and once for an explicit choice, because CSS has no way to share a block between a
- * media query and a selector. Keep the two identical.
+ * The dark set appears twice, once for the device preference and once for an explicit choice,
+ * because CSS has no way to share a block between a media query and a selector. Keep the two
+ * identical.
  */
 
 :root {
   color-scheme: light;
 
   /* Ground and text */
-  --bg: #f5f3f4;
+  --bg: #f3f1f4;
   --surface: #ffffff;
-  --sunk: #eeeaed;
-  --ink: #1e1620;
-  --ink-2: #4d4250;
-  --muted: #675b6a;
-  --line: #e5dfe3;
-  --line-strong: #cbc2c9;
+  --sunk: #ebe7ec;
+  --ink: #170f1b;
+  --ink-2: #463b4a;
+  --muted: #64586a;
+  --line: #e0d9df;
+  --line-strong: #c3b9c2;
   --on-ink: #ffffff;
   --focus: #4a2348;
 
-  /* The hold: aubergine appears only where Chaperone is holding something */
+  /* The hold, the route and the clasp: aubergine appears where Chaperone is holding something */
   --hold: #4a2348;
   --hold-tint: #f1e8f0;
+  --spine: #4a2348; /* the route line down the left of every page */
+  --clasp: #3a1838; /* the bracket's stroke, a little deeper than the hold */
 
-  /* Gate states */
+  /* The vault: the one dark surface on a screen, where the money is right now. The v- colours are
+     the states' inks on it. */
+  --vault: #2b1530;
+  --vault-2: #3d2243;
+  --vault-ink: #f4e6f0;
+  --vault-muted: #c9b1c4;
+  --vault-line: #5c3d5f;
+  --v-approve: #6ccbaf;
+  --v-escalate: #e7b55a;
+  --v-attacker: #ff7b6e;
+  --v-block: #e2dce3;
+
+  /* The states a gate or the money can be in */
   --approve: #1f6a55;
   --approve-tint: #e2f0e9;
   --approve-ink: #185443;
@@ -42,36 +57,42 @@
   --attacker-tint: #fbe9e7;
   --on-attacker: #ffffff;
 
-  /* The three zone grounds */
-  --z-cat: #f1f5fa;
+  /* The grounds: the catalog, and seller-written text behind the hatch */
+  --z-cat: #eef3f9;
   --z-cat-ink: #2b4a6b;
   --z-cat-line: #d3dfec;
-  --z-route: #ece2eb;
-  --z-route-ink: #4a2348;
   --z-seller: #efeae4;
   --z-seller-ink: #5c4f42;
-  --hatch: rgba(110, 92, 74, 0.2);
+  --hatch: rgba(110, 92, 74, 0.22);
 
-  /* Type */
-  --font-serif: "Newsreader Variable", Newsreader, Georgia, serif;
-  --font-sans: "Host Grotesk Variable", "Host Grotesk", system-ui, sans-serif;
+  /* Type: Besley speaks (display, titles, money, rates, and the person's own words in italic),
+     Archivo at its normal width works (the interface), Fragment Mono records. */
+  --font-display: "Besley Variable", Besley, Georgia, serif;
+  --font-voice: "Besley Variable", Besley, Georgia, serif; /* set in italic 400 */
+  --font-ui: "Archivo Variable", Archivo, system-ui, sans-serif;
   --font-mono: "Fragment Mono", ui-monospace, monospace;
 
-  --text-display: 4rem; /* 64 / 1.02, Newsreader 500 */
-  --text-page-title: 2.625rem; /* 42 / 1.08, Newsreader 500 */
-  --text-money: 2.625rem; /* 42 to 66, Newsreader 500 */
-  --text-section: 1.375rem; /* 22 / 1.25, Host Grotesk 700 */
-  --text-item: 1.0625rem; /* 17 / 1.3, Host Grotesk 700 */
-  --text-body: 0.9375rem; /* 15 / 1.55, Host Grotesk 400 */
-  --text-meta: 0.78125rem; /* 12.5 / 1.4, Host Grotesk 500 */
+  --text-display: 4rem; /* 64 / 1.02, Besley 700: page titles */
+  --text-headline: 2.875rem; /* 46 / 1.05, Besley 700: the run's sentence */
+  --text-section: 1.25rem; /* 20 / 1.25, Archivo 800: a station's heading */
+  --text-lede: 1.0625rem; /* 17 / 1.45, Archivo 400 */
+  --text-item: 1.0625rem; /* 17 / 1.3, Archivo 700 */
+  --text-body: 0.9375rem; /* 15 / 1.45, Archivo 400 */
+  --text-meta: 0.78125rem; /* 12.5 / 1.4, Archivo 700 */
   --text-data: 0.78125rem; /* 12.5 / 1.4, Fragment Mono */
 
-  /* Radius */
-  --radius-xs: 6px; /* read chips */
-  --radius-sm: 8px; /* pills, chips */
-  --radius-md: 10px; /* buttons, event cards */
-  --radius-lg: 16px; /* panels */
-  --radius-xl: 18px; /* zone groups */
+  /* The route line: a 3px spine 68px in from the page edge, the title a filled station and each
+     section a ring station joined to its heading by a short branch. */
+  --spine-width: 3px;
+  --spine-left: 68px;
+  --route-gutter: 112px; /* where a page's content starts, right of the spine */
+  --station-title: 24px;
+  --station-ring: 18px;
+  --station-ring-stroke: 3.5px;
+
+  /* Radius: two values. The clasp's corner is the mark's; everything else is nearly square. */
+  --radius-clasp: 14px;
+  --radius: 2px;
 
   /* Space, on a 4px step */
   --space-1: 4px;
@@ -84,23 +105,42 @@
   --space-8: 64px;
 }
 
+@media (max-width: 760px) {
+  :root {
+    --spine-left: 20px;
+    --route-gutter: 56px;
+  }
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --bg: #141015;
-    --surface: #1c171e;
-    --sunk: #110d12;
-    --ink: #f1ecf0;
-    --ink-2: #cfc5ce;
+    --bg: #120e14;
+    --surface: #1a151d;
+    --sunk: #0d0a0f;
+    --ink: #f3edf2;
+    --ink-2: #cec3cd;
     --muted: #a396a5;
-    --line: #2e2630;
-    --line-strong: #463b48;
-    --on-ink: #141015;
+    --line: #2b2330;
+    --line-strong: #453a49;
+    --on-ink: #120e14;
     --focus: #d2aacb;
 
     --hold: #d2aacb;
     --hold-tint: #2b202c;
+    --spine: #d2aacb;
+    --clasp: #e2bfda;
+
+    --vault: #2c1732;
+    --vault-2: #3c2243;
+    --vault-ink: #f4e6f0;
+    --vault-muted: #c9b1c4;
+    --vault-line: #5a3c5e;
+    --v-approve: #6ccbaf;
+    --v-escalate: #e7b55a;
+    --v-attacker: #ff7b6e;
+    --v-block: #e2dce3;
 
     --approve: #6ccbaf;
     --approve-tint: #16271f;
@@ -113,35 +153,45 @@
 
     --attacker: #ff7b6e;
     --attacker-tint: #3a1e1d;
-    --on-attacker: #141015;
+    --on-attacker: #120e14;
 
-    --z-cat: #10171f;
+    --z-cat: #0f161e;
     --z-cat-ink: #a9c3e0;
     --z-cat-line: #22303f;
-    --z-route: #2a1e2c;
-    --z-route-ink: #d2aacb;
-    --z-seller: #1e1b17;
+    --z-seller: #1d1a16;
     --z-seller-ink: #cdbfae;
-    --hatch: rgba(190, 172, 150, 0.13);
+    --hatch: rgba(190, 172, 150, 0.14);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #141015;
-  --surface: #1c171e;
-  --sunk: #110d12;
-  --ink: #f1ecf0;
-  --ink-2: #cfc5ce;
+  --bg: #120e14;
+  --surface: #1a151d;
+  --sunk: #0d0a0f;
+  --ink: #f3edf2;
+  --ink-2: #cec3cd;
   --muted: #a396a5;
-  --line: #2e2630;
-  --line-strong: #463b48;
-  --on-ink: #141015;
+  --line: #2b2330;
+  --line-strong: #453a49;
+  --on-ink: #120e14;
   --focus: #d2aacb;
 
   --hold: #d2aacb;
   --hold-tint: #2b202c;
+  --spine: #d2aacb;
+  --clasp: #e2bfda;
+
+  --vault: #2c1732;
+  --vault-2: #3c2243;
+  --vault-ink: #f4e6f0;
+  --vault-muted: #c9b1c4;
+  --vault-line: #5a3c5e;
+  --v-approve: #6ccbaf;
+  --v-escalate: #e7b55a;
+  --v-attacker: #ff7b6e;
+  --v-block: #e2dce3;
 
   --approve: #6ccbaf;
   --approve-tint: #16271f;
@@ -154,14 +204,12 @@
 
   --attacker: #ff7b6e;
   --attacker-tint: #3a1e1d;
-  --on-attacker: #141015;
+  --on-attacker: #120e14;
 
-  --z-cat: #10171f;
+  --z-cat: #0f161e;
   --z-cat-ink: #a9c3e0;
   --z-cat-line: #22303f;
-  --z-route: #2a1e2c;
-  --z-route-ink: #d2aacb;
-  --z-seller: #1e1b17;
+  --z-seller: #1d1a16;
   --z-seller-ink: #cdbfae;
-  --hatch: rgba(190, 172, 150, 0.13);
+  --hatch: rgba(190, 172, 150, 0.14);
 }

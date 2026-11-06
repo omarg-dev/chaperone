@@ -1,37 +1,10 @@
-import { NavLink, Outlet, useMatch } from "react-router";
+import { NavLink, Outlet } from "react-router";
 import { buttonClass, Wordmark } from "../design";
 import { useRuns } from "../runs/RunsProvider";
 import { ThemeSwitch } from "../theme/ThemeSwitch";
 
-function NavIcon({ d }: { d: string }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-      <path
-        d={d}
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-const ICONS = {
-  runs: "M2 4h12M2 8h12M2 12h8",
-  escalations: "M8 2.5v7M5 5.5l3-3 3 3M3 13h10",
-  dashboard: "M3 13V8M8 13V3M13 13V6",
-  arena: "M2.5 6.5 8 3l5.5 3.5V13h-11z",
-};
-
 export function Shell() {
   const { heldForPerson } = useRuns();
-  // A run is drawn across three columns, so its page is wider than the lists.
-  const onRun = useMatch("/runs/:runId") !== null;
-  // The dashboard sets a table of nine columns beside a three-column comparison.
-  const onDashboard = useMatch("/dashboard") !== null;
-  const wide = onRun || onDashboard;
   return (
     <div className="shell">
       <header className="topbar">
@@ -40,11 +13,9 @@ export function Shell() {
         </NavLink>
         <nav aria-label="Main" className="topbar-nav">
           <NavLink to="/runs" className="nav-link">
-            <NavIcon d={ICONS.runs} />
             Runs
           </NavLink>
           <NavLink to="/escalations" className="nav-link">
-            <NavIcon d={ICONS.escalations} />
             Escalations
             <span
               className={`count${heldForPerson > 0 ? " count-live" : ""}`}
@@ -55,23 +26,30 @@ export function Shell() {
             </span>
           </NavLink>
           <NavLink to="/dashboard" className="nav-link">
-            <NavIcon d={ICONS.dashboard} />
             Dashboard
           </NavLink>
           <NavLink to="/arena" className="nav-link nav-link-soon">
-            <NavIcon d={ICONS.arena} />
             Arena
-            <span className="badge">Under construction</span>
+            <span className="nav-soon">Under construction</span>
           </NavLink>
         </nav>
         <div className="topbar-end">
-          <NavLink to="/start" className={`${buttonClass("primary", true)} topbar-start`}>
+          {/* The one filled button on a screen, until the page it opens is the one on screen: then
+              it is the current link, like the others. */}
+          <NavLink
+            to="/start"
+            className={({ isActive }) =>
+              isActive
+                ? "nav-link active topbar-start-here"
+                : `${buttonClass("primary", true)} topbar-start`
+            }
+          >
             Start a run
           </NavLink>
           <ThemeSwitch />
         </div>
       </header>
-      <main className={wide ? "page page-wide" : "page"}>
+      <main>
         <Outlet />
       </main>
     </div>

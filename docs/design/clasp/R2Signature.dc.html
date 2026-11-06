@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Signature carriers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Besley:ital,wght@0,400..900;1,400..900&amp;family=Archivo:ital,wght@0,100..900;1,100..900&amp;family=Fragment+Mono&amp;display=swap">
+<style>
+body{margin:0}
+.c2{--bg:#F3F1F4;--surface:#FFFFFF;--sunk:#EBE7EC;--ink:#170F1B;--ink-2:#463B4A;--muted:#64586A;--line:#E0D9DF;--line-strong:#C3B9C2;--on-ink:#FFFFFF;--hold:#4A2348;--hold-tint:#F1E8F0;--spine:#4A2348;--vault:#2B1530;--vault-2:#3D2243;--vault-ink:#F4E6F0;--vault-muted:#C9B1C4;--vault-line:#5C3D5F;--v-approve:#6CCBAF;--v-escalate:#E7B55A;--v-attacker:#FF7B6E;--v-block:#E2DCE3;--approve:#1F6A55;--approve-ink:#185443;--escalate:#8A5700;--escalate-ink:#6E4600;--block:#2F2A31;--attacker:#B3261E;--on-attacker:#FFFFFF;background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.c2 *{box-sizing:border-box}
+.dsp{font-family:'Besley',Georgia,serif;font-weight:700;letter-spacing:-.012em;line-height:1.02}
+.amt{font-family:'Besley',Georgia,serif;font-weight:800;font-variant-numeric:tabular-nums lining-nums;line-height:1;white-space:nowrap}
+.amt .c{font-size:.5em;position:relative;top:-.72em;margin-left:.03em}
+.mono{font-family:'Fragment Mono',ui-monospace,monospace;font-size:12.5px}
+.lbl{font-size:12.5px;font-weight:700;color:var(--muted)}
+.h2{margin:0;font-size:20px;font-weight:800}
+.card{display:flex;flex-direction:column;gap:14px;min-width:0}
+.mini{position:relative;background:var(--surface);border:1px solid var(--line);padding:24px 24px 24px 72px;min-height:250px;overflow:hidden}
+.mini::before{content:"";position:absolute;left:30px;top:30px;bottom:0;width:3px;background:var(--spine)}
+.msec{position:relative}
+.mstn{position:absolute;left:-50.5px;top:5px;width:18px;height:18px;border-radius:50%;border:3.5px solid var(--spine);background:var(--surface)}
+.mstn::after{content:"";position:absolute;left:14.5px;top:4px;width:24px;height:3px;background:var(--spine)}
+.mstn.on{left:-53.5px;top:14px;width:24px;height:24px;background:var(--spine);border:0}
+.mstn.on::after{left:24px;top:10.5px;width:22px}
+.vault{position:relative;background:var(--vault);color:var(--vault-ink);margin-left:-48px;padding:18px 20px 18px 48px}
+.vault::before{content:"";position:absolute;left:6px;top:0;bottom:0;width:3px;background:var(--vault-ink)}
+.g>*{display:none}
+.g.held{color:var(--hold)}.g.held .bo,.g.held .di{display:inline}
+.g.wait{color:var(--escalate)}.g.wait .bo,.g.wait .dh{display:inline}
+.g.paid{color:var(--approve)}.g.paid .bs,.g.paid .ln,.g.paid .dx{display:inline}
+.g.void{color:var(--block)}.g.void .bc,.g.void .vd{display:inline}
+.g.rel{color:var(--muted)}.g.rel .br{display:inline}
+.g.atk{color:var(--attacker)}.g.atk .bs,.g.atk .ln,.g.atk .dxa{display:inline}
+.g.off{color:var(--ink-2)}.g.off .ln,.g.off .dx{display:inline}
+.g.none{color:var(--muted)}.g.none .bd,.g.none .di{display:inline}
+.chk{display:grid;grid-template-columns:200px repeat(5,minmax(0,1fr));border-top:2px solid var(--ink);font-size:13.5px}
+.chk>*{padding:10px 12px;border-bottom:1px solid var(--line);min-width:0}
+.yes{font-weight:700;color:var(--hold)}
+</style>
+</helmet>
+<div class="c2" style="min-height:1060px;padding:48px max(16px,4%) 56px;display:flex;flex-direction:column;gap:36px">
+  <header style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:end">
+    <div style="grid-column:span 6;min-width:0"><span class="lbl">Round 2 · signature carriers</span><h1 class="dsp" style="margin:6px 0 0;font-size:56px">Chaperone with the logo covered</h1></div>
+    <p style="grid-column:span 6;margin:0;color:var(--ink-2);max-width:60ch">Four things appear on every screen, none of them the mark: the money's route as the page's spine, one aubergine vault holding where the money is now, money-state glyphs in place of generic pills, and amounts written in Besley with the fraction raised, once, in the column that says where they are.</p>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px">
+    <section class="card">
+      <h2 class="h2">1 · The route is the spine</h2>
+      <div class="mini" aria-hidden="true">
+        <div class="msec"><span class="mstn on"></span><span class="dsp" style="font-size:36px">Runs</span></div>
+        <div class="msec" style="margin-top:34px"><span class="mstn"></span><span style="font-weight:800">Where the money went</span></div>
+        <div class="msec" style="margin-top:34px"><span class="mstn"></span><span style="font-weight:800">211 runs, newest first</span></div>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">A 3px aubergine rule 68px in from the page edge, from the title to the foot. The title is a filled station, each section a ring joined to its heading by a short branch. Sections are drawn no other way: no cards, no dividers.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">2 · One vault per screen</h2>
+      <div class="mini">
+        <div class="msec"><span class="mstn on" aria-hidden="true"></span><span class="dsp" style="font-size:36px">Runs</span></div>
+        <div class="vault" style="margin-top:28px">
+          <span class="lbl" style="color:var(--vault-muted)">Held right now</span><br>
+          <span class="amt" style="font-size:46px">$171<span class="c">.98</span></span>
+          <div style="font-size:13px;font-weight:700;color:var(--v-escalate);margin-top:6px">2 runs waiting on you</div>
+        </div>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">The dark aubergine surface, in light and dark, is where the money is right now and nothing else. Every screen has exactly one. The spine runs through it, turning light. On an empty screen the vault is still there, empty.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">3 · Money glyphs</h2>
+      <div class="mini" style="padding-left:24px">
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px">
+          <sc-for list="{{glyphs}}" as="s" hint-placeholder-count="8">
+            <span style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:650"><svg class="g {{s.g}}" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path class="bo" d="M15 4.5H9.5A5 5 0 0 0 4.5 9.5v5A5 5 0 0 0 9.5 19.5H15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path><path class="bs" d="M11 4.5H8.5A4 4 0 0 0 4.5 8.5v7A4 4 0 0 0 8.5 19.5H11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path><path class="bd" d="M15 4.5H9.5A5 5 0 0 0 4.5 9.5v5A5 5 0 0 0 9.5 19.5H15" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 2.5"></path><rect class="bc" x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2.4"></rect><rect class="br" x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 2.5"></rect><circle class="di" cx="10.8" cy="12" r="2.8" fill="currentColor"></circle><circle class="dh" cx="10.8" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="2"></circle><path class="ln" d="M12 12h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></path><circle class="dx" cx="19.5" cy="12" r="2.6" fill="currentColor"></circle><circle class="dxa" cx="19" cy="12" r="3.8" fill="currentColor"></circle><path class="vd" d="M9 12h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"></path></svg>{{s.label}}</span>
+          </sc-for>
+        </div>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">One SVG, eight states, drawn on the bracket's geometry. They are the pill, the grid's outcome cell, the filter chips, the place-column headers and the run view's exits. No tinted rounded pills remain except Paid attacker, which is filled red.</p>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">4 · Amounts, once, in their place</h2>
+      <div class="mini" style="padding-left:24px;display:flex;flex-direction:column;gap:16px">
+        <span class="amt" style="font-size:64px">$109<span class="c">.99</span></span>
+        <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:2px solid var(--ink);font-size:12.5px">
+          <span class="lbl" style="padding:6px 8px">Held</span><span class="lbl" style="padding:6px 8px">Moved</span><span class="lbl" style="padding:6px 8px">Voided</span>
+          <span class="amt" style="font-size:20px;padding:8px;border-top:1px solid var(--line)">$61<span class="c">.99</span></span><span style="border-top:1px solid var(--line)"></span><span style="border-top:1px solid var(--line)"></span>
+          <span style="border-top:1px solid var(--line)"></span><span class="amt" style="font-size:20px;padding:8px;border-top:1px solid var(--line);color:var(--attacker)">$79<span class="c">.99</span></span><span style="border-top:1px solid var(--line)"></span>
+          <span style="border-top:1px solid var(--line)"></span><span style="border-top:1px solid var(--line)"></span><span class="amt" style="font-size:20px;padding:8px;border-top:1px solid var(--line);color:var(--muted);text-decoration:line-through">$139<span class="c">.00</span></span>
+        </div>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--ink-2)">Besley 800, tabular, the fraction at half size raised to the cap line, for money and for rates (68.8% sets as 68 and a raised .8%). Borrowed from Docket: an amount is written once, in the column that says where the money is.</p>
+    </section>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:24px;align-items:start">
+    <section class="card" style="grid-column:span 4">
+      <h2 class="h2">The seal, borrowed from Docket</h2>
+      <div style="display:flex;gap:20px;align-items:center">
+        <div role="img" aria-label="Seal: locked, sha256 ffd84b5a ec819dad" style="position:relative;width:176px;height:132px;border:5px solid var(--hold);border-radius:14px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;background:var(--hold-tint)">
+          <span style="font-weight:800;color:var(--hold)">Locked</span>
+          <span class="mono" style="font-size:12px;line-height:1.4;color:var(--ink)">sha256 ffd84b5a<br>ec819dad 904174d3</span>
+          <span class="mono" style="font-size:11px;color:var(--muted)">24 Oct 2026, 11:03 UTC</span>
+        </div>
+        <p style="margin:0;font-size:13.5px;color:var(--ink-2)">The clasp shut around the hash: the mark's radius and stroke, closed. It lands at the end of the mandate when it is locked, and stays as the mandate's signature wherever the mandate is shown.</p>
+      </div>
+    </section>
+
+    <section class="card" style="grid-column:span 8">
+      <h2 class="h2">The cover-the-logo check</h2>
+      <div class="chk" role="table" aria-label="Which carriers each page shows">
+        <span class="lbl" role="columnheader">Page</span><span class="lbl" role="columnheader">Route spine</span><span class="lbl" role="columnheader">Vault</span><span class="lbl" role="columnheader">Glyphs</span><span class="lbl" role="columnheader">Amounts</span><span class="lbl" role="columnheader">Seal</span>
+        <span style="font-weight:700">Runs</span><span class="yes">Yes</span><span class="yes">Held right now</span><span class="yes">Filter, outcome, headers</span><span class="yes">Place columns</span><span style="color:var(--muted)">No</span>
+        <span style="font-weight:700">Start a run</span><span class="yes">Steps are stations</span><span class="yes">The run step</span><span class="yes">Run step</span><span class="yes">Price ceiling</span><span class="yes">On lock</span>
+        <span style="font-weight:700">Inbox item</span><span class="yes">Each item a station</span><span class="yes">The held cart</span><span class="yes">Recently decided</span><span class="yes">Cart and total</span><span style="color:var(--muted)">No</span>
+        <span style="font-weight:700">Dashboard</span><span class="yes">Yes</span><span class="yes">Full tree column</span><span class="yes">Legend, dot plot</span><span class="yes">Rates</span><span style="color:var(--muted)">No</span>
+        <span style="font-weight:700">Empty state</span><span class="yes">Solid, then dashed</span><span class="yes">Empty vault</span><span class="yes">Nothing held</span><span style="color:var(--muted)">No</span><span style="color:var(--muted)">No</span>
+      </div>
+      <p style="margin:0;font-size:13.5px;color:var(--muted)">Not used: the quarantine hatch as a brand texture. It means seller text, and spreading it would break that rule.</p>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1060}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      glyphs: [
+        { g: 'held', label: 'Held, under review' },
+        { g: 'wait', label: 'Held for a person' },
+        { g: 'paid', label: 'Captured, seller paid' },
+        { g: 'void', label: 'Blocked, voided' },
+        { g: 'rel', label: 'Hold released' },
+        { g: 'atk', label: 'Paid attacker' },
+        { g: 'off', label: 'Firewall off' },
+        { g: 'none', label: 'Not reviewed yet' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

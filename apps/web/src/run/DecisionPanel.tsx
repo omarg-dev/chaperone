@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ApiError, type DecisionResult, postDecision } from "../api";
-import { Button, formatMoney } from "../design";
+import { Amount, Button } from "../design";
 import type { CartLine } from "./timeline";
 
 // Carrying out a person's decision on a purchase Chaperone paused, shared by the run view and the
@@ -59,13 +59,22 @@ export function DecisionButtons({
   decide,
   unfinished,
   saidAbove = false,
+  sellers = 1,
 }: ReturnType<typeof useDecision> & {
+  // How many sellers an approval pays, so the button says who is paid.
+  sellers?: number;
   unfinished?: Unfinished | null;
   // The page already says what was decided and why it didn't finish (the run view's headline does),
   // so it isn't said again here.
   saidAbove?: boolean;
 }) {
   const busy = asking !== null;
+  const paid =
+    sellers === 1
+      ? "The seller is paid"
+      : sellers === 2
+        ? "Both sellers are paid"
+        : `All ${sellers} sellers are paid`;
   if (unfinished) {
     const approved = unfinished.decision === "approve";
     return (
@@ -93,9 +102,7 @@ export function DecisionButtons({
                     ? "Finish and pay"
                     : "Finish and release hold"}
               </span>
-              <span className="decision-choice-note">
-                {approved ? "The seller is paid" : "Nobody is paid"}
-              </span>
+              <span className="decision-choice-note">{approved ? paid : "Nobody is paid"}</span>
             </span>
           </Button>
         </div>
@@ -123,7 +130,7 @@ export function DecisionButtons({
             <span className="decision-choice-title">
               {asking === "approve" ? "Paying…" : "Approve and pay"}
             </span>
-            <span className="decision-choice-note">The seller is paid</span>
+            <span className="decision-choice-note">{paid}</span>
           </span>
         </Button>
       </div>
@@ -137,7 +144,16 @@ export function DecisionButtons({
 }
 
 // The held cart: each line with its store and amount.
-export function HeldCart({ cart }: { cart: CartLine[] }) {
+export function HeldCart({
+  cart,
+  size = "sm",
+  amounts = true,
+}: {
+  cart: CartLine[];
+  size?: "sm" | "lg";
+  // Each line's amount, or only what it is: a cart of one line has the page's own amount to say it.
+  amounts?: boolean;
+}) {
   return (
     <ul className="decision-lines">
       {cart.map((line) => (
@@ -149,14 +165,15 @@ export function HeldCart({ cart }: { cart: CartLine[] }) {
             </span>
             {line.sellerName && <span className="decision-seller">{line.sellerName}</span>}
           </div>
-          <span className="money money-sm">{formatMoney(line.totalCents)}</span>
+          {amounts && <Amount cents={line.totalCents} size={size} />}
         </li>
       ))}
     </ul>
   );
 }
 
-// What a person can do with a purchase Chaperone paused: the held cart, and the two ways out.
+// What a person can do with a purchase Chaperone paused: the held cart, and the two ways out. It is a
+// station on the route in the hold's own tint, not a card: "The decision is yours."
 export function DecisionPanel({
   runId,
   cart,
@@ -170,9 +187,12 @@ export function DecisionPanel({
 }) {
   const decision = useDecision(runId, () => onDecided());
   return (
-    <section className="decision" aria-label="Your decision">
+    <section className="decision station-section" aria-label="Your decision">
+      <span className="station station-ring" aria-hidden="true" />
+      <h2 className="decision-heading t-section">The decision is yours.</h2>
       <div className="decision-cart">
-        <HeldCart cart={cart} />
+        {/* One line is the whole cart, and the header already says its amount. */}
+        <HeldCart cart={cart} amounts={cart.length > 1} />
       </div>
       <DecisionButtons {...decision} unfinished={unfinished} saidAbove />
     </section>

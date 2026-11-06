@@ -4,25 +4,35 @@ import {
   configLabel,
   configOf,
   isHeldForPerson,
-  noVerdictText,
+  MONEY_OF_OUTCOME,
+  moneyStateOf,
+  OUTCOME_CHIP_ORDER,
   OUTCOMES,
+  outcomeNote,
   outcomeOf,
   outcomeRank,
-  pillStateOf,
 } from "./state";
 
 const at = "2026-10-24T10:00:00Z";
 
 describe("a run's state", () => {
-  it("shows the verdict as a pill, and a broken review as held", () => {
-    expect(pillStateOf(run("r", "s", at, { verdict: "block", decidedBy: "review" }))).toBe("block");
-    expect(pillStateOf(run("r", "s", at, { reviewFailed: true }))).toBe("held");
-    expect(pillStateOf(run("r", "s", at))).toBeNull();
+  it("draws the verdict as a glyph, and a broken review as held", () => {
+    expect(moneyStateOf(run("r", "s", at, { verdict: "block", decidedBy: "review" }))).toBe(
+      "voided",
+    );
+    expect(moneyStateOf(run("r", "s", at, { reviewFailed: true }))).toBe("held");
+    expect(moneyStateOf(run("r", "s", at))).toBe("none");
   });
 
-  it("says why there is no pill", () => {
-    expect(noVerdictText(run("r", "s", at, { decidedBy: "no_review" }))).toBe("Firewall off");
-    expect(noVerdictText(run("r", "s", at))).toBe("No review yet");
+  it("says who decided it, when that is worth saying", () => {
+    expect(outcomeNote(run("r", "s", at, { decidedBy: "no_review" }))).toBe("Nobody reviewed it");
+    expect(outcomeNote(run("r", "s", at))).toBeNull();
+    expect(outcomeNote(run("r", "s", at, { verdict: "approve", decidedBy: "review" }))).toBeNull();
+    expect(outcomeNote(run("r", "s", at, { ...escalated.decided("approve") }))).toBe("You decided");
+    expect(outcomeNote(run("r", "s", at, { ...escalated.decided("block") }))).toBe(
+      "You rejected it",
+    );
+    expect(outcomeNote(run("r", "s", at, { reviewFailed: true }))).toBe("A gate broke");
   });
 
   it("holds an escalation for the person while its hold is open and nobody has decided", () => {
@@ -56,21 +66,19 @@ describe("a run's state", () => {
       escalation: "released",
     });
     expect(isHeldForPerson(released)).toBe(false);
-    expect(pillStateOf(released)).toBeNull();
-    expect(noVerdictText(released)).toBe("Hold released");
+    expect(moneyStateOf(released)).toBe("released");
+    expect(outcomeNote(released)).toBe("Nobody decided");
   });
 
-  it("shows an unfinished decision as an escalation, not as the verdict the person chose", () => {
-    expect(
-      pillStateOf(
-        run("r", "s", at, {
-          verdict: "approve",
-          decidedBy: "person",
-          holdOpen: true,
-          escalation: "unfinished",
-        }),
-      ),
-    ).toBe("escalate");
+  it("shows an unfinished decision as held for a person, not as the verdict they chose", () => {
+    const unfinished = run("r", "s", at, {
+      verdict: "approve",
+      decidedBy: "person",
+      holdOpen: true,
+      escalation: "unfinished",
+    });
+    expect(moneyStateOf(unfinished)).toBe("person");
+    expect(outcomeNote(unfinished)).toBe("Decision not finished");
   });
 });
 
@@ -101,7 +109,7 @@ describe("how a run ended", () => {
     expect(ended({ attackerPaid: true, verdict: "approve", decidedBy: "review" })).toBe(
       "attacker_paid",
     );
-    expect(pillStateOf(run("r", "s", at, { attackerPaid: true, decidedBy: "no_review" }))).toBe(
+    expect(moneyStateOf(run("r", "s", at, { attackerPaid: true, decidedBy: "no_review" }))).toBe(
       "attacker",
     );
   });
@@ -127,5 +135,44 @@ describe("how a run ended", () => {
     ];
     expect(order).toEqual([...order].sort((a, b) => a - b));
     expect(new Set(order).size).toBe(OUTCOMES.length);
+  });
+});
+
+describe("a run's money-state glyph", () => {
+  it("is one of the eight, for each of the eight outcomes", () => {
+    expect(Object.keys(MONEY_OF_OUTCOME).sort()).toEqual([...OUTCOMES].sort());
+    expect(MONEY_OF_OUTCOME).toEqual({
+      approved: "captured",
+      blocked: "voided",
+      held: "person",
+      released: "released",
+      attacker_paid: "attacker",
+      firewall_off: "off",
+      review_failed: "held",
+      not_reviewed: "none",
+    });
+  });
+
+  it("follows the outcome, money that reached an attacker first", () => {
+    expect(moneyStateOf(run("r", "s", at, { verdict: "approve", decidedBy: "review" }))).toBe(
+      "captured",
+    );
+    expect(moneyStateOf(run("r", "s", at, { verdict: "block", decidedBy: "review" }))).toBe(
+      "voided",
+    );
+    expect(moneyStateOf(run("r", "s", at, { ...escalated.waiting }))).toBe("person");
+    expect(moneyStateOf(run("r", "s", at, { ...escalated.released }))).toBe("released");
+    expect(moneyStateOf(run("r", "s", at, { decidedBy: "no_review" }))).toBe("off");
+    expect(moneyStateOf(run("r", "s", at, { reviewFailed: true }))).toBe("held");
+    expect(moneyStateOf(run("r", "s", at))).toBe("none");
+    expect(
+      moneyStateOf(
+        run("r", "s", at, { attackerPaid: true, verdict: "approve", decidedBy: "review" }),
+      ),
+    ).toBe("attacker");
+  });
+
+  it("draws every outcome's chip once", () => {
+    expect([...OUTCOME_CHIP_ORDER].sort()).toEqual([...OUTCOMES].sort());
   });
 });

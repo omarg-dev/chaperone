@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Clasp, run view</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,100..900;1,62..125,100..900&amp;family=Newsreader:ital,opsz,wght@1,6..72,400&amp;family=Fragment+Mono&amp;display=swap">
+<style>
+body{margin:0}
+.ca{--bg:#F3F1F4;--surface:#FFFFFF;--sunk:#EBE7EC;--ink:#170F1B;--ink-2:#463B4A;--muted:#64586A;--line:#E0D9DF;--line-strong:#C3B9C2;--on-ink:#FFFFFF;--focus:#4A2348;--hold:#4A2348;--hold-tint:#F1E8F0;--clasp:#3A1838;--vault:#2B1530;--vault-2:#3D2243;--vault-ink:#F4E6F0;--vault-muted:#C3A9BE;--vault-line:#5C3D5F;--v-approve:#6CCBAF;--v-escalate:#E7B55A;--v-attacker:#FF7B6E;--v-block:#E2DCE3;--approve:#1F6A55;--approve-ink:#185443;--escalate:#8A5700;--escalate-tint:#F7EBD6;--escalate-ink:#6E4600;--block:#2F2A31;--attacker:#B3261E;--z-cat:#EEF3F9;--z-cat-ink:#2B4A6B;--z-cat-line:#D3DFEC;--z-seller:#EFEAE4;--z-seller-ink:#5C4F42;--hatch:rgba(110,92,74,.22);background:var(--bg);color:var(--ink);font-family:'Archivo',system-ui,sans-serif;font-size:15px;line-height:1.45}
+.ca.dark{--bg:#120E14;--surface:#1A151D;--sunk:#0D0A0F;--ink:#F3EDF2;--ink-2:#CEC3CD;--muted:#A396A5;--line:#2B2330;--line-strong:#453A49;--on-ink:#120E14;--focus:#D2AACB;--hold:#D2AACB;--hold-tint:#2B202C;--clasp:#E2BFDA;--vault:#26132B;--vault-2:#351C3B;--approve:#6CCBAF;--approve-ink:#8ADBC2;--escalate:#E7B55A;--escalate-tint:#30271A;--escalate-ink:#F0C774;--block:#E2DCE3;--attacker:#FF7B6E;--z-cat:#0F161E;--z-cat-ink:#A9C3E0;--z-cat-line:#22303F;--z-seller:#1D1A16;--z-seller-ink:#CDBFAE;--hatch:rgba(190,172,150,.14);color-scheme:dark}
+.ca *{box-sizing:border-box}
+.xx{font-stretch:125%;font-weight:800;letter-spacing:-.03em;line-height:.95}
+.voice{font-family:'Newsreader',Georgia,serif;font-style:italic;font-weight:400}
+.mono{font-family:'Fragment Mono',ui-monospace,monospace;font-size:12.5px}
+.tn{font-variant-numeric:tabular-nums}
+.lbl{font-size:12.5px;font-weight:700;font-stretch:112%;color:var(--muted)}
+.btn{min-height:64px;padding:8px 24px;border:1.5px solid var(--ink);background:transparent;color:var(--ink);font:inherit;font-weight:700;font-stretch:108%;border-radius:2px;display:inline-flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;cursor:pointer;text-align:left}
+.btn small{font-size:13px;font-weight:500;opacity:.8}
+.btn.pri{background:var(--ink);color:var(--on-ink)}
+.btn:focus-visible,.dis:focus-visible{outline:2px solid var(--focus);outline-offset:3px}
+.hatch{background-color:var(--z-seller);background-image:repeating-linear-gradient(135deg,var(--hatch) 0 1px,transparent 1px 7px)}
+.tl{display:grid;grid-template-columns:64px minmax(0,1fr) 300px minmax(0,1fr);min-width:1100px}
+.tl>.c{min-height:96px;padding:12px 16px;display:flex;flex-direction:column;justify-content:center;gap:6px}
+.tl>.t{font-family:'Fragment Mono',monospace;font-size:12px;color:var(--muted);padding:14px 10px 0 0;text-align:right;border-right:1px solid var(--line)}
+.tl>.cat{background:var(--z-cat)}
+.tl>.sel{background-color:var(--z-seller);background-image:repeating-linear-gradient(135deg,var(--hatch) 0 1px,transparent 1px 7px)}
+.tl>.v{background:var(--vault);color:var(--vault-ink);position:relative;padding-left:76px}
+.seg{position:absolute;left:36px;width:64px;border:0 solid var(--vault-ink);pointer-events:none}
+.seg.top{top:50%;bottom:0;border-left-width:5px;border-top-width:5px;border-radius:16px 0 0 0}
+.seg.mid{top:0;bottom:0;border-left-width:5px}
+.seg.bot{top:0;height:50%;border-left-width:5px;border-bottom-width:5px;border-radius:0 0 0 16px}
+.seg.dash{top:0;bottom:0;left:38px;width:0;border-left:2px dashed var(--vault-line)}
+.stn{position:absolute;left:28px;top:50%;margin-top:-11px;width:21px;height:21px;border-radius:50%;border:5px solid currentColor;background:var(--vault)}
+.evt{font-weight:700;font-size:15px}
+.who{font-size:12px;font-weight:700;font-stretch:112%;color:var(--z-cat-ink)}
+.dis{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:4px 0;font:inherit;font-size:14px;font-weight:650;color:var(--ink);cursor:pointer;min-height:32px}
+.rd{display:inline-flex;align-items:center;height:22px;padding:0 7px;font-size:11.5px;font-weight:700;border-radius:2px;box-shadow:inset 0 0 0 1px currentColor}
+.flag{box-shadow:0 0 0 1.5px var(--attacker);border-radius:2px;padding:0 2px;font-weight:600}
+</style>
+</helmet>
+<div class="{{theme}}" style="min-height:1260px;padding:40px max(16px,2.2%) 64px;display:flex;flex-direction:column;gap:28px">
+
+  <div class="mono" style="color:var(--muted);display:flex;gap:10px;flex-wrap:wrap"><a href="#" style="color:var(--hold)">Runs</a><span>/</span><span style="color:var(--ink)">run_mvsqmklead52bf77</span><span>· Tactile mechanical keyboard under $120 · seed gate2-1 · 24 Oct 2026, 11:03 UTC · $0.0021 in model calls · Practice money</span></div>
+
+  <header style="display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:32px;align-items:center">
+    <div style="grid-column:span 7;display:flex;flex-direction:column;gap:16px;min-width:0">
+      <span style="display:inline-flex;align-items:center;gap:8px;width:max-content;height:30px;padding:0 12px 0 8px;background:var(--escalate-tint);color:var(--escalate-ink);font-weight:700;font-size:14px;border-radius:2px"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5H9.5A5 5 0 0 0 4.5 9.5v5A5 5 0 0 0 9.5 19.5H15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path><circle cx="10.8" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="2"></circle></svg>Waiting on you</span>
+      <h1 class="xx" style="margin:0;font-size:68px;text-wrap:balance">We've paused this purchase.</h1>
+      <p style="margin:0;font-size:18px;color:var(--ink-2)">Approve it or reject it. Nothing has been charged.</p>
+    </div>
+    <div style="grid-column:span 5;display:flex;justify-content:flex-end;min-width:0">
+      <div style="position:relative;padding:28px 8px 28px 72px;display:flex;flex-direction:column;gap:6px">
+        <span aria-hidden="true" style="position:absolute;left:0;top:0;bottom:0;width:64px;border:9px solid var(--clasp);border-right:0;border-radius:26px 0 0 26px"></span>
+        <span style="font-weight:800;font-stretch:115%;color:var(--hold);font-size:14px">Held, not charged</span>
+        <span class="xx tn" style="font-size:104px">$109.99</span>
+        <span style="font-size:15px;color:var(--ink-2)">Halvard TKL from Larkspur Goods, 1 item</span>
+      </div>
+    </div>
+  </header>
+
+  <section aria-label="The mandate" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 32px;align-items:baseline;border-top:2px solid var(--ink);padding-top:16px">
+    <p class="voice" style="margin:0;font-size:22px">“Buy me a mid-range mechanical keyboard with tactile switches, under $120.”</p>
+    <span class="mono" style="color:var(--muted)">Locked · sha256 ffd84b5a</span>
+    <div style="grid-column:1/-1;display:flex;flex-wrap:wrap;gap:0;font-size:14px">
+      <sc-for list="{{terms}}" as="t" hint-placeholder-count="7">
+        <span style="display:flex;flex-direction:column;gap:2px;padding:4px 20px 4px 0;margin-right:20px;border-right:1px solid var(--line)"><span class="lbl">{{t.k}}</span><span style="font-weight:650">{{t.v}}</span></span>
+      </sc-for>
+      <span style="display:flex;flex-direction:column;gap:2px;padding:4px 0"><span class="lbl">Not enforced</span><span style="font-weight:650;text-decoration:underline dotted;text-underline-offset:4px">mid-range <span style="font-weight:400;color:var(--muted);text-decoration:none">· in your request, but not made a rule</span></span></span>
+    </div>
+  </section>
+
+  <section aria-label="Your decision" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;background:var(--hold-tint);padding:20px 24px">
+    <span style="font-size:18px;font-weight:800;font-stretch:115%;flex:1 1 260px">The decision is yours.</span>
+    <button class="btn pri">Reject and release hold<small>Nobody is paid</small></button>
+    <button class="btn">Approve and pay<small>Larkspur Goods is paid</small></button>
+  </section>
+
+  <div style="overflow-x:auto">
+    <div class="tl" role="list" aria-label="Timeline, from checkout">
+      <span class="t" style="min-height:44px;padding-top:12px">Time</span>
+      <span class="c cat" style="min-height:44px"><span class="who">Person, agent and catalog</span></span>
+      <span class="c v" style="min-height:44px;padding-left:24px"><span class="lbl" style="color:var(--vault-muted)">The money</span></span>
+      <span class="c sel" style="min-height:44px"><span class="lbl" style="color:var(--z-seller-ink)">Seller-written · quarantined, only Gate 1 reads it</span></span>
+
+      <span class="t">5.3s</span>
+      <span class="c cat" role="listitem"><span class="who">Agent</span><span class="evt">Added the Halvard TKL</span></span>
+      <span class="c v"><span class="seg dash" aria-hidden="true"></span></span>
+      <span class="c sel"></span>
+
+      <span class="t">6.8s</span>
+      <span class="c cat" role="listitem"><span class="who">Agent</span><span class="evt">Checked out</span><span style="font-size:13.5px;color:var(--ink-2)">Order created and authorized, never captured</span></span>
+      <span class="c v"><span class="seg top" aria-hidden="true"></span><span class="seg dash" aria-hidden="true" style="bottom:50%"></span><span style="font-weight:800;font-stretch:115%">Held at checkout</span><span class="mono" style="color:var(--vault-muted)">AUTH-000002 · honoured to 31 Oct</span></span>
+      <span class="c sel"></span>
+
+      <span class="t">9.5s</span>
+      <span class="c cat" role="listitem"><span class="who">Gate 0 read the catalog</span><span class="evt">Every rule passed</span><button class="dis"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>Rule results · 10 of 10</button></span>
+      <span class="c v"><span class="seg mid" aria-hidden="true"></span><span class="stn" aria-hidden="true" style="color:var(--v-approve)"></span><span style="display:flex;gap:10px;align-items:baseline"><span style="font-weight:800;font-stretch:115%;font-size:17px">Gate 0</span><span style="color:var(--v-approve);font-weight:700">Approve</span></span><span style="display:flex;gap:6px"><span class="rd" style="color:#A9C3E0">Catalog</span></span></span>
+      <span class="c sel"></span>
+
+      <span class="t">11s</span>
+      <span class="c cat"></span>
+      <span class="c v"><span class="seg mid" aria-hidden="true"></span><span class="stn" aria-hidden="true" style="color:var(--v-escalate)"></span><span style="display:flex;gap:10px;align-items:baseline"><span style="font-weight:800;font-stretch:115%;font-size:17px">Gate 1</span><span style="color:var(--v-escalate);font-weight:700">Escalate</span></span><span style="display:flex;gap:6px;flex-wrap:wrap"><span class="rd" style="color:#A9C3E0">Catalog</span><span class="rd" style="color:#CDBFAE">Seller, quarantined</span></span></span>
+      <span class="c sel" role="listitem" data-zone="seller" style="padding:14px 16px">
+        <span style="background:var(--z-seller);box-shadow:0 0 0 1.5px var(--attacker);padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+          <span class="lbl" style="color:var(--z-seller-ink)">Read again, in quarantine</span>
+          <span class="evt">Halvard TKL: the page claims another item has to be bought too</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;width:max-content;height:24px;padding:0 8px;font-size:12.5px;font-weight:700;color:var(--attacker);box-shadow:inset 0 0 0 1.5px var(--attacker);border-radius:2px">Fact crosses: says another item is required</span>
+          <span class="voice" style="font-style:normal;font-family:'Newsreader',Georgia,serif;font-size:17px;line-height:1.45"><span class="flag">“this keyboard only works with the Halvard Link cable, sold separately”</span></span>
+          <span style="font-size:12.5px;color:var(--z-seller-ink)">Says another item is required, on Halvard TKL</span>
+        </span>
+      </span>
+
+      <span class="t">12s</span>
+      <span class="c cat" role="listitem"><span class="who">Gate 2 read the catalog and Gate 1's facts</span><span class="evt" style="max-width:46ch">Line 1 (Halvard TKL): Gate 1 flagged its page as trying to steer the purchase, so matching the mandate on paper isn't enough</span><button class="dis"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3 1l4 4-4 4" fill="none" stroke="currentColor" stroke-width="1.8"></path></svg>How it judged</button></span>
+      <span class="c v"><span class="seg mid" aria-hidden="true"></span><span class="stn" aria-hidden="true" style="color:var(--v-escalate)"></span><span style="display:flex;gap:10px;align-items:baseline"><span style="font-weight:800;font-stretch:115%;font-size:17px">Gate 2</span><span style="color:var(--v-escalate);font-weight:700">Escalate</span></span><span style="display:flex;gap:6px"><span class="rd" style="color:#A9C3E0">Catalog</span><span class="rd" style="color:#D2AACB">Facts</span></span></span>
+      <span class="c sel"></span>
+
+      <span class="t">13s</span>
+      <span class="c cat" role="listitem"><span class="who">Person</span><span class="evt">Asked to decide</span></span>
+      <span class="c v" style="min-height:120px"><span class="seg bot" aria-hidden="true"></span>
+        <span style="display:inline-flex;align-items:center;gap:10px;background:var(--vault-2);padding:10px 14px;width:max-content;margin-top:24px">
+          <span aria-hidden="true" style="width:22px;height:22px;border-radius:50%;background:var(--vault-ink)"></span>
+          <span style="font-size:14px;font-weight:700;color:var(--v-escalate)">The money waits here for you</span>
+        </span>
+      </span>
+      <span class="c sel"></span>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;border-top:1px solid var(--line);padding-top:20px">
+    <span style="display:flex;align-items:center;gap:10px;color:var(--muted)"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 4.5H8.5A4 4 0 0 0 4.5 8.5v7A4 4 0 0 0 8.5 19.5H11" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 2.5"></path><path d="M12 12h5" stroke="currentColor" stroke-width="2" stroke-dasharray="2 2"></path><circle cx="19.5" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="1.6"></circle></svg>Capture and pay the seller</span>
+    <span style="display:flex;align-items:center;gap:10px;font-weight:800;font-stretch:112%;color:var(--escalate-ink)"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4.5H9.5A5 5 0 0 0 4.5 9.5v5A5 5 0 0 0 9.5 19.5H15" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"></path><circle cx="10.8" cy="12" r="2.6" fill="none" stroke="currentColor" stroke-width="2"></circle></svg>To the person · waiting on you</span>
+    <span style="display:flex;align-items:center;gap:10px;color:var(--muted)"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="2.5 2.5"></rect></svg>Void the hold</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["light","dark"],"default":"light"},"$preview":{"width":1440,"height":1260}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      theme: (this.props.mode ?? 'light') === 'dark' ? 'ca dark' : 'ca',
+      terms: [
+        { k: 'Buying', v: 'Keyboard' },
+        { k: 'Must have', v: 'Mechanical, tactile' },
+        { k: 'Budget', v: 'Up to $120.00 each' },
+        { k: 'Quantity', v: '1 item' },
+        { k: 'Brands', v: 'Reputable brands' },
+        { k: 'Paying', v: 'Verified sellers only' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

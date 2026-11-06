@@ -134,11 +134,14 @@ export function outcomeOf(events: readonly OutcomeEvent[]): RunOutcome {
 //  - review_started (lane review): `config`, in the order the reviews ran, so the last is the one
 //    the run's outcome comes from;
 //  - enforced (lane review): `payouts`, the sellers the capture was shared out to. The last
-//    `enforced` event is the run's: only payees that were paid an amount count.
+//    `enforced` event is the run's: only payees that were paid an amount count;
+//  - authorize_order and reauthorize (lane payments): `heldCents`, the amount of the latest
+//    authorization, which is how much the order's hold is for.
 export interface RunFacets {
   seed: string | null;
   reviews: string[];
   paidPayees: string[];
+  heldCents: number | null;
   origin: string | null;
   payments: string | null;
 }
@@ -147,11 +150,20 @@ export function facetsOf(events: readonly OutcomeEvent[]): RunFacets {
   let seed: string | null = null;
   const reviews: string[] = [];
   let paidPayees: string[] = [];
+  let heldCents: number | null = null;
   let origin: string | null = null;
   let payments: string | null = null;
   for (const event of events) {
     const body = record(event.payload);
-    if (event.lane === "arena" && event.type === "run_started") {
+    if (event.lane === "payments" && event.type === "payment_call") {
+      const held = record(body.result).amountCents;
+      if (
+        (body.operation === "authorize_order" || body.operation === "reauthorize") &&
+        typeof held === "number"
+      ) {
+        heldCents = held;
+      }
+    } else if (event.lane === "arena" && event.type === "run_started") {
       if (typeof body.seed === "string") seed = body.seed;
       if (typeof body.origin === "string") origin = body.origin;
       if (typeof body.payments === "string") payments = body.payments;
@@ -165,5 +177,5 @@ export function facetsOf(events: readonly OutcomeEvent[]): RunFacets {
         .map((p) => p.payeeKey as string);
     }
   }
-  return { seed, reviews, paidPayees, origin, payments };
+  return { seed, reviews, paidPayees, heldCents, origin, payments };
 }

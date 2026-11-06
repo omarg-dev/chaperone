@@ -90,7 +90,8 @@ function Cell({ items, zone }: { items: TimelineItem[]; zone: "catalog" | "route
 }
 
 // One vertical timeline in three columns: the person, agent and catalog on the left, the money's
-// route down the middle, and seller-written text on the right behind the hatch. Each row is a
+// route down the middle (the vault, with the route drawn as the bracket's long arm), and
+// seller-written text on the right behind the hatch. Each row is a
 // moment; the time column says how far into the run it was.
 export function Timeline({
   items,
@@ -136,14 +137,14 @@ export function Timeline({
               </li>
             ))}
           </ol>
-          {footer && <Footer footer={footer} />}
+          {footer && <Footer footer={footer} spine={rows.at(-1)?.spine ?? false} />}
         </div>
       </div>
     </section>
   );
 }
 
-function Footer({ footer }: { footer: TimelineFooter }) {
+function Footer({ footer, spine }: { footer: TimelineFooter; spine: boolean }) {
   const lane = (zone: "catalog" | "route" | "seller", content: ReactNode) => {
     const taken = footer.taken === zone;
     const style = { "--exit-tone": toneVar(footer.takenTone) } as CSSProperties;
@@ -157,7 +158,7 @@ function Footer({ footer }: { footer: TimelineFooter }) {
     );
   };
   return (
-    <div className="tl-foot">
+    <div className="tl-foot" data-spine={spine ? "money" : "none"}>
       <span className="tl-time" />
       {lane("catalog", footer.catalog)}
       {lane("route", footer.route)}
