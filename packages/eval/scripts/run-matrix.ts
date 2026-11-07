@@ -13,7 +13,8 @@
 //
 // Calls models, so it costs money: --dry-run prints the cell count and expected cost and spends
 // nothing; --max-usd (default $0.50) stops the matrix starting new cells once it is spent. Needs
-// FIREWALL_ANTHROPIC_API_KEY; FIREWALL_CHANNEL3_API_KEY is optional. --adapter sandbox also needs the
+// FIREWALL_ANTHROPIC_API_KEY (the gates run on it in every column), and the column's own key for
+// --column openai (FIREWALL_OPENAI_API_KEY) or gemini (FIREWALL_GEMINI_API_KEY); FIREWALL_CHANNEL3_API_KEY is optional. --adapter sandbox also needs the
 // sandbox variables (see run-scenario in @firewall/agent).
 
 import { mkdirSync } from "node:fs";
@@ -23,11 +24,10 @@ import { parseArgs } from "node:util";
 import {
   AGENT_COLUMNS,
   type AgentColumn,
-  anthropicConfigFromEnv,
+  columnConfigFromEnv,
   createColumnModel,
   DEFAULT_LIMITS,
-  findColumn,
-  HAIKU_COLUMN,
+  resolveColumn,
 } from "@firewall/agent";
 import { createArenaService } from "@firewall/arena";
 import { openEventLog } from "@firewall/events";
@@ -93,7 +93,7 @@ const { values } = parseArgs({
 
 if (!values.scenarios) {
   fail(
-    "Usage: run-matrix --scenarios <ids|all|attacks|benign> [--seeds 1,2] [--column haiku] " +
+    "Usage: run-matrix --scenarios <ids|all|attacks|benign> [--seeds 1,2] [--column haiku|openai|gemini] " +
       "[--adapter fake|sandbox] [--max-usd 0.5] [--concurrency 3] [--dry-run]",
   );
 }
@@ -102,12 +102,11 @@ if (values.adapter !== "fake" && values.adapter !== "sandbox") {
 }
 const adapterName: PaymentAdapterName = values.adapter;
 
-// "haiku" is the short name for the Claude Haiku 5.5 column.
-const columnArg = values.column === "haiku" ? HAIKU_COLUMN.columnId : values.column;
-const column: AgentColumn | undefined = findColumn(columnArg);
+// A column by its short name (haiku, openai, gemini) or its ID.
+const column: AgentColumn | undefined = resolveColumn(values.column ?? "");
 if (!column) {
   fail(
-    `No agent column "${values.column}". Columns: haiku, ${AGENT_COLUMNS.map((c) => c.columnId).join(", ")}`,
+    `No agent column "${values.column}". Columns: ${AGENT_COLUMNS.map((c) => `${c.shortName} (${c.columnId})`).join(", ")}`,
   );
 }
 const positive = (name: string, text: string | undefined): number => {
@@ -128,11 +127,17 @@ try {
   fail((error as Error).message);
 }
 const cells = planMatrix(scenarios, seeds, column.columnId);
-const estimate = estimateMatrix(cells);
+const estimate = estimateMatrix(cells, column);
 
 console.log(
   `${estimate.cells} cells (${scenarios.length} scenarios x ${seeds.length} seeds), ${column.label}, ` +
     `${adapterName} payments, gates on ${EXTRACTOR_MODEL}`,
+);
+// Said up front, since a matrix without it still runs: Gate 2 then checks prices within the arena only.
+console.log(
+  channel3ConfigFromEnv().apiKey
+    ? "Market reference: Channel3"
+    : "Market reference: off (no FIREWALL_CHANNEL3_API_KEY), Gate 2 checks prices within the arena only",
 );
 console.log(
   `Expected cost about $${estimate.expectedUsd.toFixed(4)} ($${estimate.perCellUsd.toFixed(4)} a cell); ` +
@@ -149,10 +154,12 @@ if (values["dry-run"]) {
 }
 if (AUDITOR_MODEL !== EXTRACTOR_MODEL) fail("The gates must run on one model");
 
-let agentConfig: ReturnType<typeof anthropicConfigFromEnv>;
+let agentConfig: ReturnType<typeof columnConfigFromEnv>;
 let gatesConfig: ReturnType<typeof gateConfigFromEnv>;
 try {
-  agentConfig = anthropicConfigFromEnv();
+  // The column's own key (the OpenAI and Gemini columns refuse to run without theirs, naming the
+  // variable) and, always, the Anthropic key the gates run on.
+  agentConfig = columnConfigFromEnv(column);
   gatesConfig = gateConfigFromEnv();
 } catch (error) {
   fail((error as Error).message);
@@ -171,9 +178,15 @@ const builder = createMandateBuilder({ client, vocabulary: arenaVocabulary() });
 const model = createColumnModel(column, agentConfig);
 
 // The fake is made fresh for every cell, so cells share nothing. The sandbox adapter is one client.
-async function paymentSetup(): Promise<() => { payments: PaymentAdapter; vaultId: string }> {
+async function paymentSetup(): Promise<
+  () => { payments: PaymentAdapter; paymentsName: PaymentAdapterName; vaultId: string }
+> {
   if (adapterName === "fake") {
-    return () => ({ payments: createFakePaymentAdapter(), vaultId: "FAKE-WALLET" });
+    return () => ({
+      payments: createFakePaymentAdapter(),
+      paymentsName: "fake",
+      vaultId: "FAKE-WALLET",
+    });
   }
   const adapter = createSandboxPaymentAdapter({ ...sandboxConfigFromEnv(), returnUrl: RETURN_URL });
   let vaultId = process.env.SANDBOX_BUYER_VAULT_ID;
@@ -186,7 +199,7 @@ async function paymentSetup(): Promise<() => { payments: PaymentAdapter; vaultId
     vaultId = await adapter.finishWalletSetup(setup.setupTokenId);
   }
   const saved = vaultId;
-  return () => ({ payments: adapter, vaultId: saved });
+  return () => ({ payments: adapter, paymentsName: "sandbox", vaultId: saved });
 }
 
 try {
@@ -209,6 +222,7 @@ try {
   const matrix = await runMatrix(cells, (input) => runAndEvaluateCell(input, context()), {
     concurrency,
     maxUsd,
+    estimateUsd: estimate.perCellUsd,
     onCell: (result, progress) => {
       const full = result.outcomes.find((o) => o.config === "full");
       console.log(

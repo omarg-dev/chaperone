@@ -4,6 +4,7 @@ import {
   type Catalog,
   type OrderDraft,
   type Seller,
+  type StartOptions,
 } from "@firewall/arena";
 import type { EventLog } from "@firewall/events";
 import type { Enforcement, FirewallConfig, ReviewGates, ReviewRun } from "@firewall/firewall";
@@ -44,6 +45,8 @@ export interface PipelineOptions {
   lockedMandate?: LockedMandate;
   // An arena run already started for this scenario and seed (see RunAgentOptions.runId).
   runId?: string;
+  // See RunAgentOptions.start.
+  start?: StartOptions;
   firewall: FirewallConfig;
   // The model gates, built for the run's catalog (the extractor's vocabulary is the catalog's). Only
   // `full` calls it.
@@ -114,6 +117,7 @@ export async function runWithFirewall(options: PipelineOptions): Promise<Pipelin
     scenarioId: options.scenarioId,
     seed: options.seed,
     ...(options.runId && { runId: options.runId }),
+    ...(options.start && { start: options.start }),
     ...(options.limits && { limits: options.limits }),
     firewall: {
       config: options.firewall,

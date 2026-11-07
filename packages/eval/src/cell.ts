@@ -43,6 +43,9 @@ export interface RunContext {
   log: EventLog;
   // The raw adapter (the fake or the sandbox's). The checkout and enforcement wrap it themselves.
   payments: PaymentAdapter;
+  // Which adapter that is, written into each run's `run_started`, so an exported run says whether
+  // its money was on the sandbox.
+  paymentsName: "fake" | "sandbox";
   vaultId: string;
   builder: MandateBuilder;
   // The column's model. Exactly one model per column, no fallback.
@@ -113,6 +116,7 @@ export async function runCell(input: CellInput, ctx: RunContext): Promise<CellRu
       model: ctx.modelFor(column),
       scenarioId: scenario.scenarioId,
       seed: input.seed,
+      start: { origin: "eval", payments: ctx.paymentsName },
       ...(ctx.limits && { limits: ctx.limits }),
       // The firewall only holds the checkout here; the configurations review it afterwards.
       firewall: { config: "off", mandate: { builder: ctx.builder, person: acceptsDraftAsIs } },

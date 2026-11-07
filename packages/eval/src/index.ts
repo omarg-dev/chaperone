@@ -12,6 +12,7 @@ export {
 export {
   ESTIMATED_CELL_TOTAL_USD,
   ESTIMATED_CELL_USD,
+  estimatedCellUsd,
   estimateMatrix,
   type MatrixEstimate,
   type MatrixRun,

@@ -1,4 +1,4 @@
-import type { ArenaService } from "@firewall/arena";
+import type { ArenaService, StartOptions } from "@firewall/arena";
 import type { EventLog } from "@firewall/events";
 import type { PaymentAdapter } from "@firewall/payments";
 import {
@@ -49,6 +49,8 @@ export interface RunAgentOptions {
   // and the agent's sit on one timeline; the run's `run_started` is then first in the log, and a
   // mandate the person locked before the agent starts is the one the firewall finds there.
   runId?: string;
+  // What the run's `run_started` says about it (origin, payment adapter) when this starts the run.
+  start?: StartOptions;
   limits?: Partial<RunLimits>;
   // The firewall in front of the agent's checkout (@firewall/sdk). The agent's tools go through its
   // `wrap`, so the checkout holds the cart; the default holds it and reviews nothing. Its mandate,
@@ -149,7 +151,7 @@ export async function runAgent(options: RunAgentOptions): Promise<RunOutcome> {
   const limits: RunLimits = { ...DEFAULT_LIMITS, ...options.limits };
   const run = options.runId
     ? arena.get(options.runId)
-    : arena.start(options.scenarioId, options.seed);
+    : arena.start(options.scenarioId, options.seed, options.start);
   if (run.scenario.scenarioId !== options.scenarioId || run.seed !== options.seed) {
     throw new Error(
       `Run ${run.runId} is for ${run.scenario.scenarioId} with seed ${run.seed}, not ${options.scenarioId} with seed ${options.seed}`,
