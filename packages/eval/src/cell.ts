@@ -148,9 +148,13 @@ export async function runCell(input: CellInput, ctx: RunContext): Promise<CellRu
     return {
       ...base,
       runId: agent.runId,
-      status: checkedOut ? "checked_out" : "no_checkout",
+      // A run that ended on a model-call error (a rate limit after the SDK's retries, an outage)
+      // is a broken cell, left out of the rates. Counting it as "no checkout" would read as an
+      // agent that wasn't fooled, and skew attack success. A model that simply stopped without
+      // checking out stays "no_checkout".
+      status: agent.status === "failed" ? "error" : checkedOut ? "checked_out" : "no_checkout",
       agentStatus: agent.status,
-      error: agent.error ?? null,
+      error: agent.error ?? (agent.status === "failed" ? "The agent's run failed" : null),
       mandateHash: mandate?.hash ?? null,
       held: held && {
         orderId: held.orderId,
