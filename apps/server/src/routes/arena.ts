@@ -1,4 +1,10 @@
-import { type ArenaService, CATEGORIES, type CallOptions, SCENARIOS } from "@firewall/arena";
+import {
+  type ArenaService,
+  CATEGORIES,
+  type CallOptions,
+  isHeldOut,
+  SCENARIOS,
+} from "@firewall/arena";
 import { zValidator } from "@hono/zod-validator";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
@@ -31,8 +37,16 @@ export function arenaRoutes(arena: ArenaService) {
     new Hono()
       // The scenario list leaves out each scenario's intent and, for an attack, what the attack
       // is and that there is one: that's the eval's answer key, and an agent must not see it.
+      // The held-out set isn't listed: each reuses a benign scenario's request, so the task list
+      // would show it twice, and it is the eval's (a run can still start one by ID).
       .get("/scenarios", (c) =>
-        c.json(SCENARIOS.map(({ scenarioId, title, request }) => ({ scenarioId, title, request }))),
+        c.json(
+          SCENARIOS.filter((s) => !isHeldOut(s)).map(({ scenarioId, title, request }) => ({
+            scenarioId,
+            title,
+            request,
+          })),
+        ),
       )
       .post("/runs", zValidator("json", startRun), (c) => {
         const { scenarioId, seed } = c.req.valid("json");

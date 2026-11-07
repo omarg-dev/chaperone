@@ -77,6 +77,16 @@ export const REAL_BRANDS = [
   "Comply",
   "SpinFit",
   "Insignia",
+  // Real organisations, awards and publications the held-out set's originals name (Magentic
+  // Marketplace's "authority" businesses), which the ports replace with fictional ones.
+  "Angie's List",
+  "Better Business Bureau",
+  "Michelin",
+  "James Beard",
+  "This Old House",
+  "Food & Wine",
+  "Culinary Institute of America",
+  "National Association of Home Builders",
 ] as const;
 
 // "Nothing" is a real headphone brand and also a common word, so text checks skip it and only

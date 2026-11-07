@@ -16,6 +16,7 @@ import {
 import type { Catalog, Listing, Product } from "../types.js";
 import { ATTACK_SCENARIOS } from "./attacks.js";
 import { BENIGN_SCENARIOS } from "./benign.js";
+import { isHeldOut } from "./held-out.js";
 import { SCENARIOS } from "./index.js";
 
 const SEEDS = ["1", "2", "3", "4", "5", "6", "7", "8"];
@@ -66,7 +67,7 @@ describe("attack scenarios", () => {
   it("have IDs unique among all scenarios", () => {
     const ids = SCENARIOS.map((s) => s.scenarioId);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(SCENARIOS.filter((s) => s.kind === "attack")).toEqual(ATTACK_SCENARIOS);
+    expect(SCENARIOS.filter((s) => s.kind === "attack" && !isHeldOut(s))).toEqual(ATTACK_SCENARIOS);
   });
 
   it("cover A1 in both variants, and A2 to A7", () => {
@@ -87,12 +88,16 @@ describe("attack scenarios", () => {
   });
 
   it("don't give the attack away in their title or request", () => {
-    for (const s of ATTACK_SCENARIOS) {
+    for (const s of SCENARIOS.filter((x) => x.kind === "attack")) {
       expect(`${s.title} ${s.request}`).not.toMatch(/attack|inject|scam|\bA\d\b/i);
     }
   });
 
-  describe.each(ATTACK_SCENARIOS.map((s) => [s.scenarioId, s] as const))("%s", (_, s) => {
+  // Every attack scenario, our own and the held-out set (held-out.test.ts checks what is
+  // particular to those).
+  describe.each(
+    SCENARIOS.filter((s) => s.kind === "attack").map((s) => [s.scenarioId, s] as const),
+  )("%s", (_, s) => {
     it("builds the same arena for the same seed", () => {
       expect(buildArena(s, "1", baseCatalog)).toEqual(buildArena(s, "1", baseCatalog));
     });

@@ -109,22 +109,18 @@ export const marketQueryFor = (record: CatalogRecord): MarketQuery => ({
   text: marketQueryText(record.category, record.attributes),
 });
 
-// Where a cart line's price sits against a quote. Code's comparison, recorded and given to the
-// auditor as numbers.
+// Where a cart line's price sits against a quote, recorded for the person to read. It decides
+// nothing (decided Nov 7): a category search's median isn't like-for-like, since "wired over-ear
+// headphones" runs from $6 to $1,700, so honest mid-range listings sat far above it. Paying more
+// than needed for the same product is Gate 2's like-for-like check, inside the marketplace.
 export interface MarketCheck {
   quote: MarketQuote;
   pctAboveMedian: number | null;
-  beyondTolerance: boolean;
 }
 
-export function marketCheck(
-  paidUnitCents: number,
-  quote: MarketQuote,
-  tolerancePct: number,
-): MarketCheck {
-  if (quote.status !== "available") return { quote, pctAboveMedian: null, beyondTolerance: false };
-  const pct = percentAbove(paidUnitCents, quote.medianCents);
-  return { quote, pctAboveMedian: pct, beyondTolerance: pct > tolerancePct };
+export function marketCheck(paidUnitCents: number, quote: MarketQuote): MarketCheck {
+  if (quote.status !== "available") return { quote, pctAboveMedian: null };
+  return { quote, pctAboveMedian: percentAbove(paidUnitCents, quote.medianCents) };
 }
 
 // Channel3, a sponsor's real product search: POST /v1/search with the key in x-api-key.

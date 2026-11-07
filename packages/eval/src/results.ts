@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { FIREWALL_CONFIGS, type FirewallConfig } from "@firewall/firewall";
-import type { MatrixRun } from "./matrix.js";
+import { type MatrixRun, type ScenarioSet, scenarioSetOf, selectScenarios } from "./matrix.js";
 import { type ConfigMetrics, computeMetrics, type Metrics } from "./metrics.js";
 import { type CellInput, type CellResult, SCHEMA_VERSION } from "./types.js";
 
@@ -22,6 +22,11 @@ export interface ResultsMeta {
   column: { columnId: string; label: string; modelId: string };
   gateModel: string;
   scenarios: string[];
+  // Which set the scenarios are: our own, or the held-out set ported from published benchmarks
+  // (docs/held-out.md). Absent from files written before the held-out set, which are all "own".
+  scenarioSet: ScenarioSet;
+  // Said in words in both files.
+  scenarioSetNote: string;
   seeds: string[];
   // ISO 8601 UTC.
   startedAt: string;
@@ -52,6 +57,13 @@ export const ADAPTER_NOTES: Record<PaymentAdapterName, string> = {
   sandbox: "SANDBOX payment adapter: the checkouts were held on the payment platform's sandbox.",
 };
 
+export const SCENARIO_SET_NOTES: Record<ScenarioSet, string> = {
+  own: "Our own scenarios: the benign set and attacks A1 to A7, written by the people who wrote the gates.",
+  "held-out":
+    "HELD-OUT set: attacks ported from published benchmarks (docs/held-out.md), written without reading " +
+    "the gates and never used to tune them.",
+};
+
 export const MONEY_NOTE =
   "Each configuration's money outcome is derived from its verdict (off and approve: captured; block: " +
   "voided; escalate: held), because all three read the one checkout the agent left. Per cell, the full " +
@@ -74,6 +86,7 @@ export interface BuildResultsInput {
 
 export function buildResults(input: BuildResultsInput): ResultsFile {
   const { matrix } = input;
+  const scenarioSet = scenarioSetOf(selectScenarios(input.scenarios.join(",")));
   return {
     meta: {
       schemaVersion: SCHEMA_VERSION,
@@ -82,6 +95,8 @@ export function buildResults(input: BuildResultsInput): ResultsFile {
       column: input.column,
       gateModel: input.gateModel,
       scenarios: [...input.scenarios],
+      scenarioSet,
+      scenarioSetNote: SCENARIO_SET_NOTES[scenarioSet],
       seeds: [...input.seeds],
       startedAt: input.startedAt.toISOString(),
       finishedAt: input.finishedAt.toISOString(),
@@ -133,6 +148,7 @@ export function renderMarkdown(results: ResultsFile): string {
         ["Payment adapter", `**${meta.paymentAdapter}**`],
         ["Agent column", `${meta.column.label} (\`${meta.column.modelId}\`)`],
         ["Gate model", `\`${meta.gateModel}\``],
+        ["Scenario set", `**${meta.scenarioSet}**: ${meta.scenarioSetNote}`],
         ["Scenarios", meta.scenarios.join(", ")],
         ["Seeds", meta.seeds.join(", ")],
         ["Started", meta.startedAt],
@@ -277,6 +293,12 @@ export function writeResults(dir: string, name: string, results: ResultsFile): W
   return { jsonPath, markdownPath };
 }
 
-// A name that says what the file is, adapter first: 2026-10-26T1203-fake-claude-haiku-5-5.
-export const resultsName = (date: Date, adapter: PaymentAdapterName, columnId: string) =>
-  `${date.toISOString().slice(0, 16).replace(/[:]/g, "")}-${adapter}-${columnId}`;
+// A name that says what the file is, adapter first: 2026-10-26T1203-fake-claude-haiku-5-5, with
+// `-held-out` at the end for the held-out set.
+export const resultsName = (
+  date: Date,
+  adapter: PaymentAdapterName,
+  columnId: string,
+  set: ScenarioSet = "own",
+) =>
+  `${date.toISOString().slice(0, 16).replace(/[:]/g, "")}-${adapter}-${columnId}${set === "held-out" ? "-held-out" : ""}`;
