@@ -13,6 +13,8 @@ import { type EventLog, needsPerson, openEventLog, outcomeOf } from "@firewall/e
 import { decideEscalation } from "@firewall/firewall";
 import { DEFAULT_TOLERANCES, type MandateBuilder } from "@firewall/mandate";
 import { createFakePaymentAdapter, type FakePaymentAdapter } from "@firewall/payments";
+import { APICallError } from "ai";
+import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   evaluateCell,
@@ -140,6 +142,32 @@ describe("runCell", () => {
     );
     expect(run).toMatchObject({ status: "no_checkout", held: null, clean: false, harms: [] });
     expect(run.bought).toEqual([]);
+  });
+
+  it("records a run that ended on a model-call error as a broken cell, not as no checkout", async () => {
+    const real = shopping(PURCHASES.honest);
+    let calls = 0;
+    const rateLimited = new MockLanguageModelV4({
+      modelId: HAIKU_COLUMN.modelId,
+      doGenerate: async (options) => {
+        if (calls++ >= 1) {
+          throw new APICallError({
+            message: "Too Many Requests",
+            url: "https://models.firewall.test/v1/messages",
+            requestBodyValues: {},
+            statusCode: 429,
+            isRetryable: false,
+          });
+        }
+        return real.doGenerate(options);
+      },
+    });
+    const run = await runCell(input(), context(rateLimited));
+    expect(run).toMatchObject({ status: "error", agentStatus: "failed", held: null, clean: false });
+    expect(run.error).toContain("Too Many Requests");
+    const result = await runAndEvaluateCell(input(), context(rateLimited));
+    expect(result.outcomes).toEqual([]);
+    expect(result.settlement).toBeNull();
   });
 
   it("records a cell that breaks as an error instead of throwing", async () => {
