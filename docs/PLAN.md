@@ -116,7 +116,7 @@ Done when: a judge can open the hosted URL, replay a real attack run, and start 
 | 8 | Bryntum Scheduler timeline of an eval matrix run: each cell's agent run and gate calls on a real time axis across the workers, from step 4's runs on Render Workflows (parked until after Nov 8) | ⬜ |
 | 9 | Landing page at `/`: one idea per screen, numbers read from the eval's results | 👀 In review |
 | 10 | Docs page at `/docs`, simple | ⬜ |
-| 11 | Route line on the run page only, off the other pages | ⬜ |
+| 11 | Route line on the run page only, off the other pages | 👀 In review |
 
 Done when: the dashboard shows real-sandbox numbers for all three models, with the ablation, the held-out results and at least one attack that still gets through.
 

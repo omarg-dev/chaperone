@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import type { DecisionResult, RunSummary } from "../api";
-import { Amount, Button, EmptyState, PageRoute, Pill, StateGlyph, Station, Vault } from "../design";
+import { Amount, Button, EmptyState, Page, Pill, Section, StateGlyph, Vault } from "../design";
 import { formatAgo, formatHoldEnds, formatSpan, formatTime } from "../format";
 import {
   confirmationText,
@@ -64,7 +64,7 @@ function CartSurface({ vaulted, children }: { vaulted: boolean; children: React.
   );
 }
 
-// A held purchase: a station on the route, with what it is, how long it has waited, what was asked
+// A held purchase: a section of the page, with what it is, how long it has waited, what was asked
 // and why it was held on one side, and below them the held cart and the two ways out. The oldest hold's
 // cart sits in the page's vault; the rest are on the page's own ground, since a screen has one.
 function HeldDecision({
@@ -151,8 +151,7 @@ function HeldDecision({
 function HeldItem(props: HeldProps & { detail: Detail; vaulted: boolean }) {
   const { run, title, detail, vaulted } = props;
   return (
-    <li className="held station-section" aria-label={title} data-state="escalate">
-      <span className="station station-ring" aria-hidden="true" />
+    <li className="held page-section" aria-label={title} data-state="escalate">
       {detail.status === "ready" ? (
         <HeldDecision {...props} model={detail.model} vaulted={vaulted} />
       ) : (
@@ -242,7 +241,7 @@ export function Escalations() {
   );
 
   return (
-    <PageRoute
+    <Page
       title="Escalations"
       lede="Purchases Chaperone paused because the decision is yours. Oldest first."
     >
@@ -317,7 +316,7 @@ export function Escalations() {
       )}
 
       {recent.length > 0 && (
-        <Station heading="Recently decided" className="inbox-recent">
+        <Section heading="Recently decided" className="inbox-recent">
           <ul className="decided-list">
             {recent.map((run) => {
               const approved = run.verdict === "approve";
@@ -335,8 +334,8 @@ export function Escalations() {
               );
             })}
           </ul>
-        </Station>
+        </Section>
       )}
-    </PageRoute>
+    </Page>
   );
 }

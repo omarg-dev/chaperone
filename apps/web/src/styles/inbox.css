@@ -1,4 +1,4 @@
-/* The escalation inbox: each purchase held for a person is a station on the route, with its held cart
+/* The escalation inbox: each purchase held for a person is a section, with its held cart
    and the two ways out under it. The oldest hold's cart is the page's vault. The decision's own
    pieces (the cart's lines, the two buttons, the server's message) are shared with the run view
    (DecisionPanel.tsx, run.css). */

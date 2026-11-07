@@ -27,7 +27,7 @@
   /* The hold, the route and the clasp: aubergine appears where Chaperone is holding something */
   --hold: #4a2348;
   --hold-tint: #f1e8f0;
-  --spine: #4a2348; /* the route line down the left of every page */
+  --spine: #4a2348; /* the run page's route line */
   --clasp: #3a1838; /* the bracket's stroke, a little deeper than the hold */
 
   /* The vault: the one dark surface on a screen, where the money is right now. The v- colours are

@@ -1,7 +1,7 @@
 import type { ResultsSummary } from "@firewall/eval/view";
 import { useMemo } from "react";
 import { useSearchParams } from "react-router";
-import { Button, EmptyState, PageRoute, Station } from "../design";
+import { Button, EmptyState, Page, Section } from "../design";
 import { formatDate } from "../format";
 import { useRuns } from "../runs/RunsProvider";
 import { Comparison } from "./Comparison";
@@ -78,10 +78,10 @@ function Results({ name, knownRunIds }: { name: string; knownRunIds: ReadonlySet
       <Provenance results={results} />
       <h2 className="cmp-headline">{headlineOf(results)}</h2>
       <Comparison results={results} />
-      <Station heading="Every run" className="grid-section">
+      <Section heading="Every run" className="grid-section">
         <p className="t-meta grid-sub">What each firewall setting did to the money, run by run.</p>
         <ResultsGrid results={results} rows={rows} knownRunIds={knownRunIds} />
-      </Station>
+      </Section>
     </>
   );
 }
@@ -124,7 +124,7 @@ export function Dashboard() {
     ) : null;
 
   return (
-    <PageRoute
+    <Page
       title="How it's doing"
       lede="How often agents are fooled with Chaperone off and on, from the eval, and what this server has seen."
       aside={
@@ -135,7 +135,7 @@ export function Dashboard() {
     >
       <LiveStrip />
 
-      <Station heading="The eval" className="eval">
+      <Section heading="The eval" className="eval">
         {picker}
         {state.status === "loading" && (
           <p className="t-meta" role="status">
@@ -161,7 +161,7 @@ export function Dashboard() {
             <Unreadable files={list.unreadable} />
           </>
         )}
-      </Station>
-    </PageRoute>
+      </Section>
+    </Page>
   );
 }

@@ -1,0 +1,104 @@
+/*
+ * The pages that aren't the run page: a title and sections one under the other, laid out in the
+ * same column as the top bar. The route line is the run page's (route.css). The vault is a plain
+ * dark panel here.
+ */
+
+.page {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 44px 48px 64px;
+}
+
+.page-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-5);
+}
+
+.page-title-text {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.page-lede {
+  max-width: 62ch;
+}
+
+.page-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 44px;
+}
+
+.page-title + .page-section,
+.page-title + .vault {
+  margin-top: 36px;
+}
+
+.page-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0;
+}
+
+.page-step {
+  color: var(--hold);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.page-note {
+  margin-inline-start: auto;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* The vault: the one dark surface, where the money is right now. */
+.vault {
+  background: var(--vault);
+  color: var(--vault-ink);
+}
+
+.vault-panel {
+  margin-top: 44px;
+  padding: 24px 32px 28px;
+}
+
+.vault-panel.empty {
+  padding-top: 40px;
+  padding-bottom: 44px;
+}
+
+.vault .t-data,
+.vault .t-meta,
+.vault .page-step,
+.vault .page-note {
+  color: var(--vault-muted);
+}
+
+.vault-bare {
+  padding: 24px;
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding-inline: var(--space-4);
+  }
+
+  .vault-panel {
+    padding-inline: var(--space-4);
+  }
+}
