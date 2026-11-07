@@ -1,4 +1,4 @@
-/* The Start a run page: the steps are stations on the route (choose, mandate, run), and the run step
+/* The Start a run page: the steps are sections (choose, mandate, run), and the run step
    is the page's vault. Two tabs sit at the title's right, as plain links. */
 
 .tabs {
@@ -24,7 +24,7 @@
 .tab[aria-selected="true"] {
   color: var(--ink);
   text-decoration: underline;
-  text-decoration-color: var(--spine);
+  text-decoration-color: var(--hold);
   text-decoration-thickness: 3px;
   text-underline-offset: 10px;
 }
@@ -34,11 +34,11 @@
   flex-direction: column;
 }
 
-.start > .station-section {
+.start > .page-section {
   margin-top: 56px;
 }
 
-.start > .station-section:first-of-type {
+.start > .page-section:first-of-type {
   margin-top: 36px;
 }
 
@@ -114,7 +114,7 @@
 }
 
 .choice-on {
-  border-top: 2px solid var(--spine);
+  border-top: 2px solid var(--hold);
   background: var(--hold-tint);
 }
 
@@ -293,7 +293,7 @@
   grid-column: 1 / -1;
   order: 99;
   min-height: 84px;
-  border-top: 2px solid var(--spine);
+  border-top: 2px solid var(--hold);
 }
 
 .term-money {
@@ -314,7 +314,7 @@
   align-items: start;
   padding: 16px;
   background: var(--hold-tint);
-  border-top: 2px solid var(--spine);
+  border-top: 2px solid var(--hold);
 }
 
 .term-editing .term-label {
@@ -347,7 +347,6 @@
 /* The run step is the vault. Until the mandate is locked it is drawn held back. */
 .launch-vault {
   margin-top: 56px;
-  --vault-pt: 28px;
   padding-bottom: 32px;
 }
 
@@ -429,7 +428,7 @@
   max-width: 980px;
 }
 
-.agent-tab > .station-section {
+.agent-tab > .page-section {
   margin-top: 56px;
 }
 

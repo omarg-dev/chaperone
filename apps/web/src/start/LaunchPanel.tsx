@@ -25,8 +25,8 @@ export function LaunchPanel({
   return (
     <Vault label="Run" className="launch-vault">
       <div className={ready ? "launch" : "launch launch-held-back"}>
-        <h2 className="station-heading t-section">
-          <span className="station-step t-data" aria-hidden="true">
+        <h2 className="page-heading t-section">
+          <span className="page-step t-data" aria-hidden="true">
             3
           </span>
           <span>Run</span>

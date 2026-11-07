@@ -1,4 +1,4 @@
-import { Station, Vault } from "../design";
+import { Section, Vault } from "../design";
 import { SDK_EXAMPLE } from "./snippet";
 
 // "Connect your own agent": how to put Chaperone in front of an agent of your own, with the SDK.
@@ -9,7 +9,7 @@ export function AgentTab() {
   return (
     <div className="agent-tab">
       <Vault label="How it holds a checkout" className="agent-vault">
-        <h2 className="station-heading t-section">How it works</h2>
+        <h2 className="page-heading t-section">How it works</h2>
         <p className="agent-lede">
           Chaperone's SDK wraps your agent's payment tool, so a checkout holds the cart instead of
           paying for it. Your agent keeps its own tools and loop. After it stops, Chaperone reviews
@@ -31,7 +31,7 @@ export function AgentTab() {
         </ol>
       </Vault>
 
-      <Station heading="The SDK's own example">
+      <Section heading="The SDK's own example">
         <figure className="snippet">
           <figcaption className="t-meta">
             It runs offline in about a minute, with the in-memory payment stand-in and a scripted
@@ -41,9 +41,9 @@ export function AgentTab() {
             <code>{SDK_EXAMPLE}</code>
           </pre>
         </figure>
-      </Station>
+      </Section>
 
-      <Station heading="What to know">
+      <Section heading="What to know">
         <ul className="agent-notes">
           <li>
             Your payment tool is named <code>checkout</code>, <code>create_order</code> or{" "}
@@ -60,7 +60,7 @@ export function AgentTab() {
             the repo for now.
           </li>
         </ul>
-      </Station>
+      </Section>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 /* The dashboard: this server's runs, the eval's comparison, and the table of every run. Tokens only. */
 
-/* This server's runs: a station whose numbers are Besley, with no box round them. */
+/* This server's runs: a section whose numbers are Besley, with no box round them. */
 .live-stats {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));

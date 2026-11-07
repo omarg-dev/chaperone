@@ -10,7 +10,7 @@ import {
   postStart,
   type ScenarioInfo,
 } from "../api";
-import { buttonClass, EmptyState, PageRoute, Station } from "../design";
+import { buttonClass, EmptyState, Page, Section } from "../design";
 import { formatTime } from "../format";
 import { useRuns } from "../runs/RunsProvider";
 import { AgentTab } from "./AgentTab";
@@ -29,7 +29,7 @@ export function stepState(index: number, current: number): "done" | "current" | 
   return index < current ? "done" : index === current ? "current" : "next";
 }
 
-// The steps' progress for assistive technology: the stations say where the person is to the eye, and
+// The steps' progress for assistive technology: the numbered sections say where the person is to the eye, and
 // this list says it to everything else (the current step, and which are done).
 function Steps({ current }: { current: number }) {
   return (
@@ -65,7 +65,7 @@ export function Start() {
   };
 
   return (
-    <PageRoute
+    <Page
       title="Start a run"
       lede="Give a shopping agent a task, say what it may buy, and watch Chaperone check the purchase before any money moves."
       aside={
@@ -98,7 +98,7 @@ export function Start() {
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === "run" ? <RunTab /> : <AgentTab />}
       </div>
-    </PageRoute>
+    </Page>
   );
 }
 
@@ -240,7 +240,7 @@ function RunTab() {
     <div className="start">
       <Steps current={current} />
 
-      <Station heading="Choose a task" step={1} className="start-step">
+      <Section heading="Choose a task" step={1} className="start-step">
         {current === 0 ? (
           <ChooseTask
             scenarios={scenarios}
@@ -259,10 +259,10 @@ function RunTab() {
             <span className="t-meta"> To choose a different task, reject the mandate.</span>
           </p>
         )}
-      </Station>
+      </Section>
 
       {mandate && (
-        <Station
+        <Section
           heading={
             mandate.state === "locked" ? "The mandate, locked" : "Review and lock the mandate"
           }
@@ -271,7 +271,7 @@ function RunTab() {
           className="start-step"
         >
           <MandatePanel mandate={mandate} onChange={setMandate} onRejected={forget} />
-        </Station>
+        </Section>
       )}
 
       <LaunchPanel

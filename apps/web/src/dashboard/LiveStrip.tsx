@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Station } from "../design";
+import { Section } from "../design";
 import { useRuns } from "../runs/RunsProvider";
 import { liveCounts, liveStats } from "./live";
 
@@ -9,7 +9,7 @@ export function LiveStrip() {
   const { status, runs } = useRuns();
   const counts = liveCounts(runs);
   return (
-    <Station
+    <Section
       heading="This server's runs"
       note="Counted from the run log here, not from the eval."
       className="live"
@@ -36,6 +36,6 @@ export function LiveStrip() {
           ))}
         </ul>
       )}
-    </Station>
+    </Section>
   );
 }

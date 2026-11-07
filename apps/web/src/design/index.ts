@@ -17,6 +17,7 @@ export {
   MoneyGlyph,
   type MoneyState,
 } from "./MoneyGlyph";
+export { Page, Section } from "./Page";
 export { PageRoute, Station } from "./PageRoute";
 export {
   GATE_STATE_LABELS,

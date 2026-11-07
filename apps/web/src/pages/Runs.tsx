@@ -8,9 +8,9 @@ import {
   EmptyState,
   MoneyGlyph,
   type MoneyState,
-  PageRoute,
+  Page,
   Pill,
-  Station,
+  Section,
   Toggle,
   Vault,
 } from "../design";
@@ -438,7 +438,7 @@ export function Runs() {
         : `${runs.length} runs`;
 
   return (
-    <PageRoute
+    <Page
       title="Runs"
       lede="Every purchase an agent has tried, newest first. Each amount sits in the column that says where the money is."
       aside={refresh}
@@ -497,7 +497,7 @@ export function Runs() {
             </div>
           </Vault>
 
-          <Station heading="Where the money went" className="runs-filters">
+          <Section heading="Where the money went" className="runs-filters">
             <OutcomeChips
               value={filters.outcome}
               counts={counts}
@@ -562,9 +562,9 @@ export function Runs() {
               )}
               {filtered && <div className="filter-clear">{clear}</div>}
             </search>
-          </Station>
+          </Section>
 
-          <Station
+          <Section
             heading={
               <>
                 <span role="status">{countText}</span>
@@ -601,10 +601,10 @@ export function Runs() {
                 statusBar={<MoneyStatus totals={totals} />}
               />
             )}
-          </Station>
+          </Section>
         </>
       )}
-    </PageRoute>
+    </Page>
   );
 }
 

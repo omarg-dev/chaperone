@@ -95,7 +95,7 @@ describe("navigation", () => {
 });
 
 describe("the route line", () => {
-  // Every page is drawn on the route: a spine, a filled title station and one title.
+  // The route line is the run page's alone. Every other page is a plain page: one title, sections.
   it.each([
     "/runs",
     "/start",
@@ -103,15 +103,22 @@ describe("the route line", () => {
     "/escalations",
     "/dashboard",
     "/arena",
-    "/runs/run_nope",
     "/nowhere",
-  ])("draws %s with PageRoute", async (path) => {
+  ])("leaves %s without it", async (path) => {
     const { container } = renderApp(path);
+    await screen.findByRole("heading", { level: 1 });
+    expect(container.querySelector(".page")).not.toBeNull();
+    expect(container.querySelector("[data-route], .station")).toBeNull();
+    expect(container.querySelectorAll("h1")).toHaveLength(1);
+    // A screen has at most one vault, and an empty or held one is still it.
+    expect(container.querySelectorAll(".vault").length).toBeLessThanOrEqual(1);
+  });
+
+  it("draws the run page on it", async () => {
+    const { container } = renderApp("/runs/run_nope");
     await screen.findByRole("heading", { level: 1 });
     expect(container.querySelectorAll("[data-route]")).toHaveLength(1);
     expect(container.querySelectorAll(".station-title")).toHaveLength(1);
     expect(container.querySelectorAll("h1")).toHaveLength(1);
-    // A screen has at most one vault, and an empty or held one is still it.
-    expect(container.querySelectorAll(".vault").length).toBeLessThanOrEqual(1);
   });
 });

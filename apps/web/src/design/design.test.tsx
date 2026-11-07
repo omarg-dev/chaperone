@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { Amount, amountParts, formatMoney, Rate, rateParts } from "./Amount";
 import { Mark } from "./Mark";
 import { MONEY_STATE_LABELS, MONEY_STATES, MoneyGlyph } from "./MoneyGlyph";
+import { Page, Section } from "./Page";
 import { PageRoute, Station } from "./PageRoute";
 import { GATE_STATE_LABELS, GATE_STATES, MONEY_OF_GATE, Pill } from "./Pill";
 import { Seal, sealGroups } from "./Seal";
@@ -165,6 +166,19 @@ describe("the route line", () => {
     expect(container.querySelectorAll(".station-title")).toHaveLength(1);
     expect(container.querySelectorAll(".station-section")).toHaveLength(2);
     expect(screen.getByRole("region", { name: "211 runs" })).toBeInTheDocument();
+  });
+
+  it("is the run page's alone: a plain page has sections and no stations", () => {
+    const { container } = render(
+      <Page title="Runs" lede="Every purchase.">
+        <Section heading="211 runs" step={2}>
+          y
+        </Section>
+      </Page>,
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "Runs" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "211 runs" })).toBeInTheDocument();
+    expect(container.querySelector("[data-route], .station")).toBeNull();
   });
 
   it("holds the money in a vault, which is named", () => {

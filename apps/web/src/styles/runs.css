@@ -6,7 +6,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 40px;
-  --vault-pt: 24px;
   padding-bottom: 26px;
 }
 
@@ -299,7 +298,7 @@
 }
 
 /* The button in the history's heading is a button, not the heading's note in the record face. */
-.runs-grid .station-note .btn {
+.runs-grid .page-note .btn {
   font-family: var(--font-ui);
   font-size: 14px;
   font-weight: 650;
