@@ -1,7 +1,9 @@
+import { GEMINI_COLUMN, HAIKU_COLUMN, OPENAI_COLUMN } from "@firewall/agent";
 import { HELD_OUT_SCENARIOS, isHeldOut } from "@firewall/arena";
 import { describe, expect, it } from "vitest";
 import {
   ESTIMATED_CELL_TOTAL_USD,
+  estimatedCellUsd,
   estimateMatrix,
   parseSeeds,
   planMatrix,
@@ -77,6 +79,24 @@ describe("choosing the cells", () => {
       perCellUsd: ESTIMATED_CELL_TOTAL_USD,
       expectedUsd: 4 * ESTIMATED_CELL_TOTAL_USD,
     });
+  });
+});
+
+describe("the cost estimate follows the column", () => {
+  it("is the same for Claude Haiku 5.5 and GPT-6 Luna, which price alike, and more for Gemini", () => {
+    // 20k input and 2k output tokens for the agent at the column's own rates, plus the mandate
+    // draft and the review, which run on Claude Haiku 5.5 whichever column the agent is on.
+    expect(estimatedCellUsd(HAIKU_COLUMN)).toBeCloseTo(0.0065, 8);
+    expect(estimatedCellUsd(HAIKU_COLUMN)).toBeCloseTo(ESTIMATED_CELL_TOTAL_USD, 12);
+    expect(estimatedCellUsd(OPENAI_COLUMN)).toBeCloseTo(0.0065, 8);
+    expect(estimatedCellUsd(GEMINI_COLUMN)).toBeCloseTo(0.006 + 0.005 + 0.0035, 8);
+  });
+
+  it("prices a matrix at the column it runs on", () => {
+    const cells = planMatrix(selectScenarios("sc_b01"), ["1", "2"], GEMINI_COLUMN.columnId);
+    const estimate = estimateMatrix(cells, GEMINI_COLUMN);
+    expect(estimate.perCellUsd).toBe(estimatedCellUsd(GEMINI_COLUMN));
+    expect(estimate.expectedUsd).toBeCloseTo(2 * estimatedCellUsd(GEMINI_COLUMN), 12);
   });
 });
 

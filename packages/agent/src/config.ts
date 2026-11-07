@@ -12,6 +12,15 @@ export interface AnthropicConfig {
   baseUrl: string;
 }
 
+// Any provider's key and base URL, as passed to its client. The Anthropic one is the same shape.
+export type ModelConfig = AnthropicConfig;
+
+// The OpenAI column's endpoint, and the Gemini column's: Google's OpenAI-compatible endpoint, which
+// takes the key as `Authorization: Bearer` (its native API only takes `x-goog-api-key` or OAuth, so
+// it can't sit behind a proxy that attaches a bearer key). docs/PLAN.md, "Models".
+export const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
+export const DEFAULT_GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai";
+
 export class MissingConfigError extends Error {
   constructor(message: string) {
     super(message);
@@ -34,4 +43,35 @@ export function anthropicConfigFromEnv(env: NodeJS.ProcessEnv = process.env): An
   const raw = env.FIREWALL_ANTHROPIC_BASE_URL?.trim() || DEFAULT_ANTHROPIC_BASE_URL;
   const baseUrl = `${raw.replace(/\/+$/, "").replace(/\/v1$/, "")}/v1`;
   return { apiKey, baseUrl };
+}
+
+const withoutTrailingSlashes = (url: string) => url.replace(/\/+$/, "");
+
+// The OpenAI column's settings, from FIREWALL_OPENAI_API_KEY and FIREWALL_OPENAI_BASE_URL only.
+// The OpenAI provider falls back to OPENAI_API_KEY and OPENAI_BASE_URL when a setting isn't passed,
+// so both are always passed here.
+export function openaiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ModelConfig {
+  const apiKey = env.FIREWALL_OPENAI_API_KEY?.trim();
+  if (!apiKey) {
+    throw new MissingConfigError(
+      "The OpenAI column needs FIREWALL_OPENAI_API_KEY, the app's own OpenAI key. " +
+        "It never uses OPENAI_API_KEY. See .env.example.",
+    );
+  }
+  const raw = env.FIREWALL_OPENAI_BASE_URL?.trim() || DEFAULT_OPENAI_BASE_URL;
+  return { apiKey, baseUrl: withoutTrailingSlashes(raw) };
+}
+
+// The Gemini column's settings, from FIREWALL_GEMINI_API_KEY and FIREWALL_GEMINI_BASE_URL only,
+// never GEMINI_API_KEY, GOOGLE_API_KEY or GOOGLE_GENERATIVE_AI_API_KEY.
+export function geminiConfigFromEnv(env: NodeJS.ProcessEnv = process.env): ModelConfig {
+  const apiKey = env.FIREWALL_GEMINI_API_KEY?.trim();
+  if (!apiKey) {
+    throw new MissingConfigError(
+      "The Gemini column needs FIREWALL_GEMINI_API_KEY, the app's own Gemini key. " +
+        "It never uses GEMINI_API_KEY or GOOGLE_API_KEY. See .env.example.",
+    );
+  }
+  const raw = env.FIREWALL_GEMINI_BASE_URL?.trim() || DEFAULT_GEMINI_BASE_URL;
+  return { apiKey, baseUrl: withoutTrailingSlashes(raw) };
 }

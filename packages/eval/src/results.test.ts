@@ -1,6 +1,7 @@
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { GEMINI_COLUMN, OPENAI_COLUMN } from "@firewall/agent";
 import { describe, expect, it } from "vitest";
 import type { MatrixRun } from "./matrix.js";
 import { buildResults, renderMarkdown, resultsName, writeResults } from "./results.js";
@@ -15,24 +16,26 @@ const matrix = (
   stoppedBySpendCap: false,
 });
 
+const buildInput = {
+  paymentAdapter: "fake",
+  column: {
+    columnId: "claude-haiku-5-5",
+    label: "Claude Haiku 5.5",
+    modelId: "claude-haiku-5-5",
+  },
+  gateModel: "claude-haiku-5-5",
+  scenarios: ["sc_b01", "sc_a02"],
+  seeds: ["1", "2"],
+  startedAt: new Date("2026-10-26T10:15:00.000Z"),
+  finishedAt: new Date("2026-10-26T10:16:00.000Z"),
+  eventLog: "run.events.db",
+  concurrency: 3,
+  maxUsd: 0.5,
+  matrix: matrix(),
+} as const;
+
 const build = (adapter: "fake" | "sandbox", m = matrix(), scenarios = ["sc_b01", "sc_a02"]) =>
-  buildResults({
-    paymentAdapter: adapter,
-    column: {
-      columnId: "claude-haiku-5-5",
-      label: "Claude Haiku 5.5",
-      modelId: "claude-haiku-5-5",
-    },
-    gateModel: "claude-haiku-5-5",
-    scenarios,
-    seeds: ["1", "2"],
-    startedAt: new Date("2026-10-26T10:15:00.000Z"),
-    finishedAt: new Date("2026-10-26T10:16:00.000Z"),
-    eventLog: "run.events.db",
-    concurrency: 3,
-    maxUsd: 0.5,
-    matrix: m,
-  });
+  buildResults({ ...buildInput, paymentAdapter: adapter, matrix: m, scenarios });
 
 describe("the results file", () => {
   it("names the payment adapter, the model column, the gate model, the seeds and the date", () => {
@@ -60,6 +63,27 @@ describe("the results file", () => {
     expect(markdown).toContain("| Seeds | 1, 2 |");
     expect(markdown).toContain("| Gate model | `claude-haiku-5-5` |");
     expect(markdown).toContain("Attack success rate");
+  });
+
+  it("names the OpenAI and Gemini columns' models in the file and its name, with the gates on Haiku", () => {
+    for (const column of [OPENAI_COLUMN, GEMINI_COLUMN]) {
+      const results = buildResults({
+        ...buildInput,
+        column: { columnId: column.columnId, label: column.label, modelId: column.modelId },
+      });
+      expect(results.meta.column).toEqual({
+        columnId: column.columnId,
+        label: column.label,
+        modelId: column.modelId,
+      });
+      expect(results.meta.gateModel).toBe("claude-haiku-5-5");
+      const markdown = renderMarkdown(results);
+      expect(markdown).toContain(column.label);
+      expect(markdown).toContain(`(\`${column.modelId}\`)`);
+      expect(resultsName(new Date("2026-10-26T10:15:00.000Z"), "fake", column.columnId)).toBe(
+        `2026-10-26T1015-fake-${column.columnId}`,
+      );
+    }
   });
 
   it("says SANDBOX for a sandbox run, and not that it is fake", () => {

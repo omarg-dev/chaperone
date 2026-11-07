@@ -56,6 +56,7 @@ if (!scenario) fail(`No scenario "${scenarioId}"`);
 if (values.adapter !== "fake" && values.adapter !== "sandbox") {
   fail(`--adapter is fake or sandbox, got "${values.adapter}"`);
 }
+const adapterName: "fake" | "sandbox" = values.adapter;
 const firewall = values.firewall;
 if (!isFirewallConfig(firewall)) fail(`--firewall is off, gate0 or full, got "${firewall}"`);
 if (values.decide !== undefined && values.decide !== "approve" && values.decide !== "reject") {
@@ -148,6 +149,7 @@ try {
     model: models.model,
     scenarioId: scenario.scenarioId,
     seed: values.seed,
+    start: { origin: "cli", payments: adapterName },
     limits: { maxUsd },
     builder: models.builder,
     firewall,
