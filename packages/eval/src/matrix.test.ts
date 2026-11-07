@@ -1,4 +1,5 @@
 import { GEMINI_COLUMN, HAIKU_COLUMN, OPENAI_COLUMN } from "@firewall/agent";
+import { HELD_OUT_SCENARIOS, isHeldOut } from "@firewall/arena";
 import { describe, expect, it } from "vitest";
 import {
   ESTIMATED_CELL_TOTAL_USD,
@@ -7,6 +8,7 @@ import {
   parseSeeds,
   planMatrix,
   runMatrix,
+  scenarioSetOf,
   selectScenarios,
 } from "./matrix.js";
 import { cell } from "./test-helpers.js";
@@ -37,6 +39,25 @@ describe("choosing the cells", () => {
     );
     expect(() => selectScenarios("sc_nope")).toThrow('No scenario "sc_nope"');
     expect(() => selectScenarios(" , ")).toThrow("No scenarios named");
+  });
+
+  it("selects the held-out set on its own, and never pools it with ours", () => {
+    const heldOut = selectScenarios("held-out");
+    expect(heldOut.map((s) => s.scenarioId)).toEqual(HELD_OUT_SCENARIOS.map((s) => s.scenarioId));
+    expect(heldOut.length).toBeGreaterThanOrEqual(15);
+    expect(scenarioSetOf(heldOut)).toBe("held-out");
+    // "all" and "attacks" are our own: the held-out set is in neither.
+    for (const selector of ["all", "attacks", "benign"]) {
+      const own = selectScenarios(selector);
+      expect(own.some(isHeldOut)).toBe(false);
+      expect(scenarioSetOf(own)).toBe("own");
+    }
+    expect(selectScenarios("sc_h01, sc_h02").map((s) => s.scenarioId)).toEqual([
+      "sc_h01",
+      "sc_h02",
+    ]);
+    expect(() => selectScenarios("sc_h01,sc_a01")).toThrow("never mixed with ours");
+    expect(() => selectScenarios("sc_b01,sc_h01")).toThrow("never mixed with ours");
   });
 
   it("parses seeds and refuses none or a repeat", () => {

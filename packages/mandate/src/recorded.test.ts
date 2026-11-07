@@ -7,6 +7,8 @@ import { builderAnswering } from "./test-helpers.js";
 
 // The builder's live answers to every scenario's request (the attack scenarios' requests are the person's own, honest ones), recorded once with
 // `pnpm --filter @firewall/mandate record-fixtures` and replayed here. Nothing calls a model.
+// A held-out scenario reuses a benign scenario's request (its `userTask`), so it replays that
+// scenario's recording.
 const load = (scenarioId: string): RecordedResponse =>
   JSON.parse(
     readFileSync(new URL(`../fixtures/requests/${scenarioId}.json`, import.meta.url), "utf8"),
@@ -15,7 +17,7 @@ const load = (scenarioId: string): RecordedResponse =>
 describe.each(SCENARIOS.map((s) => [s.scenarioId, s] as const))(
   "the recorded draft for %s",
   (scenarioId, scenario) => {
-    const fixture = load(scenarioId);
+    const fixture = load(scenario.userTask ?? scenarioId);
     const { builder, sent } = builderAnswering(fixture.response);
 
     it("was recorded for this scenario's request, with the prompt and schema the builder sends now", () => {

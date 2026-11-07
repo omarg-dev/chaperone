@@ -12,7 +12,7 @@ import {
 } from "./comparables.js";
 import type { GateResult } from "./gate.js";
 import { decideGate2, type Gate2Finding, type LineReview } from "./gate2-verdict.js";
-import { type MarketCheck, type MarketReference, marketCheck, marketQueryFor } from "./market.js";
+import { type MarketReference, marketCheck, marketQueryFor } from "./market.js";
 import type { ReviewerView } from "./reviewer-view.js";
 import { checkoutOf, mandateOf, Refs } from "./run-inputs.js";
 import { STEERING_FLAGS } from "./verdict.js";
@@ -22,7 +22,8 @@ import { STEERING_FLAGS } from "./verdict.js";
 //  - the checkout's numbers (listing, quantity, prices), and each listing's facts from the
 //    catalog, never the checkout's line titles, which are the sellers' page titles;
 //  - Gate 1's result through factsForReviewers only, never an arena page event;
-//  - comparable offers from the catalog, and a real-market reference when one answers.
+//  - comparable offers from the catalog, and a real-market reference when one answers, which is
+//    recorded and noted on the verdict but never shown to the auditor or acted on.
 // It computes the comparables and the price checks in code, asks the auditor for its judgement,
 // decides the verdict by rule (gate2-verdict.ts), and writes every step to the gate2 lane:
 //  - gate2_started (system): what it read, by event ID and hash, and everything it computed;
@@ -74,25 +75,6 @@ const comparablesSummary = (c: Comparables | null) =>
     meetingMandate: c.meetingMandate,
   };
 
-const marketSummary = (m: MarketCheck | null) => {
-  if (!m) return null;
-  const q = m.quote;
-  return q.status === "available"
-    ? {
-        status: q.status,
-        source: q.source,
-        query: q.query,
-        pricedProducts: q.pricedProducts,
-        lowCents: q.lowCents,
-        medianCents: q.medianCents,
-        highCents: q.highCents,
-        paidVsMedianPct: m.pctAboveMedian,
-        beyondTolerance: m.beyondTolerance,
-      }
-    : // Why it is missing, as a code: the detail stays in the event log.
-      { status: q.status, source: q.source, reason: q.reason };
-};
-
 // What the auditor is shown. Everything here is the catalog's, the person's or code's: the
 // checkout's line titles, page events and Gate 1's quotes are never read into it.
 export function auditView(input: {
@@ -103,7 +85,6 @@ export function auditView(input: {
   lines: readonly LineReview[];
   gate1: { reviewerView: ReviewerView; verdictEventId: string };
   inputsEventId: string;
-  marketEventId: string;
 }): { view: AuditView; eventIdOf: (ref: string) => string | undefined } {
   const refs = new Refs();
   const checkout = refs.ref(input.checkoutEventId, "the checkout: the cart's lines and prices");
@@ -112,7 +93,6 @@ export function auditView(input: {
     input.inputsEventId,
     "the firewall's computed comparables and price checks",
   );
-  const marketRef = refs.ref(input.marketEventId, "the market reference lookups");
   const gate1Ref = refs.ref(input.gate1.verdictEventId, "Gate 1's verdict");
   const page = "a listing page the agent was served (its facts are in gate1)";
   const { mandate } = input;
@@ -134,7 +114,7 @@ export function auditView(input: {
     cart: {
       evidence: checkout,
       totalCents: input.totalCents,
-      lines: input.lines.map(({ line, comparables, market }) => ({
+      lines: input.lines.map(({ line, comparables }) => ({
         line: line.line,
         listingId: line.listingId,
         quantity: line.quantity,
@@ -151,7 +131,6 @@ export function auditView(input: {
           attributes: line.record.attributes,
         },
         comparables: comparables && { evidence: computed, ...comparablesSummary(comparables) },
-        market: market && { evidence: marketRef, ...marketSummary(market) },
       })),
     },
     gate1: {
@@ -295,7 +274,7 @@ export async function runGate2(
   reviews.forEach((r, i) => {
     const quote = quotes[i];
     if (quote) {
-      r.market = marketCheck(r.line.paidUnitCents, quote, mandate.tolerances.priceVsBestOfferPct);
+      r.market = marketCheck(r.line.paidUnitCents, quote);
     }
   });
   const marketEvent = append(
@@ -308,7 +287,6 @@ export async function runGate2(
         listingId: r.line.listingId,
         quote: r.market?.quote ?? null,
         pctAboveMedian: r.market?.pctAboveMedian ?? null,
-        beyondTolerance: r.market?.beyondTolerance ?? false,
       })),
     },
     { latencyMs: Math.round(now() - lookupsStarted) },
@@ -323,7 +301,6 @@ export async function runGate2(
     lines: reviews,
     gate1: options.gate1,
     inputsEventId: start.eventId,
-    marketEventId: marketEvent.eventId,
   });
   let audit: AuditResult | null = null;
   let failure: AuditError | null = null;

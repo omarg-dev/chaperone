@@ -28,6 +28,9 @@ export function Shell() {
           <NavLink to="/dashboard" className="nav-link">
             Dashboard
           </NavLink>
+          <NavLink to="/docs" className="nav-link">
+            Docs
+          </NavLink>
           <NavLink to="/arena" className="nav-link nav-link-soon">
             Arena
             <span className="nav-soon">Under construction</span>

@@ -69,7 +69,6 @@ function line(
     market: overrides.market ?? {
       quote: unavailable,
       pctAboveMedian: null,
-      beyondTolerance: false,
     },
     steering: overrides.steering ?? [],
   };
@@ -159,7 +158,7 @@ describe("Gate 2's verdict", () => {
       ]);
     });
 
-    it("escalates a price far above the real market by code", () => {
+    it("approves a price far above the real market, and notes the quote (decided Nov 7)", () => {
       const quote: MarketQuote = {
         status: "available",
         source: "stand-in",
@@ -171,17 +170,34 @@ describe("Gate 2's verdict", () => {
         highCents: 9000,
         latencyMs: 0,
       };
-      const market = { quote, pctAboveMedian: 100, beyondTolerance: true };
+      const market = { quote, pctAboveMedian: 100 };
       const d = decide([line(1, { market })], judged("approve", [[1, "matches_mandate"]]));
-      expect(summary(d)).toEqual([[1, "overpriced_vs_market", "code", "escalate", 1]]);
+      expect(d.result.verdict).toBe("approve");
+      expect(summary(d)).toEqual([]);
+      expect(d.result.reasons[1]).toBe(
+        "Noted, not escalated: line 1 (lst_1): the real market sells this kind of product for 3000 cents to 9000 cents, median 5000 cents over 8 products (stand-in); this line is 100% above the median",
+      );
       expect(d.result.evidenceEventIds).toContain("ev_market");
-      // An available reference leaves no note.
-      expect(d.result.reasons.join(" ")).not.toContain("Noted");
     });
 
-    it("escalates, at the auditor's confidence, a price concern code doesn't share", () => {
-      const d = decide([line(1)], judged("escalate", [[1, "overpriced_vs_market"]]));
-      expect(summary(d)).toEqual([[1, "overpriced_vs_market", "auditor", "escalate", 0.7]]);
+    it("notes a line below the market median the same way", () => {
+      const quote: MarketQuote = {
+        status: "available",
+        source: "stand-in",
+        query: "q",
+        products: 9,
+        pricedProducts: 8,
+        lowCents: 3000,
+        medianCents: 5000,
+        highCents: 9000,
+        latencyMs: 0,
+      };
+      const d = decide(
+        [line(1, { market: { quote, pctAboveMedian: -20 } })],
+        judged("approve", [[1, "matches_mandate"]]),
+      );
+      expect(d.result.verdict).toBe("approve");
+      expect(d.result.reasons[1]).toMatch(/this line is 20% below the median$/);
     });
   });
 
