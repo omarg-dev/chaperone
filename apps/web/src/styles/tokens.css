@@ -80,6 +80,8 @@
   --text-body: 0.9375rem; /* 15 / 1.45, Archivo 400 */
   --text-meta: 0.78125rem; /* 12.5 / 1.4, Archivo 700 */
   --text-data: 0.78125rem; /* 12.5 / 1.4, Fragment Mono */
+  --text-hero: clamp(2.75rem, 5.2vw, 4.75rem); /* the landing page's headlines, Besley 700 */
+  --text-stat: clamp(5rem, 11vw, 9.5rem); /* the landing page's big numbers, Besley 700 */
 
   /* The route line: a 3px spine 68px in from the page edge, the title a filled station and each
      section a ring station joined to its heading by a short branch. */

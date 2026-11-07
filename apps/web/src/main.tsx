@@ -16,6 +16,7 @@ import "./styles/inbox.css";
 import "./styles/grid.css";
 import "./styles/dashboard.css";
 import "./styles/start.css";
+import "./styles/landing.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("index.html has no #root element");

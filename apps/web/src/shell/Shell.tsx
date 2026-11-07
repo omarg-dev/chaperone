@@ -8,7 +8,7 @@ export function Shell() {
   return (
     <div className="shell">
       <header className="topbar">
-        <NavLink to="/runs" className="topbar-home" aria-label="Chaperone, home">
+        <NavLink to="/" end className="topbar-home" aria-label="Chaperone, home">
           <Wordmark />
         </NavLink>
         <nav aria-label="Main" className="topbar-nav">

@@ -186,6 +186,7 @@ describe("the list of results", () => {
       },
       gateModel: "claude-haiku-5-5",
       seeds: ["1", "2"],
+      scenarios: expect.any(Array),
       date: "2026-10-26",
       startedAt: "2026-10-26T10:15:00.000Z",
     });

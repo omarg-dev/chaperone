@@ -93,6 +93,7 @@ describe("GET /eval/results", () => {
       },
       gateModel: "claude-haiku-5-5",
       seeds: ["1", "2", "3"],
+      scenarios: expect.any(Array),
       date: "2026-10-30",
       startedAt: "2026-10-30T09:00:00.000Z",
     });
