@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router";
+import { Docs } from "./docs/Docs";
 import { Escalations } from "./pages/Escalations";
 import { Arena, NotFound } from "./pages/Placeholders";
 import { Runs } from "./pages/Runs";
@@ -31,6 +32,7 @@ export function App() {
               </Suspense>
             }
           />
+          <Route path="docs" element={<Docs />} />
           <Route path="start" element={<Start />} />
           <Route path="runs" element={<Runs />} />
           <Route path="runs/:runId" element={<RunView />} />

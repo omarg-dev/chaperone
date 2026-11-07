@@ -240,6 +240,8 @@ log.close();
 pnpm --filter @firewall/sdk example   # verdict: block, money: voided
 ```
 
+The same material, as a page, is [docs/sdk.md](docs/sdk.md), which the app shows at `/docs`.
+
 What it does:
 
 - `createFirewall(options)` takes the event log, the catalog source (below), the payment adapter and the buyer's wallet, the mandate the person confirmed (or `{ builder, person }` to build it in the run), and `config`: `off`, `gate0` or `full` (`full` also needs `gates`, the model gates built from your own settings; the SDK never creates a model client from the environment).
