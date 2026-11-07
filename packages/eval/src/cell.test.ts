@@ -69,6 +69,7 @@ const context = (
   arena,
   log,
   payments: fake,
+  paymentsName: "fake",
   vaultId: "FAKE-WALLET",
   builder,
   modelFor: () => model,
@@ -131,6 +132,13 @@ describe("runCell", () => {
     expect(events.some((e) => e.lane === "review")).toBe(false);
     expect(payments("capture")).toHaveLength(0);
     expect(payments("void")).toHaveLength(0);
+  });
+
+  it("marks the run as the eval's and names its payment adapter, so an export can tell", async () => {
+    const { run } = await shop("honest");
+    const [started] = log.listRun(run.runId as string);
+    expect(started?.type).toBe("run_started");
+    expect(started?.payload).toMatchObject({ origin: "eval", payments: "fake" });
   });
 
   it("records a run where the agent never checked out, with nothing held", async () => {

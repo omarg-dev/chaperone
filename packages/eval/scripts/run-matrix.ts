@@ -133,6 +133,12 @@ console.log(
   `${estimate.cells} cells (${scenarios.length} scenarios x ${seeds.length} seeds), ${column.label}, ` +
     `${adapterName} payments, gates on ${EXTRACTOR_MODEL}`,
 );
+// Said up front, since a matrix without it still runs: Gate 2 then checks prices within the arena only.
+console.log(
+  channel3ConfigFromEnv().apiKey
+    ? "Market reference: Channel3"
+    : "Market reference: off (no FIREWALL_CHANNEL3_API_KEY), Gate 2 checks prices within the arena only",
+);
 console.log(
   `Expected cost about $${estimate.expectedUsd.toFixed(4)} ($${estimate.perCellUsd.toFixed(4)} a cell); ` +
     `cap $${maxUsd}, per-run agent cap $${agentMaxUsd}`,
@@ -172,9 +178,15 @@ const builder = createMandateBuilder({ client, vocabulary: arenaVocabulary() });
 const model = createColumnModel(column, agentConfig);
 
 // The fake is made fresh for every cell, so cells share nothing. The sandbox adapter is one client.
-async function paymentSetup(): Promise<() => { payments: PaymentAdapter; vaultId: string }> {
+async function paymentSetup(): Promise<
+  () => { payments: PaymentAdapter; paymentsName: PaymentAdapterName; vaultId: string }
+> {
   if (adapterName === "fake") {
-    return () => ({ payments: createFakePaymentAdapter(), vaultId: "FAKE-WALLET" });
+    return () => ({
+      payments: createFakePaymentAdapter(),
+      paymentsName: "fake",
+      vaultId: "FAKE-WALLET",
+    });
   }
   const adapter = createSandboxPaymentAdapter({ ...sandboxConfigFromEnv(), returnUrl: RETURN_URL });
   let vaultId = process.env.SANDBOX_BUYER_VAULT_ID;
@@ -187,7 +199,7 @@ async function paymentSetup(): Promise<() => { payments: PaymentAdapter; vaultId
     vaultId = await adapter.finishWalletSetup(setup.setupTokenId);
   }
   const saved = vaultId;
-  return () => ({ payments: adapter, vaultId: saved });
+  return () => ({ payments: adapter, paymentsName: "sandbox", vaultId: saved });
 }
 
 try {

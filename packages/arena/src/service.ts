@@ -35,11 +35,12 @@ export interface CallOptions {
   parentId?: string;
 }
 
-// What a caller says about who started a run, written into its `run_started` event. The web app's
-// live runs say `origin: "web"` (the daily spend cap counts those) and which payment adapter holds
-// their money.
+// What a caller says about who started a run, written into its `run_started` event: where it came
+// from (the web app's live runs say `origin: "web"`, and the daily spend cap counts only those; the
+// eval says "eval" and the command line "cli") and which payment adapter holds its money, so an
+// export or the run list can tell a sandbox run from a fake one.
 export interface StartOptions {
-  origin?: "web";
+  origin?: "web" | "eval" | "cli";
   payments?: "fake" | "sandbox";
 }
 
