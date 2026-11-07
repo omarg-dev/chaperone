@@ -13,6 +13,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Topic | Decision |
 |---|---|
 | Stack | TypeScript throughout: pnpm workspace monorepo, Hono server, React + Vite web app, SQLite through Drizzle. |
+| Scope, Nov 7 | Render Workflows is cut: the eval runs locally. Refunds after capture and the Bryntum timeline are parked until after Nov 8. A landing page at `/` and a simple docs page at `/docs` join v1.2. The route line (`PageRoute`) belongs to the run page only and comes off the other pages. |
 | Model calls | The shopping agent uses the Vercel AI SDK, so one loop runs on any provider. Its checkout tool is ours, because the platform's agent toolkit can't hold money (its order tools capture at once); the firewall wraps that tool. The toolkit's read, refund and dispute tools belong to the dispute evidence pack and transaction insights, where they fit as they are. The gates use the official Anthropic SDK, for structured outputs, prompt caching and batch pricing. |
 | Models | Gates: Claude Haiku 5.5, fixed for every eval run. Shopping agent: three separate eval columns, Claude Haiku 5.5, an OpenAI model and a Gemini model (free tier). Exact OpenAI and Gemini model IDs get picked when we wire them up. |
 | No fallback inside the eval | Each eval column runs on exactly one model. A provider fallback chain would mix models inside one column's numbers, so it only exists for the hosted demo's agent. |
@@ -50,7 +51,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now: the MVP (steps 0 to 18) is merged; its 0.1.1 entry was written but never deployed, so the last release on the server's old `prod` is tagged `v0.1.0`. All of v1.1 (steps 1 to 12) is merged, and so is v1.2 step 1, Gate 3. On Nov 6 the repo moved to the rulebook's `main` and release workflow; the first release from it, 0.2.0, puts v1.1 on chaperone.omarg.dev. Next in v1.2: the OpenAI and Gemini agent columns, the eval on Render, the first real-sandbox matrix, then the gate freeze (slipped from Nov 5) and the held-out set.** MVP step 6, the first technical checks, is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
+**Now (Nov 7): Render Workflows is cut (the eval runs locally); refunds after capture and the Bryntum timeline are parked until after Nov 8; v1.2 gains a landing page at `/` and a simple docs page; the route line stays on the run page only. Before that: the MVP (steps 0 to 18) is merged; its 0.1.1 entry was written but never deployed, so the last release on the server's old `prod` is tagged `v0.1.0`. All of v1.1 (steps 1 to 12) is merged, and so is v1.2 step 1, Gate 3. On Nov 6 the repo moved to the rulebook's `main` and release workflow; the first release from it, 0.2.0, puts v1.1 on chaperone.omarg.dev. Next in v1.2: the OpenAI and Gemini agent columns, the eval on Render, the first real-sandbox matrix, then the gate freeze (slipped from Nov 5) and the held-out set.** MVP step 6, the first technical checks, is answered in full ([docs/sandbox-checks.md](sandbox-checks.md)): the buyer's wallet saves with one scripted approval and holds every later order with no approval link. The sandbox adapter passes the same contract as the fake: a cart is one order paid to the platform, voided on a block, or captured and paid out to each seller.
 
 Each step is one PR into `main`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `main`.
 
@@ -106,13 +107,16 @@ Done when: a judge can open the hosted URL, replay a real attack run, and start 
 | # | Step | Status |
 |---|---|---|
 | 1 | Gate 3, trace auditor | 👀 PR open |
-| 2 | Refunds after capture | ⬜ |
+| 2 | Refunds after capture (parked until after Nov 8) | ⬜ |
 | 3 | OpenAI and Gemini agent columns | ⬜ |
-| 4 | Eval matrix on Render Workflows | ⬜ |
+| 4 | ~~Eval matrix on Render Workflows~~ cut Nov 7: the eval runs locally | ⛔ Cut |
 | 5 | **Gate freeze, Nov 5**: gate prompts and logic stop changing | ⬜ |
 | 6 | Held-out set ported from published benchmarks and run against the frozen gates | ⬜ |
 | 7 | Headline matrix against the real sandbox | ⬜ |
-| 8 | Bryntum Scheduler timeline of an eval matrix run: each cell's agent run and gate calls on a real time axis across the workers, from step 4's runs on Render Workflows | ⬜ |
+| 8 | Bryntum Scheduler timeline of an eval matrix run: each cell's agent run and gate calls on a real time axis across the workers, from step 4's runs on Render Workflows (parked until after Nov 8) | ⬜ |
+| 9 | Landing page at `/`: one idea per screen, numbers read from the eval's results | 👀 In review |
+| 10 | Docs page at `/docs`, simple | ⬜ |
+| 11 | Route line on the run page only, off the other pages | ⬜ |
 
 Done when: the dashboard shows real-sandbox numbers for all three models, with the ablation, the held-out results and at least one attack that still gets through.
 

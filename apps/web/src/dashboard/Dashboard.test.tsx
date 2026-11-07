@@ -20,6 +20,7 @@ const summary = (name: string, results: typeof fakeResults, startedAt: string) =
   column: results.meta.column,
   gateModel: results.meta.gateModel,
   seeds: results.meta.seeds,
+  scenarios: results.meta.scenarios,
   date: startedAt.slice(0, 10),
   startedAt,
 });

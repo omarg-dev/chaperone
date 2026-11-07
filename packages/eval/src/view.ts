@@ -180,6 +180,8 @@ export interface ResultsSummary {
   column: ResultsMetaView["column"];
   gateModel: string;
   seeds: string[];
+  // The scenarios the matrix ran, so a page can tell our own set from a held-out one.
+  scenarios: string[];
   date: string;
   startedAt: string;
 }
@@ -190,6 +192,7 @@ export const summarize = (name: string, meta: ResultsMetaView): ResultsSummary =
   column: meta.column,
   gateModel: meta.gateModel,
   seeds: meta.seeds,
+  scenarios: meta.scenarios,
   date: meta.date,
   startedAt: meta.startedAt,
 });

@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router";
+import { Route, Routes } from "react-router";
 import { Escalations } from "./pages/Escalations";
 import { Arena, NotFound } from "./pages/Placeholders";
 import { Runs } from "./pages/Runs";
@@ -14,12 +14,23 @@ const Dashboard = lazy(() =>
   import("./dashboard/Dashboard").then((module) => ({ default: module.Dashboard })),
 );
 
+const Landing = lazy(() =>
+  import("./landing/Landing").then((module) => ({ default: module.Landing })),
+);
+
 export function App() {
   return (
     <RunsProvider>
       <Routes>
         <Route element={<Shell />}>
-          <Route index element={<Navigate to="/runs" replace />} />
+          <Route
+            index
+            element={
+              <Suspense fallback={<p className="t-meta" role="status" />}>
+                <Landing />
+              </Suspense>
+            }
+          />
           <Route path="start" element={<Start />} />
           <Route path="runs" element={<Runs />} />
           <Route path="runs/:runId" element={<RunView />} />
