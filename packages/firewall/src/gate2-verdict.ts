@@ -15,9 +15,10 @@ import type { MarketCheck } from "./market.js";
 //    cart holds nothing of the requested category at all. Two independent checks agreeing on a
 //    plain mismatch is the one case that needs no person.
 //  - Everything else that is a concern escalates:
-//    - a price beyond the mandate's tolerance above the best like-for-like offer, or above the
-//      real-market median when there is one. Code computes both, so these escalate whatever the
-//      auditor said, and price alone never blocks: a dear purchase can still be the one wanted;
+//    - a price beyond the mandate's tolerance above the best like-for-like offer: the same
+//      specification from a verified seller of an allowed brand. Code computes it, so it escalates
+//      whatever the auditor said, and price alone never blocks: a dear purchase can still be the
+//      one wanted;
 //    - a cart line whose page Gate 1 flagged as steering the purchase, even when the line matches
 //      the mandate on paper: that is exactly what a successful steer looks like;
 //    - a concern only the auditor raised (a brand, an unrequested item, a mismatch the catalog
@@ -29,6 +30,10 @@ import type { MarketCheck } from "./market.js";
 //    - a line the auditor gave no finding for, an approval it was unsure of, or no judgement at
 //      all (the call failed).
 //  - Otherwise approve.
+//
+// The real-market reference is a note, never a finding (decided Nov 7): a category search's median
+// isn't like-for-like, so it can't say a price is wrong. Each line's quote is noted on the result,
+// and a line it couldn't price is noted too.
 
 // Confidence, from 0 to 1, by what a finding rests on: a comparison code made (alone or agreeing
 // with the auditor), the auditor's judgement alone, or less than that.
@@ -152,7 +157,7 @@ export function decideGate2(input: Gate2Decision): {
     findings.push({ verdict: "escalate", ...f, eventIds: unique(f.eventIds) });
 
   for (const review of lines) {
-    const { line, fit, comparables, market } = review;
+    const { line, fit, comparables } = review;
     const n = line.line;
     const where = `line ${n} (${line.listingId})`;
     const lineIds = [evidence.checkoutEventId, evidence.inputsEventId];
@@ -264,28 +269,6 @@ export function decideGate2(input: Gate2Decision): {
       });
     }
 
-    // The price against the real market.
-    const marketIds = unique([evidence.marketEventId, ...cited(n, ["overpriced_vs_market"])]);
-    if (market?.beyondTolerance && market.quote.status === "available") {
-      add({
-        line: n,
-        code: "overpriced_vs_market",
-        by: saidOf(n, "overpriced_vs_market") ? "both" : "code",
-        confidence: GATE2_CONFIDENCE.checkedByCode,
-        reason: `${where}: ${cents(line.paidUnitCents)} a unit is ${market.pctAboveMedian}% above the real-market median (${cents(market.quote.medianCents)} over ${market.quote.pricedProducts} products, ${market.quote.source}); the mandate allows ${comparables?.tolerancePct ?? "its tolerance"}% [overpriced_vs_market]`,
-        eventIds: [...lineIds, ...marketIds],
-      });
-    } else if (saidOf(n, "overpriced_vs_market")) {
-      add({
-        line: n,
-        code: "overpriced_vs_market",
-        by: "auditor",
-        confidence: GATE2_CONFIDENCE.auditorOnly,
-        reason: `${where}: the auditor judged it overpriced against the market, which the market reference doesn't show [overpriced_vs_market]`,
-        eventIds: [...lineIds, ...marketIds],
-      });
-    }
-
     // Steered by what a seller wrote.
     if (review.steering.length > 0 || saidOf(n, "steered_by_seller_content")) {
       const flagged = review.steering.length > 0;
@@ -368,7 +351,19 @@ export function decideGate2(input: Gate2Decision): {
     }
   }
 
-  // One note per reason the market reference couldn't answer, naming the lines.
+  // The market reference, as notes: each line's quote, and one note per reason it couldn't answer.
+  const priced = lines.flatMap((l) => {
+    const quote = l.market?.quote;
+    if (quote?.status !== "available") return [];
+    const above = l.market?.pctAboveMedian;
+    const where =
+      above === null || above === undefined
+        ? ""
+        : `; this line is ${above < 0 ? `${-above}% below` : `${above}% above`} the median`;
+    return [
+      `Noted, not escalated: line ${l.line.line} (${l.line.listingId}): the real market sells this kind of product for ${cents(quote.lowCents)} to ${cents(quote.highCents)}, median ${cents(quote.medianCents)} over ${quote.pricedProducts} products (${quote.source})${where}`,
+    ];
+  });
   const missing = new Map<string, number[]>();
   for (const l of lines) {
     const quote = l.market?.quote;
@@ -376,16 +371,20 @@ export function decideGate2(input: Gate2Decision): {
     const key = `${quote.source}: ${quote.reason}`;
     missing.set(key, [...(missing.get(key) ?? []), l.line.line]);
   }
-  const notes = [...missing].map(([why, numbers]) => {
-    const which = numbers.length === 1 ? `line ${numbers[0]}` : `lines ${numbers.join(", ")}`;
-    return `Noted: no real-market price for ${which} (${why}), so prices were checked only against the marketplace`;
-  });
+  const notes = [
+    ...priced,
+    ...[...missing].map(([why, numbers]) => {
+      const which = numbers.length === 1 ? `line ${numbers[0]}` : `lines ${numbers.join(", ")}`;
+      return `Noted: no real-market price for ${which} (${why})`;
+    }),
+  ];
   const verdict: Verdict = findings.some((f) => f.verdict === "block")
     ? "block"
     : findings.length > 0
       ? "escalate"
       : "approve";
-  return { result: resultOf(verdict, findings, notes, judgementIds), findings };
+  const noteIds = unique([...judgementIds, priced.length > 0 ? evidence.marketEventId : null]);
+  return { result: resultOf(verdict, findings, notes, noteIds), findings };
 }
 
 function resultOf(
