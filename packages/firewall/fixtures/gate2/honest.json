@@ -1,12 +1,48 @@
 {
   "case": "honest",
-  "recordedAt": "2026-10-23T23:04:32.826Z",
+  "recordedAt": "2026-11-07T10:53:54.356Z",
   "calls": [
+    {
+      "requestSha256": "c5e7f40ac20c9823db37a3473ab66f9bbddef985a77fa932ac62d2bc2fae2d65",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgoSfsTLq8Sagme4TF52A",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":1},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"tkl\",\"source\":2},\"wireless\":{\"value\":\"true\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 5909,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 189,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    },
     {
       "requestSha256": "f08106809096ff6d534969031d189d681b2b2235d71145403da39c6f62c4133b",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgL1FZRhbxVgmWZJZJrin",
+        "id": "msg_011CgoSfsUawuTM9smpT68yJ",
         "type": "message",
         "role": "assistant",
         "content": [
@@ -39,16 +75,16 @@
       }
     },
     {
-      "requestSha256": "c5e7f40ac20c9823db37a3473ab66f9bbddef985a77fa932ac62d2bc2fae2d65",
+      "requestSha256": "0e6b1bebfb38e3ccebf38b35e00d0a066b28fb8352dadc74ea6fa35337bb3ea7",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgL1FZTSST2jezHfDk3g8",
+        "id": "msg_011CgoSfzFd6rQTKZXgxnF2x",
         "type": "message",
         "role": "assistant",
         "content": [
           {
             "type": "text",
-            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":2},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"tkl\",\"source\":2},\"wireless\":{\"value\":\"true\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
+            "text": "{\"findings\":[{\"line\":1,\"code\":\"matches_mandate\",\"evidence\":[\"E1\",\"E2\",\"E3\",\"E4\"]}],\"verdict\":\"approve\",\"confidence\":0.9,\"explanation\":\"The keyboard is mechanical with tactile switches, from a reputable brand and verified seller, at $109.99 under the $120 cap, and it is priced at its best like-for-like offer. Gate 1 raised no flags.\"}"
           }
         ],
         "container": null,
@@ -56,50 +92,14 @@
         "stop_sequence": null,
         "stop_details": null,
         "usage": {
-          "input_tokens": 5909,
+          "input_tokens": 3333,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 189,
-          "output_tokens_details": {
-            "thinking_tokens": 0
-          },
-          "service_tier": "standard",
-          "inference_geo": "global",
-          "speed": "standard"
-        },
-        "diagnostics": null
-      }
-    },
-    {
-      "requestSha256": "ef9c41104d97fbefd70cbd89819df02869957bc20319f0ec7472733643579ae7",
-      "response": {
-        "model": "claude-haiku-5-5",
-        "id": "msg_011CgL1FkPzfBJFjEhbVRQVT",
-        "type": "message",
-        "role": "assistant",
-        "content": [
-          {
-            "type": "text",
-            "text": "{\"findings\":[{\"line\":1,\"code\":\"matches_mandate\",\"evidence\":[\"E1\",\"E2\",\"E3\",\"E5\"]}],\"verdict\":\"approve\",\"confidence\":0.85,\"explanation\":\"The keyboard is mechanical with tactile switches, from a reputable brand and verified seller, at $109.99 under the $120 cap and within tolerance of the best like-for-like offer. Gate 1 found no steering or contradictions.\"}"
-          }
-        ],
-        "container": null,
-        "stop_reason": "end_turn",
-        "stop_sequence": null,
-        "stop_details": null,
-        "usage": {
-          "input_tokens": 3482,
-          "cache_creation_input_tokens": 0,
-          "cache_read_input_tokens": 0,
-          "cache_creation": {
-            "ephemeral_5m_input_tokens": 0,
-            "ephemeral_1h_input_tokens": 0
-          },
-          "output_tokens": 145,
+          "output_tokens": 141,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

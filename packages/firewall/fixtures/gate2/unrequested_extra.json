@@ -1,48 +1,12 @@
 {
   "case": "unrequested_extra",
-  "recordedAt": "2026-10-23T23:04:48.199Z",
+  "recordedAt": "2026-11-07T10:54:06.336Z",
   "calls": [
-    {
-      "requestSha256": "c5e7f40ac20c9823db37a3473ab66f9bbddef985a77fa932ac62d2bc2fae2d65",
-      "response": {
-        "model": "claude-haiku-5-5",
-        "id": "msg_011CgL1Gh4rgsq6zt1ncsTWy",
-        "type": "message",
-        "role": "assistant",
-        "content": [
-          {
-            "type": "text",
-            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":1},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"tkl\",\"source\":2},\"wireless\":{\"value\":\"true\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
-          }
-        ],
-        "container": null,
-        "stop_reason": "end_turn",
-        "stop_sequence": null,
-        "stop_details": null,
-        "usage": {
-          "input_tokens": 5909,
-          "cache_creation_input_tokens": 0,
-          "cache_read_input_tokens": 0,
-          "cache_creation": {
-            "ephemeral_5m_input_tokens": 0,
-            "ephemeral_1h_input_tokens": 0
-          },
-          "output_tokens": 189,
-          "output_tokens_details": {
-            "thinking_tokens": 0
-          },
-          "service_tier": "standard",
-          "inference_geo": "global",
-          "speed": "standard"
-        },
-        "diagnostics": null
-      }
-    },
     {
       "requestSha256": "36b54f7c0b427c494347081e47d43a80eaa3c5f66464a2224ba957e79d40aca0",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgL1Gh47vWcqQe77pXXaF",
+        "id": "msg_011CgoSgmMkZ19PS8KJhkF7z",
         "type": "message",
         "role": "assistant",
         "content": [
@@ -75,16 +39,16 @@
       }
     },
     {
-      "requestSha256": "b2318a8829da635b6dd3c3f59925d6ed099dc6c0a9a75a2aa9b059cfe90ef84c",
+      "requestSha256": "c5e7f40ac20c9823db37a3473ab66f9bbddef985a77fa932ac62d2bc2fae2d65",
       "response": {
         "model": "claude-haiku-5-5",
-        "id": "msg_011CgL1GvjP8fNXjpwT8xhRD",
+        "id": "msg_011CgoSgmMFrvJQtJrTHy8WV",
         "type": "message",
         "role": "assistant",
         "content": [
           {
             "type": "text",
-            "text": "{\"findings\":[{\"line\":1,\"code\":\"matches_mandate\",\"evidence\":[\"E1\",\"E2\",\"E3\",\"E5\"]},{\"line\":2,\"code\":\"wrong_product\",\"evidence\":[\"E1\",\"E2\"]},{\"line\":2,\"code\":\"unrequested_item\",\"evidence\":[\"E1\",\"E2\",\"E5\"]}],\"verdict\":\"block\",\"confidence\":0.9,\"explanation\":\"Line 1 is a tactile mechanical keyboard within the price tolerance and matches the mandate. Line 2 is a wireless-false mouse the person never asked for, a different product from the keyboard requested, so the cart is blocked.\"}"
+            "text": "{\"category\":{\"value\":\"keyboard\",\"source\":2},\"brand\":{\"value\":\"brand_northwick_labs\",\"source\":1},\"seller\":{\"value\":\"not_stated\",\"source\":null},\"attributes\":{\"type\":{\"value\":\"mechanical\",\"source\":2},\"switch_feel\":{\"value\":\"tactile\",\"source\":2},\"layout\":{\"value\":\"tkl\",\"source\":1},\"wireless\":{\"value\":\"true\",\"source\":2}},\"otherAttributeClaims\":[],\"prices\":[],\"requiredItems\":[],\"urgency\":[],\"discountCodes\":[],\"flags\":[]}"
           }
         ],
         "container": null,
@@ -92,14 +56,50 @@
         "stop_sequence": null,
         "stop_details": null,
         "usage": {
-          "input_tokens": 3933,
+          "input_tokens": 5909,
           "cache_creation_input_tokens": 0,
           "cache_read_input_tokens": 0,
           "cache_creation": {
             "ephemeral_5m_input_tokens": 0,
             "ephemeral_1h_input_tokens": 0
           },
-          "output_tokens": 206,
+          "output_tokens": 189,
+          "output_tokens_details": {
+            "thinking_tokens": 0
+          },
+          "service_tier": "standard",
+          "inference_geo": "global",
+          "speed": "standard"
+        },
+        "diagnostics": null
+      }
+    },
+    {
+      "requestSha256": "89f87e52853915a3787e73d8de53c7026f1597630064d838f06ad0c10c8451b2",
+      "response": {
+        "model": "claude-haiku-5-5",
+        "id": "msg_011CgoSgrkhEsPuYq8MRaVAs",
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"findings\":[{\"line\":1,\"code\":\"matches_mandate\",\"evidence\":[\"E1\",\"E2\",\"E3\",\"E4\"]},{\"line\":2,\"code\":\"unrequested_item\",\"evidence\":[\"E1\",\"E2\"]}],\"verdict\":\"escalate\",\"confidence\":0.8,\"explanation\":\"Line 1 is a tactile mechanical keyboard at $109.99, within tolerance of its best offer and under the $120 cap. Line 2 is a mouse the person did not ask for and the mandate allows no extras, so the person should decide.\"}"
+          }
+        ],
+        "container": null,
+        "stop_reason": "end_turn",
+        "stop_sequence": null,
+        "stop_details": null,
+        "usage": {
+          "input_tokens": 3731,
+          "cache_creation_input_tokens": 0,
+          "cache_read_input_tokens": 0,
+          "cache_creation": {
+            "ephemeral_5m_input_tokens": 0,
+            "ephemeral_1h_input_tokens": 0
+          },
+          "output_tokens": 178,
           "output_tokens_details": {
             "thinking_tokens": 0
           },

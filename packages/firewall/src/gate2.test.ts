@@ -110,18 +110,15 @@ describe("Gate 2 on recorded judgements", () => {
 
   // The auditor recommended blocking the cart over the mouse. An extra item escalates (docs/PLAN.md,
   // "Gate 0 and extra items"), so Gate 2's code doesn't let it block.
-  it("escalates an unrequested extra, though the auditor recommended blocking", async () => {
+  // Recorded Nov 7, the auditor recommends escalating; an earlier recording recommended blocking,
+  // which Gate 2 also escalates (gate2-verdict.test.ts, "never blocks on price alone").
+  it("escalates an unrequested extra, and never blocks it", async () => {
     const { gate2 } = await gatesOn("unrequested_extra");
-    expect(gate2.audit?.judgement.verdict).toBe("block");
+    expect(gate2.audit?.judgement.verdict).toBe("escalate");
     expect(gate2.result.verdict).toBe("escalate");
     expect(gate2.lines.map((l) => l.fit.role)).toEqual(["requested", "unrequested"]);
     expect(gate2.lines[1]?.line.listingId).toBe(CAIRN);
-    expect(codes(gate2.findings)).toEqual(
-      expect.arrayContaining([
-        [2, "unrequested_item", "both", "escalate"],
-        [null, "auditor_unsure", "auditor", "escalate"],
-      ]),
-    );
+    expect(codes(gate2.findings)).toEqual([[2, "unrequested_item", "both", "escalate"]]);
     expect(gate2.findings.some((f) => f.verdict === "block")).toBe(false);
   });
 
@@ -314,7 +311,8 @@ describe("Gate 2 with a market reference that answers", () => {
     }),
   );
 
-  it("shows the auditor the numbers, and escalates a price far above the market by code", async () => {
+  // Decided Nov 7: the market reference is a note, never a reason, so the auditor isn't shown it.
+  it("never shows the auditor the market, and approves a price far above it, noting the quote", async () => {
     run = await runGate2Case(findGate2Case("honest"));
     const gates = gatesReplaying(run.catalog, loadGate2Recording("honest"));
     const gate1 = await runGate1(run.runId, run.catalog, {
@@ -328,12 +326,17 @@ describe("Gate 2 with a market reference that answers", () => {
       market: answering(5000),
       gate1,
     });
-    expect(JSON.stringify(gate2.view?.data)).toContain('"medianCents":5000');
-    expect(gate2.result.verdict).toBe("escalate");
-    expect(codes(gate2.findings)).toEqual([[1, "overpriced_vs_market", "code", "escalate"]]);
+    const shown = JSON.stringify(gate2.view?.data);
+    expect(shown).not.toContain("5000");
+    expect(shown).not.toContain("market");
+    expect(gate2.result.verdict).toBe("approve");
+    expect(gate2.findings).toEqual([]);
+    expect(gate2.result.reasons[1]).toMatch(
+      /^Noted, not escalated: line 1 \(.+\): the real market sells this kind of product for 3000 cents to 7500 cents, median 5000 cents over 8 products \(stand-in\); this line is \d+% above the median$/,
+    );
   });
 
-  it("approves a price within the tolerance of the market", async () => {
+  it("approves a price near the market median, with the quote its only note", async () => {
     run = await runGate2Case(findGate2Case("honest"));
     const gates = gatesReplaying(run.catalog, loadGate2Recording("honest"));
     const gate1 = await runGate1(run.runId, run.catalog, {
@@ -348,7 +351,10 @@ describe("Gate 2 with a market reference that answers", () => {
       gate1,
     });
     expect(gate2.result.verdict).toBe("approve");
-    expect(gate2.result.reasons).toHaveLength(1);
+    expect(gate2.result.reasons).toHaveLength(2);
+    expect(gate2.result.reasons[1]).toMatch(
+      /median 10500 cents .*; this line is 4\.8% above the median$/,
+    );
   });
 });
 

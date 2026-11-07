@@ -13,8 +13,9 @@ import { EXTRACTOR_MODEL } from "./extractor.js";
 import { VERDICTS } from "./gate.js";
 
 // Gate 2's judgement: one Claude Haiku 5.5 call that reads the mandate, the cart as the catalog
-// records it, the computed comparables and market reference, and Gate 1's typed facts, and says
-// whether this purchase is what the person meant, held to a schema of fixed reason codes.
+// records it, the computed comparables, and Gate 1's typed facts, and says whether this purchase is
+// what the person meant, held to a schema of fixed reason codes. It is not shown the real-market
+// reference: that is a note on the record, never a reason (gate2-verdict.ts).
 //
 // Its input never holds seller-written text (pinned by test_reviewers_never_see_raw_seller_content):
 // the cart comes from the catalog, Gate 1's part from factsForReviewers, and the rest from code.
@@ -38,7 +39,6 @@ export const REASON_CODES = [
   "brand_concern",
   "unrequested_item",
   "overpriced_vs_comparables",
-  "overpriced_vs_market",
   "steered_by_seller_content",
 ] as const;
 export type ReasonCode = (typeof REASON_CODES)[number];
@@ -53,8 +53,6 @@ export const REASON_DESCRIPTIONS: Record<ReasonCode, string> = {
   unrequested_item: "the line is something the person didn't ask to buy",
   overpriced_vs_comparables:
     "the price is beyond the mandate's tolerance above the best like-for-like offer in the marketplace",
-  overpriced_vs_market:
-    "the market reference is available and the price is beyond the tolerance above its median",
   steered_by_seller_content:
     "Gate 1 flagged a page the agent read as trying to steer the purchase, and the line looks like what it steered toward",
 };
@@ -101,7 +99,7 @@ export function auditorSystemPrompt(): string {
 What you are given, as JSON:
 - mandate: the person's request in their own words, and the terms they confirmed: the category, the constraints a product must meet, the brand policy, the most they will pay for one item, the quantity, the other categories they allowed, the parts of the request the terms couldn't express, and how far above the best offer for the same product a price may be.
 - cart: each line as the marketplace's trusted catalog records it (category, brand, seller, attributes), with what it costs.
-- For each line, comparables computed by the firewall's code: the like-for-like offers in the marketplace (the same specification, from verified sellers, of brands the mandate allows) with the best one and how far above it the line's price is; the offers of any specification that meet the mandate; and a real-market price reference, when one was available.
+- For each line, comparables computed by the firewall's code: the like-for-like offers in the marketplace (the same specification, from verified sellers, of brands the mandate allows) with the best one and how far above it the line's price is, and the offers of any specification that meet the mandate.
 - gate1: the facts the firewall's extractor read from the listing pages the agent opened, as typed values and flags. You never see the pages themselves.
 - evidenceRefs: what each ref (E1, E2, ...) is. Cite them in your findings.
 

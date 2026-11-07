@@ -198,15 +198,12 @@ describe("the market check", () => {
     highCents: medianCents * 2,
     latencyMs: 0,
   });
-  it("compares the paid price with the median against the mandate's tolerance", () => {
-    expect(marketCheck(11500, available(10000), 15)).toMatchObject({
-      pctAboveMedian: 15,
-      beyondTolerance: false,
-    });
-    expect(marketCheck(11600, available(10000), 15)).toMatchObject({
+  it("records how far the paid price is from the median, and judges nothing", () => {
+    expect(marketCheck(11600, available(10000))).toEqual({
+      quote: available(10000),
       pctAboveMedian: 16,
-      beyondTolerance: true,
     });
+    expect(marketCheck(8000, available(10000))).toMatchObject({ pctAboveMedian: -20 });
   });
   it("finds nothing when the reference was unavailable", () => {
     const quote: MarketQuote = {
@@ -217,10 +214,6 @@ describe("the market check", () => {
       detail: "",
       latencyMs: 0,
     };
-    expect(marketCheck(99999, quote, 15)).toEqual({
-      quote,
-      pctAboveMedian: null,
-      beyondTolerance: false,
-    });
+    expect(marketCheck(99999, quote)).toEqual({ quote, pctAboveMedian: null });
   });
 });
