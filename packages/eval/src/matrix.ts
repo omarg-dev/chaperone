@@ -1,3 +1,4 @@
+import { type AgentColumn, costUsd, HAIKU_COLUMN, NO_TOKENS } from "@firewall/agent";
 import { SCENARIOS, type ScenarioDefinition } from "@firewall/arena";
 import type { CellInput, CellResult } from "./types.js";
 
@@ -44,12 +45,27 @@ export function planMatrix(
   );
 }
 
-// What one cell is expected to cost on Claude Haiku 5.5, rounded up: the agent about 0.23 cents
-// (measured, docs/PLAN.md "Cost"), the mandate draft about 0.05, the full review about 0.2. A
-// planning number for the dry run and the cap, not a measurement; the results file has the real ones.
-export const ESTIMATED_CELL_USD = { agent: 0.003, mandate: 0.0005, gates: 0.003 } as const;
-export const ESTIMATED_CELL_TOTAL_USD =
-  ESTIMATED_CELL_USD.agent + ESTIMATED_CELL_USD.mandate + ESTIMATED_CELL_USD.gates;
+// What one cell is expected to cost, rounded up: the agent, the mandate draft and the full review.
+// The mandate and the review are Claude Haiku 5.5 in every column (the gates never change model):
+// about 0.05 cents and 0.2 cents, measured (docs/PLAN.md "Cost"). The agent is a typical run's
+// tokens (a measured Haiku run is 12k to 18k in and about 1k out, a third of it thinking; this pads
+// that to 20k in and 2k out) priced at the column's own rates, so the dry run and the cap follow
+// the column. A planning number, not a measurement; the results file has the real ones.
+export const ESTIMATED_AGENT_TOKENS = { inputTokens: 20_000, outputTokens: 2_000 } as const;
+export const ESTIMATED_GATE_USD = { mandate: 0.0005, gates: 0.003 } as const;
+
+export const estimatedAgentUsd = (column: AgentColumn): number =>
+  costUsd(column.pricing, { ...NO_TOKENS, ...ESTIMATED_AGENT_TOKENS });
+
+export const estimatedCellUsd = (column: AgentColumn): number =>
+  estimatedAgentUsd(column) + ESTIMATED_GATE_USD.mandate + ESTIMATED_GATE_USD.gates;
+
+// The Claude Haiku 5.5 column's.
+export const ESTIMATED_CELL_USD = {
+  agent: estimatedAgentUsd(HAIKU_COLUMN),
+  ...ESTIMATED_GATE_USD,
+} as const;
+export const ESTIMATED_CELL_TOTAL_USD = estimatedCellUsd(HAIKU_COLUMN);
 
 export interface MatrixEstimate {
   cells: number;
@@ -57,11 +73,13 @@ export interface MatrixEstimate {
   expectedUsd: number;
 }
 
-export const estimateMatrix = (cells: readonly CellInput[]): MatrixEstimate => ({
-  cells: cells.length,
-  perCellUsd: ESTIMATED_CELL_TOTAL_USD,
-  expectedUsd: cells.length * ESTIMATED_CELL_TOTAL_USD,
-});
+export const estimateMatrix = (
+  cells: readonly CellInput[],
+  column: AgentColumn = HAIKU_COLUMN,
+): MatrixEstimate => {
+  const perCellUsd = estimatedCellUsd(column);
+  return { cells: cells.length, perCellUsd, expectedUsd: cells.length * perCellUsd };
+};
 
 export interface RunMatrixOptions {
   concurrency: number;

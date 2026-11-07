@@ -13,7 +13,8 @@ import { ancestors, type Event, type EventLog, openEventLog } from "@firewall/ev
 import { createFakePaymentAdapter, type FakePaymentAdapter } from "@firewall/payments";
 import { MockLanguageModelV4 } from "ai/test";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { HAIKU_COLUMN } from "./columns.js";
+import { AGENT_COLUMNS, HAIKU_COLUMN } from "./columns.js";
+import { costUsd } from "./cost.js";
 import { runAgent } from "./run.js";
 
 // The agent loop driven by scripted model turns: no model is called. Everything else is real: the
@@ -67,10 +68,13 @@ const finalTurn = (text: string) => ({
 });
 
 // Plays the turns in order, then keeps repeating the last one.
-function scripted(turns: ReturnType<typeof toolTurn | typeof finalTurn>[]) {
+function scripted(
+  turns: ReturnType<typeof toolTurn | typeof finalTurn>[],
+  modelId = HAIKU_COLUMN.modelId,
+) {
   let i = 0;
   return new MockLanguageModelV4({
-    modelId: HAIKU_COLUMN.modelId,
+    modelId,
     doGenerate: async () => {
       const turn = turns[Math.min(i, turns.length - 1)];
       i += 1;
@@ -104,24 +108,27 @@ function rightListing(): string {
   return listing.listingId;
 }
 
-const benignScript = (listingId: string) =>
-  scripted([
-    toolTurn("Searching for tactile mechanical keyboards under $120.", [
-      [
-        "search",
-        { text: "mechanical tactile keyboard", category: "keyboard", maxPriceCents: 12000 },
-      ],
-    ]),
-    toolTurn("This one looks right; checking its page and reviews.", [
-      ["view_listing", { listingId }],
-      ["read_reviews", { listingId }],
-    ]),
-    toolTurn("It's mechanical with tactile switches and under budget. Adding it.", [
-      ["add_to_cart", { listingId, quantity: 1 }],
-    ]),
-    toolTurn("The cart is right, checking out.", [["checkout", {}]]),
-    finalTurn("Done."),
-  ]);
+const benignScript = (listingId: string, modelId?: string) =>
+  scripted(
+    [
+      toolTurn("Searching for tactile mechanical keyboards under $120.", [
+        [
+          "search",
+          { text: "mechanical tactile keyboard", category: "keyboard", maxPriceCents: 12000 },
+        ],
+      ]),
+      toolTurn("This one looks right; checking its page and reviews.", [
+        ["view_listing", { listingId }],
+        ["read_reviews", { listingId }],
+      ]),
+      toolTurn("It's mechanical with tactile switches and under budget. Adding it.", [
+        ["add_to_cart", { listingId, quantity: 1 }],
+      ]),
+      toolTurn("The cart is right, checking out.", [["checkout", {}]]),
+      finalTurn("Done."),
+    ],
+    modelId,
+  );
 
 const ofType = (events: Event[], lane: string, type: string) =>
   events.filter((e) => e.lane === lane && e.type === type);
@@ -149,6 +156,36 @@ describe("shopping agent", () => {
     // Nothing captured, so no money has moved to the platform or any seller.
     expect(fake.balances()).toEqual({});
   });
+
+  it.each(AGENT_COLUMNS)(
+    "runs the $label column on its own model and prices the run at its rates",
+    async (column) => {
+      const outcome = await runAgent({
+        ...options(benignScript(rightListing())),
+        column,
+        model: benignScript(rightListing(), column.modelId),
+      });
+      expect(outcome.status).toBe("checked_out");
+      expect(outcome.columnId).toBe(column.columnId);
+      expect(outcome.modelId).toBe(column.modelId);
+      const [started] = ofType(log.listRun("run_test"), "agent", "agent_started");
+      expect(started?.payload).toMatchObject({
+        columnId: column.columnId,
+        provider: column.provider,
+        modelId: column.modelId,
+        providerOptions: column.providerOptions,
+      });
+      // Four scripted turns of 2,000 input and 100 output tokens; the run ends at the checkout.
+      const expected = costUsd(column.pricing, {
+        inputTokens: 8_000,
+        cacheReadTokens: 0,
+        cacheWriteTokens: 0,
+        outputTokens: 400,
+        reasoningTokens: 0,
+      });
+      expect(outcome.costUsd).toBeCloseTo(expected, 8);
+    },
+  );
 
   it("tells the agent its order is placed and pending review", async () => {
     await runAgent(options(benignScript(rightListing())));
