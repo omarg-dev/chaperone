@@ -15,7 +15,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 | Stack | TypeScript throughout: pnpm workspace monorepo, Hono server, React + Vite web app, SQLite through Drizzle. |
 | Scope, Nov 7 | Render Workflows is cut: the eval runs locally. Refunds after capture and the Bryntum timeline are parked until after Nov 8. A landing page at `/` and a simple docs page at `/docs` join v1.2. The route line (`PageRoute`) belongs to the run page only and comes off the other pages. |
 | Model calls | The shopping agent uses the Vercel AI SDK, so one loop runs on any provider. Its checkout tool is ours, because the platform's agent toolkit can't hold money (its order tools capture at once); the firewall wraps that tool. The toolkit's read, refund and dispute tools belong to the dispute evidence pack and transaction insights, where they fit as they are. The gates use the official Anthropic SDK, for structured outputs, prompt caching and batch pricing. |
-| Models | Gates: Claude Haiku 5.5, fixed for every eval run. Shopping agent: three separate eval columns, Claude Haiku 5.5, an OpenAI model and a Gemini model (free tier). Exact OpenAI and Gemini model IDs get picked when we wire them up. |
+| Models | Gates: Claude Haiku 5.5, fixed for every eval run. Shopping agent: three separate eval columns, picked Nov 6 from the providers' docs. **Claude Haiku 5.5** (`claude-haiku-5-5`, $0.10 in / $0.50 out per million tokens). **OpenAI GPT-6 Luna** (`gpt-6-luna`, OpenAI's cheapest current model, Standard $0.10 in / $0.01 cached / $0.50 out; over 272K input tokens 2x input and 1.5x output; tool calling needs the Responses API, which is what the column uses; developers.openai.com/api/docs/models/gpt-6-luna and /pricing). **Gemini 3.5 Flash-Lite** (`gemini-3.5-flash-lite`, stable, free tier available, paid Standard $0.30 in / $0.03 cached / $2.50 out including thinking; ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite and /pricing). The eval's `--max-usd` cap and the results price every column at these list rates, free tier or not. Each column's key and base URL come only from `FIREWALL_OPENAI_API_KEY` / `FIREWALL_OPENAI_BASE_URL` and `FIREWALL_GEMINI_API_KEY` / `FIREWALL_GEMINI_BASE_URL`. **Gemini goes through Google's OpenAI-compatible endpoint** (`https://generativelanguage.googleapis.com/v1beta/openai`), because that is the endpoint that takes the key as `Authorization: Bearer` (checked Nov 6: the native `generateContent` endpoint answers 401 to a bearer API key, so it can't sit behind a proxy that attaches one). The column therefore uses the AI SDK's OpenAI provider in Chat Completions mode, not `@ai-sdk/google`, and carries Gemini 3's `thought_signature` on each tool call itself (`packages/agent/src/gemini.ts`), which the compatible endpoint requires and the SDK drops. `FIREWALL_GEMINI_BASE_URL` can point at another endpoint only if it also speaks Chat Completions. |
 | No fallback inside the eval | Each eval column runs on exactly one model. A provider fallback chain would mix models inside one column's numbers, so it only exists for the hosted demo's agent. |
 | Model budget | $5 of API credit per provider until Dec 15: Anthropic, OpenAI and Google (Omar, Nov 2). Anthropic's is the one that binds, because the gates run on Claude Haiku 5.5 in every eval column and live runs use Haiku too; OpenAI's and Google's only pay for their own agent columns. See *Cost* below. |
 | Escalation | Decided in the Observatory. The authorization stays held while the person reads the review tree and approves (capture) or rejects (void). No second order. |
@@ -108,7 +108,7 @@ Done when: a judge can open the hosted URL, replay a real attack run, and start 
 |---|---|---|
 | 1 | Gate 3, trace auditor | 👀 PR open |
 | 2 | Refunds after capture (parked until after Nov 8) | ⬜ |
-| 3 | OpenAI and Gemini agent columns | ⬜ |
+| 3 | OpenAI and Gemini agent columns | ✅ |
 | 4 | ~~Eval matrix on Render Workflows~~ cut Nov 7: the eval runs locally | ⛔ Cut |
 | 5 | **Gate freeze, Nov 5**: gate prompts and logic stop changing | ⬜ |
 | 6 | Held-out set ported from published benchmarks and run against the frozen gates | ⬜ |
@@ -179,7 +179,8 @@ How the $5 stretches:
 - Tests replay recorded model responses and never call a model.
 - The server keeps a spend meter and refuses new runs once a hard cap is reached.
 - The hosted demo replays recorded real runs by default, with a small daily cap on live runs.
-- Gemini runs on its free tier, which only exists on a Google Cloud project with billing turned off.
+- Gemini runs on its free tier, which only exists on a Google Cloud project with billing turned off. The free tier may use prompts to improve Google's products, which is fine for the arena's fictional content.
+- Measured on Nov 6 on `sc_b01`, seed 1, fake payments: the OpenAI column's agent run cost $0.0006 (5 model calls, 7.1k input and 0.5k output tokens) and a whole cell $0.0034; the Gemini column's agent run $0.0037 (6 calls, 10.4k input and 0.2k output) and a cell $0.0057. The dry run's estimate prices 20k input and 2k output tokens at the column's rates, plus the mandate and the review, which are Haiku in every column: $0.0065 a cell for Haiku and OpenAI, $0.0145 for Gemini.
 
 ## To do outside the code (Omar)
 
@@ -191,11 +192,12 @@ How the $5 stretches:
 - [x] Allow the platform's static asset host (the checkout page's scripts and styles) in the network settings, so the buyer's one approval can load.
 - [x] Turn on saving payment methods in the sandbox app's settings.
 - [x] Create the firewall platform's business account and a sandbox app on it with saving payment methods and payouts on, and swap its credentials into `SANDBOX_CLIENT_ID` and `SANDBOX_CLIENT_SECRET`.
-- [ ] Allow `api.render.com` in the network settings, plus `api.openai.com` when the OpenAI column is added.
+- [ ] Allow `api.render.com` in the network settings, plus `api.openai.com` and `generativelanguage.googleapis.com` for the OpenAI and Gemini columns.
 - [ ] Get a Gemini API key from a Google Cloud project with billing turned off.
 - [ ] Add OpenAI API credit (the ChatGPT subscription doesn't cover the API), or drop that column.
 - [ ] Claim the $50 Render credits.
-- [ ] Create a Channel3 developer account and apply the hackathon code; add the key as a network secret for `api.trychannel3.com` (header `x-api-key`), or as `FIREWALL_CHANNEL3_API_KEY`, and allow `api.trychannel3.com` in the network settings. Then record Gate 2's fixtures with real market prices (`pnpm --filter @firewall/firewall record-gate2-fixtures`).
+- [x] Create a Channel3 developer account and apply the hackathon code; add the key as a network secret for `api.trychannel3.com`. Done Nov 6; a request with `x-api-key: proxy-injected` gets a 200, so the cloud session runs with `FIREWALL_CHANNEL3_API_KEY=proxy-injected`. The first sandbox matrix ran without it, so its market reference was unavailable.
+- [ ] Record Gate 2's fixtures with real market prices (`pnpm --filter @firewall/firewall record-gate2-fixtures`).
 - [x] Install the APIMatic Context Plugin in Claude Code.
 - [ ] Ask AG Grid and Bryntum on the hackathon Discord for licenses that last until Dec 15, and don't start either 45-day trial before Oct 25.
 - [ ] Ask on the Discord whether any sponsor offers model API credits.

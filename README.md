@@ -87,7 +87,7 @@ pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --firewall off       
 pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --adapter sandbox --firewall off  # the sandbox
 ```
 
-It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; Claude Haiku 5.5 is the only column so far. The tests drive the loop with scripted model turns and never call a model.
+It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; `run-scenario` runs the Claude Haiku 5.5 column (the eval has two more, below). The tests drive the loop with scripted model turns and never call a model.
 
 ## Building a mandate
 
@@ -259,11 +259,11 @@ Our own shopping agent goes through the same two calls: `runAgent` wraps its too
 `@firewall/eval` (`packages/eval`) measures the firewall: attack success rate, false block rate, false escalation rate, cost and latency, with the firewall off, with Gate 0 only and with the full tree. The agent runs once for each scenario, seed and model column (a cell), and the three configurations all review that same recorded checkout, so a run costs the agent once.
 
 ```sh
-pnpm --filter @firewall/eval run-matrix --scenarios all --seeds 1,2 --column haiku --dry-run   # cells and expected cost, spends nothing
+pnpm --filter @firewall/eval run-matrix --scenarios all --seeds 1,2 --column openai --dry-run  # cells and expected cost, spends nothing
 pnpm --filter @firewall/eval run-matrix --scenarios sc_b01,sc_a02 --seeds 1 --column haiku     # the real thing
 ```
 
-`--scenarios` takes IDs, `all`, `attacks` or `benign`; `--adapter fake|sandbox` picks the payment adapter (default `fake`); `--max-usd` (default 0.50) stops the matrix starting new cells once it is spent, on top of the agent's own per-run cap (`--agent-max-usd`); `--concurrency` (default 3) is how many cells run at once. It needs `FIREWALL_ANTHROPIC_API_KEY` and calls models: a cell is about half a cent to a cent. The tests call none.
+`--column` picks the shopping agent's model, each one model with no fallback: `haiku` (Claude Haiku 5.5, needs `FIREWALL_ANTHROPIC_API_KEY`), `openai` (OpenAI GPT-6 Luna, needs `FIREWALL_OPENAI_API_KEY`) or `gemini` (Gemini 3.5 Flash-Lite, needs `FIREWALL_GEMINI_API_KEY`, through Google's OpenAI-compatible endpoint). The gates run on Claude Haiku 5.5 in every column, so every column also needs the Anthropic key, and a column without its own key refuses to run and names the variable. `--scenarios` takes IDs, `all`, `attacks` or `benign`; `--adapter fake|sandbox` picks the payment adapter (default `fake`); `--max-usd` (default 0.50) stops the matrix starting new cells once it is spent, on top of the agent's own per-run cap (`--agent-max-usd`); `--concurrency` (default 3) is how many cells run at once. It calls models: a cell is about half a cent to a cent (the dry run prices the column you picked). The tests call none.
 
 Each run writes `<date>-<adapter>-<column>.json` (every cell and configuration), a `.md` summary and the `.events.db` event log holding every run, under `results/`, which git ignores. **Every file says which payment adapter produced it.** Numbers from the `fake` adapter are for development; only a run against the sandbox may be shown in the video or the write-up. [results/README.md](results/README.md) explains the file and how each rate is counted. The cell functions (`runCell`, `evaluateCell`) are plain async functions over serialisable records, so the same code can run as tasks on Render Workflows later.
 

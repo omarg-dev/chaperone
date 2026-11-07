@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.77",
+    "@ai-sdk/openai": "4.0.90",
     "@firewall/arena": "workspace:*",
     "@firewall/events": "workspace:*",
     "@firewall/firewall": "workspace:*",
