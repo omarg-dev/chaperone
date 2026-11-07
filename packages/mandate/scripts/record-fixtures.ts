@@ -52,7 +52,16 @@ if (unknown.length > 0) {
   console.error(`No scenario ${unknown.join(", ")}`);
   process.exit(1);
 }
-const recording = SCENARIOS.filter((s) => only.length === 0 || only.includes(s.scenarioId));
+// A held-out scenario reuses a benign scenario's request (its `userTask`), whose recording it
+// replays, so it has none of its own.
+const reused = only.filter((id) => SCENARIOS.some((s) => s.scenarioId === id && s.userTask));
+if (reused.length > 0) {
+  console.error(`${reused.join(", ")} reuse another scenario's request: record that one instead`);
+  process.exit(1);
+}
+const recording = SCENARIOS.filter(
+  (s) => !s.userTask && (only.length === 0 || only.includes(s.scenarioId)),
+);
 for (const scenario of recording) {
   lastBody = null;
   const save = () => {

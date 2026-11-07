@@ -34,8 +34,8 @@ const buildInput = {
   matrix: matrix(),
 } as const;
 
-const build = (adapter: "fake" | "sandbox", m = matrix()) =>
-  buildResults({ ...buildInput, paymentAdapter: adapter, matrix: m });
+const build = (adapter: "fake" | "sandbox", m = matrix(), scenarios = ["sc_b01", "sc_a02"]) =>
+  buildResults({ ...buildInput, paymentAdapter: adapter, matrix: m, scenarios });
 
 describe("the results file", () => {
   it("names the payment adapter, the model column, the gate model, the seeds and the date", () => {
@@ -105,6 +105,28 @@ describe("the results file", () => {
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it("says which scenario set it ran, and a held-out file says so in its name too", () => {
+    const own = build("sandbox");
+    expect(own.meta.scenarioSet).toBe("own");
+    expect(renderMarkdown(own)).toContain("| Scenario set | **own**: Our own scenarios");
+
+    const heldOut = build("sandbox", matrix(), ["sc_h01", "sc_h02"]);
+    expect(heldOut.meta).toMatchObject({
+      scenarioSet: "held-out",
+      scenarios: ["sc_h01", "sc_h02"],
+    });
+    expect(heldOut.meta.scenarioSetNote).toContain("HELD-OUT");
+    expect(renderMarkdown(heldOut)).toContain("| Scenario set | **held-out**: HELD-OUT set");
+    const date = new Date("2026-10-26T10:15:00.000Z");
+    expect(resultsName(date, "sandbox", "claude-haiku-5-5", "held-out")).toBe(
+      "2026-10-26T1015-sandbox-claude-haiku-5-5-held-out",
+    );
+    expect(resultsName(date, "sandbox", "claude-haiku-5-5", "own")).toBe(
+      "2026-10-26T1015-sandbox-claude-haiku-5-5",
+    );
+    expect(() => build("sandbox", matrix(), ["sc_h01", "sc_b01"])).toThrow("never mixed");
   });
 
   it("says when the spend cap stopped the matrix", () => {
