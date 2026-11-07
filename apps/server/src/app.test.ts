@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createArenaService, SCENARIOS } from "@firewall/arena";
+import { createArenaService, isHeldOut, SCENARIOS } from "@firewall/arena";
 import { type EventLog, openEventLog } from "@firewall/events";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
@@ -38,9 +38,13 @@ describe("GET /health", () => {
 });
 
 describe("arena routes", () => {
-  it("lists every scenario, attacks included, without their answer key", async () => {
-    const scenarios = (await (await app.request("/arena/scenarios")).json()) as object[];
-    expect(scenarios).toHaveLength(SCENARIOS.length);
+  it("lists every scenario but the held-out set, attacks included, without their answer key", async () => {
+    const scenarios = (await (await app.request("/arena/scenarios")).json()) as {
+      scenarioId: string;
+    }[];
+    expect(scenarios.map((s) => s.scenarioId)).toEqual(
+      SCENARIOS.filter((s) => !isHeldOut(s)).map((s) => s.scenarioId),
+    );
     // Nothing says which are attacks or what they do: no kind, no attack, no intent.
     for (const scenario of scenarios) {
       expect(Object.keys(scenario).sort()).toEqual(["request", "scenarioId", "title"]);

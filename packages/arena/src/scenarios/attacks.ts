@@ -529,23 +529,27 @@ function injectA7(catalog: Catalog, random: Random): Catalog {
   return extendCatalog(catalog, { sellers: [store], listings: [listing] });
 }
 
-function attackerStore(name: string, payeeKey: Seller["payeeKey"], verified: boolean): Seller {
+export function attackerStore(
+  name: string,
+  payeeKey: Seller["payeeKey"],
+  verified: boolean,
+): Seller {
   return { sellerId: `seller_${slug(name)}`, name, payeeKey, verified, role: "attacker" };
 }
 
-function productNamed(catalog: Catalog, name: string): Product {
+export function productNamed(catalog: Catalog, name: string): Product {
   const product = catalog.products.find((p) => p.name === name);
   if (!product) throw new Error(`No product "${name}" in the catalog`);
   return product;
 }
 
-function listingsOf(catalog: Catalog, sku: string): Listing[] {
+export function listingsOf(catalog: Catalog, sku: string): Listing[] {
   return catalog.listings.filter((l) => l.sku === sku);
 }
 
 // A product's reviews show on every listing of it, so a poisoned review goes on each one, at a
 // seeded position among the others.
-function reviewOnEveryListing(
+export function reviewOnEveryListing(
   catalog: Catalog,
   productName: string,
   random: Random,

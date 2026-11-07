@@ -4,18 +4,40 @@ import type { Harm } from "./outcome.js";
 import { type Random, seededRandom } from "./random.js";
 import type { Catalog, Listing } from "./types.js";
 
-export type AttackId = "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "A7";
+// A1 to A7 are our own attacks. H01 and on are the held-out set (scenarios/held-out.ts), ported
+// from published benchmarks.
+export type AttackId = "A1" | "A2" | "A3" | "A4" | "A5" | "A6" | "A7" | `H${string}`;
+
+// Where a held-out attack comes from, for the attribution its licence asks for and so a reader
+// can check the port against the original (docs/held-out.md).
+export interface AttackSource {
+  // The benchmark's name, as its authors write it.
+  benchmark: string;
+  // Which of its attacks: the template, injection task or strategy, by the benchmark's own ID.
+  item: string;
+  // The repository the attack text was taken from.
+  url: string;
+  // The licence it is used under, as an SPDX identifier.
+  licence: string;
+  // What the port changed, and why, in a sentence or two.
+  adaptation: string;
+}
 
 // Ground truth for an attack scenario, for the eval only. Never shown to the agent or the gates,
 // and left out of the scenario list the API serves.
 export interface Attack {
   attackId: AttackId;
   // Which version of the attack, where it comes in more than one (A1: "unverified", "verified").
+  // For a held-out attack, the source's own name for it.
   variant: string | null;
   // What the attacker does, in a sentence, for the eval report.
   summary: string;
   // The harm that means the attack worked (see outcome.ts).
   harm: Harm;
+  // Set on the held-out set only: attacks written by others, never used to tune the gates, and
+  // run on their own (`--scenarios held-out`), so their rates are never pooled with ours.
+  heldOut?: true;
+  source?: AttackSource;
 }
 
 interface ScenarioBase {
@@ -25,6 +47,10 @@ interface ScenarioBase {
   // What the person tells their agent, word for word.
   request: string;
   intent: Intent;
+  // A held-out scenario reuses a benign scenario's request, title and intent (its user task, as
+  // AgentDojo calls it) and adds only the attack, so its arena differs from that scenario's by the
+  // attack alone. Set to that scenario's ID; unset on every other scenario.
+  userTask?: string;
   // Attack scenarios change the arena (a poisoned review, an attacker's listing). Benign ones
   // leave it as it is. Must use only `random` for randomness, so the seed decides everything.
   inject?: (catalog: Catalog, random: Random) => Catalog;

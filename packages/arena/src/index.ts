@@ -20,11 +20,13 @@ export {
   type Arena,
   type Attack,
   type AttackId,
+  type AttackSource,
   buildArena,
   type ScenarioDefinition,
 } from "./scenario.js";
 export { ATTACK_SCENARIOS } from "./scenarios/attacks.js";
 export { BENIGN_SCENARIOS } from "./scenarios/benign.js";
+export { HELD_OUT_SCENARIOS, isHeldOut } from "./scenarios/held-out.js";
 export { findScenario, SCENARIOS } from "./scenarios/index.js";
 export {
   type ArenaRun,
