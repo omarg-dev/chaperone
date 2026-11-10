@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { LiveStatus, MandateRow, MandateView } from "../api";
 import { loadGrid, mockDevice, mockServer, renderApp, run } from "../test-utils";
-import { ceilingOf } from "./copy";
+import { ceilingOf, requirementsOf } from "./copy";
 import { SDK_EXAMPLE } from "./snippet";
 
 // The repo's root, from this file (a path, since the DOM's URL isn't the one fs reads).
@@ -114,15 +114,12 @@ function flow(over: { status?: LiveStatus; draft?: MandateView } = {}) {
 const posts = (calls: { method: string }[]) => calls.filter((c) => c.method === "POST");
 
 describe("choosing a task", () => {
-  it("lists each task's title and the person's request, defaults the firewall to full, and never says which are attacks", async () => {
+  it("lists each task's title and the person's request, and never says which are attacks", async () => {
     flow();
     renderApp("/start");
     expect(await screen.findByRole("radio", { name: /Tactile keyboard/ })).toBeInTheDocument();
     expect(screen.getByText("Buy me a tactile keyboard, $120.", { exact: false })).toBeVisible();
     expect(screen.getByRole("radio", { name: /Wired keyboard/ })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: /Full/ })).toBeChecked();
-    expect(screen.getByRole("radio", { name: /Gate 0 only/ })).not.toBeChecked();
-    expect(screen.getByRole("radio", { name: /Off/ })).not.toBeChecked();
     const page = document.querySelector(".start") as HTMLElement;
     expect(page.textContent?.toLowerCase()).not.toContain("attack");
     expect(page.textContent?.toLowerCase()).not.toContain("benign");
@@ -131,10 +128,13 @@ describe("choosing a task", () => {
   it("holds the run step back, in the page's one vault, until the mandate is locked", async () => {
     flow();
     renderApp("/start");
-    const vault = await screen.findByRole("region", { name: "Run" });
+    const vault = await screen.findByRole("region", { name: "Start the run" });
     expect(vault).toHaveClass("vault");
     expect(within(vault).getByRole("button", { name: "Start the run" })).toBeDisabled();
-    expect(within(vault).getByText("Lock the mandate first.")).toBeVisible();
+    expect(within(vault).getByText("Lock the rules in step 2 first.")).toBeVisible();
+    // What will happen is already said; the setting isn't asked for until it can be used.
+    expect(within(vault).getByText(/the money is held, not paid/)).toBeVisible();
+    expect(within(vault).queryByRole("radio")).toBeNull();
     expect(document.querySelectorAll(".vault")).toHaveLength(1);
   });
 
@@ -143,22 +143,49 @@ describe("choosing a task", () => {
     renderApp("/start");
     const steps = await screen.findByRole("list", { name: "Steps" });
     const items = within(steps).getAllByRole("listitem");
-    expect(items.map((i) => i.textContent)).toEqual(["1Choose a task", "2Set the mandate", "3Run"]);
+    expect(items.map((i) => i.textContent)).toEqual([
+      "1Pick a task",
+      "2Check the rules",
+      "3Start the run",
+    ]);
     expect(items[0]).toHaveAttribute("aria-current", "step");
   });
 
   it("can't draft until a task is chosen, then asks the server for a draft of that scenario", async () => {
     const { calls } = flow();
     renderApp("/start");
-    const button = await screen.findByRole("button", { name: "Draft the mandate" });
+    const button = await screen.findByRole("button", { name: "Write the rules" });
     expect(button).toBeDisabled();
     await userEvent.click(screen.getByRole("radio", { name: /Wired keyboard/ }));
     await userEvent.click(button);
-    await screen.findByRole("list", { name: "The mandate's terms" });
+    await screen.findByRole("list", { name: "The rules" });
     expect(posts(calls)[0]).toMatchObject({
       path: "/live/runs",
       body: { scenarioId: "sc_a01" },
     });
+  });
+
+  it("shows the first few of a long list of tasks, and the rest on request", async () => {
+    const many = Array.from({ length: 9 }, (_, i) => ({
+      scenarioId: `sc_${i}`,
+      title: `Task ${i + 1}`,
+      request: `Buy thing ${i + 1}.`,
+    }));
+    mockServer({
+      scenarios: many,
+      live: (call) => (call.path === "/live/status" ? { status: 200, body: status() } : undefined),
+    });
+    renderApp("/start");
+    const tasks = within(await screen.findByRole("group", { name: "What should the agent buy?" }));
+    expect(tasks.getAllByRole("radio")).toHaveLength(6);
+    const more = screen.getByRole("button", { name: "Show all 9 tasks" });
+    expect(more).toHaveAttribute("aria-expanded", "false");
+    await userEvent.click(more);
+    expect(tasks.getAllByRole("radio")).toHaveLength(9);
+    expect(screen.getByRole("button", { name: "Show fewer tasks" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
   });
 
   it("shows the server's own message when a draft is refused", async () => {
@@ -174,7 +201,7 @@ describe("choosing a task", () => {
     });
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
+    await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
       "The mandate couldn't be drafted just now.",
     );
@@ -186,15 +213,15 @@ describe("setting the mandate", () => {
     const server = flow();
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
-    await screen.findByRole("list", { name: "The mandate's terms" });
+    await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
+    await screen.findByRole("list", { name: "The rules" });
     return server;
   }
 
   it("shows the request and every term the person is agreeing to, and what isn't covered", async () => {
     await drafted();
     expect(screen.getByText("Buy me a tactile keyboard, $120.", { selector: "q" })).toBeVisible();
-    const terms = within(screen.getByRole("list", { name: "The mandate's terms" }));
+    const terms = within(screen.getByRole("list", { name: "The rules" }));
     expect(terms.getAllByRole("listitem").map((li) => li.textContent)).toEqual([
       expect.stringContaining("keyboard"),
       expect.stringContaining("$120.00 each"),
@@ -216,7 +243,7 @@ describe("setting the mandate", () => {
     await userEvent.click(screen.getByRole("button", { name: "Change price ceiling" }));
     const input = screen.getByRole("textbox", { name: "New price ceiling" });
     expect(input).toHaveValue("120.00");
-    expect(screen.getByText("hint for price ceiling")).toBeVisible();
+    expect(screen.getByText(/hint for price ceiling/)).toBeVisible();
     state.mandate = view({
       rows: state.mandate.rows.map((r) =>
         r.field === "maxUnitPriceCents" ? { ...r, value: "$99.50 each", editText: "99.50" } : r,
@@ -231,6 +258,8 @@ describe("setting the mandate", () => {
       body: { action: "edit", field: "maxUnitPriceCents", input: "99.50" },
     });
     expect(screen.queryByRole("textbox")).toBeNull();
+    // Focus goes back to the term that was changed, not nowhere.
+    expect(screen.getByRole("button", { name: "Change price ceiling" })).toHaveFocus();
   });
 
   it("keeps the edit box open and shows why when the server can't read an edit", async () => {
@@ -249,7 +278,7 @@ describe("setting the mandate", () => {
     });
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
+    await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
     await userEvent.click(await screen.findByRole("button", { name: "Change price ceiling" }));
     const input = screen.getByRole("textbox", { name: "New price ceiling" });
     await userEvent.clear(input);
@@ -266,42 +295,69 @@ describe("setting the mandate", () => {
     flow({ draft: view({ canConfirm: false }) });
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
-    expect(await screen.findByRole("button", { name: "Lock this mandate" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
+    expect(await screen.findByRole("button", { name: "Lock these rules" })).toBeDisabled();
     expect(screen.getByText(/Set a price ceiling first/)).toBeVisible();
   });
 
   it("locks on confirm: the terms stay in view, can't be changed, and the third step opens", async () => {
     const { calls } = await drafted();
-    await userEvent.click(screen.getByRole("button", { name: "Lock this mandate" }));
+    await userEvent.click(screen.getByRole("button", { name: "Lock these rules" }));
     // The clasp shuts around the hash: the seal says who locked it and the hash, in groups.
     expect(
       await screen.findByRole("img", { name: "Seal: locked by you, sha256 abcdef01 23456789" }),
     ).toBeVisible();
-    expect(screen.getByText("The mandate, locked")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Rules locked" })).toBeVisible();
+    // The setting is asked for now, beside the button it goes with, and starts on the full check.
+    expect(screen.getByRole("radio", { name: /Full check/ })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Rules only/ })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: /^Off/ })).not.toBeChecked();
     expect(posts(calls).at(-1)).toMatchObject({ body: { action: "confirm" } });
     expect(screen.queryByRole("button", { name: /^Change/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Lock this mandate" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Lock these rules" })).toBeNull();
     expect(screen.getByText("$120.00 each")).toBeVisible();
     expect(screen.getByRole("button", { name: "Start the run" })).toBeEnabled();
     const steps = within(screen.getByRole("list", { name: "Steps" })).getAllByRole("listitem");
     expect(steps[2]).toHaveAttribute("aria-current", "step");
   });
 
+  it("says the rules in a person's words, not the command line's", () => {
+    expect(requirementsOf("type = mechanical; switch_feel = tactile; weight_g <= 70 g")).toEqual([
+      "Type: mechanical",
+      "Switch feel: tactile",
+      "Weight: at most 70 g",
+    ]);
+    expect(requirementsOf("form = over_ear; anc = yes; layout = tkl")).toEqual([
+      "Fit: over ear",
+      "Noise cancelling: yes",
+      "Layout: tenkeyless",
+    ]);
+    expect(requirementsOf("none")).toEqual(["none"]);
+  });
+
+  it("lets a person with locked rules pick a different task, without telling the server anything", async () => {
+    const { calls } = await drafted();
+    await userEvent.click(screen.getByRole("button", { name: "Lock these rules" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Pick a different task" }));
+    expect(await screen.findByRole("radio", { name: /Tactile keyboard/ })).toBeInTheDocument();
+    expect(posts(calls).at(-1)).toMatchObject({ body: { action: "confirm" } });
+    expect(screen.getByTestId("location")).not.toHaveTextContent("run=");
+  });
+
   it("goes back to choosing a task when the mandate is rejected", async () => {
     const { calls } = await drafted();
-    await userEvent.click(screen.getByRole("button", { name: "Reject and start over" }));
+    await userEvent.click(screen.getByRole("button", { name: "Start over" }));
     expect(await screen.findByRole("radio", { name: /Tactile keyboard/ })).toBeInTheDocument();
     expect(posts(calls).at(-1)).toMatchObject({ body: { action: "reject" } });
-    expect(screen.queryByRole("list", { name: "The mandate's terms" })).toBeNull();
+    expect(screen.queryByRole("list", { name: "The rules" })).toBeNull();
   });
 
   it("picks up where the person was after a reload, from the run in the address", async () => {
     flow();
     renderApp("/start?run=run_new&firewall=gate0");
-    expect(await screen.findByRole("list", { name: "The mandate's terms" })).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Lock this mandate" }));
-    expect(await screen.findByText("Gate 0 only")).toBeVisible();
+    expect(await screen.findByRole("list", { name: "The rules" })).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Lock these rules" }));
+    expect(await screen.findByRole("radio", { name: /Rules only/ })).toBeChecked();
   });
 
   it("starts over when the run in the address is gone", async () => {
@@ -324,33 +380,43 @@ describe("running", () => {
     const server = flow();
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
-    if (firewallLabel) await userEvent.click(screen.getByRole("radio", { name: firewallLabel }));
-    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
-    await userEvent.click(await screen.findByRole("button", { name: "Lock this mandate" }));
-    await screen.findByRole("button", { name: "Start the run" });
+    await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Lock these rules" }));
+    if (firewallLabel) {
+      await userEvent.click(await screen.findByRole("radio", { name: firewallLabel }));
+    }
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Start the run" })).toBeEnabled(),
+    );
     return server;
   }
 
-  it("says what is about to happen: the agent, the firewall setting, the money and the day's budget", async () => {
-    await locked(/Gate 0 only/);
+  it("says what is about to happen: the agent, the money, that it costs the person nothing, and the day's budget", async () => {
+    await locked();
     const facts = within(document.querySelector(".launch-facts") as HTMLElement);
     expect(facts.getByText("Claude Haiku 5.5")).toBeVisible();
-    expect(facts.getByText("Gate 0 only")).toBeVisible();
     expect(facts.getByText("Practice money")).toBeVisible();
-    expect(facts.getByText(/\$0\.97 of today's \$1\.00 is left/)).toBeVisible();
+    expect(facts.getByText("Nothing")).toBeVisible();
+    expect(facts.getByText(/\$0\.97 of \$1\.00 is left today/)).toBeVisible();
+  });
+
+  it("says what turning Chaperone off means before the run starts", async () => {
+    await locked(/^Off/);
+    const next = within(screen.getByRole("list", { name: "What happens when it starts" }));
+    expect(next.getByText(/the payment goes straight through. Nobody checks it/)).toBeVisible();
   });
 
   it("says Sandbox when the server holds money on the sandbox", async () => {
     flow({ status: status({ payments: "sandbox" }) });
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
-    await userEvent.click(await screen.findByRole("button", { name: "Lock this mandate" }));
+    await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Lock these rules" }));
     expect(await screen.findByText("Sandbox")).toBeVisible();
   });
 
   it("starts the run with the chosen setting and goes to its page, which follows it", async () => {
-    const { calls } = await locked(/Off/);
+    const { calls } = await locked(/^Off/);
     await userEvent.click(screen.getByRole("button", { name: "Start the run" }));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/runs/run_new"));
     expect(posts(calls).at(-1)).toMatchObject({
@@ -382,8 +448,8 @@ describe("running", () => {
     });
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
-    await userEvent.click(await screen.findByRole("button", { name: "Lock this mandate" }));
+    await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
+    await userEvent.click(await screen.findByRole("button", { name: "Lock these rules" }));
     await userEvent.click(await screen.findByRole("button", { name: "Start the run" }));
     expect(await screen.findByRole("alert")).toHaveTextContent("Another live run is in progress.");
     expect(screen.getByTestId("location")).toHaveTextContent("/start");
@@ -393,8 +459,8 @@ describe("running", () => {
   it("holds the start back while another live run is in progress", async () => {
     flow({ status: status({ busy: true }) });
     renderApp("/start?run=run_new");
-    await userEvent.click(await screen.findByRole("button", { name: "Lock this mandate" }));
-    expect(await screen.findByText(/Another live run is in progress/)).toBeVisible();
+    await userEvent.click(await screen.findByRole("button", { name: "Lock these rules" }));
+    expect(await screen.findByText(/Someone else's live run is going right now/)).toBeVisible();
     expect(screen.getByRole("button", { name: "Start the run" })).toBeDisabled();
   });
 });
@@ -410,12 +476,16 @@ describe("when live runs can't start", () => {
     });
     renderApp("/start");
     expect(
-      await screen.findByRole("heading", { name: "Live runs are off on this server." }),
+      await screen.findByRole("heading", { name: "Live runs are off right now." }),
     ).toBeVisible();
+    expect(screen.getByText(/Every recorded run still plays back step by step/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "See the benchmark results" })).toBeVisible();
+    // The server's reason is an operator's, so it waits behind a disclosure.
+    expect(screen.getByText(/has no model key/)).not.toBeVisible();
+    await userEvent.click(screen.getByText("Details for whoever runs this server"));
     expect(screen.getByText(/has no model key/)).toBeVisible();
-    expect(screen.getByText(/Recorded runs still replay, and everything else works/)).toBeVisible();
-    expect(screen.queryByRole("button", { name: "Draft the mandate" })).toBeNull();
-    await userEvent.click(screen.getByRole("link", { name: "Replay a recorded run" }));
+    expect(screen.queryByRole("button", { name: "Write the rules" })).toBeNull();
+    await userEvent.click(screen.getByRole("link", { name: "Watch a recorded run" }));
     expect(await screen.findByRole("heading", { name: "Runs" })).toBeVisible();
   });
 
@@ -436,7 +506,8 @@ describe("when live runs can't start", () => {
     expect(
       await screen.findByRole("heading", { name: "Today's live runs are used up." }),
     ).toBeVisible();
-    expect(screen.getByText(/daily budget of \$1\.00 is spent/)).toBeVisible();
+    expect(screen.getByText(/daily budget of \$1\.00, and today's is spent/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Watch a recorded run" })).toBeVisible();
     expect(screen.getByText(/2 Nov 2026, 03:00 GMT\+3/)).toBeVisible();
   });
 
@@ -468,7 +539,9 @@ describe("connect your own agent", () => {
     flow();
     renderApp("/start?tab=agent");
     await screen.findByText(/wraps your agent's payment tool/);
-    expect(screen.queryByRole("button", { name: /upload|start the run|draft/i })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /upload|start the run|write the rules/i }),
+    ).toBeNull();
     expect(document.querySelector("input[type=file]")).toBeNull();
     expect(screen.getByText(/You can't upload an agent here/)).toBeVisible();
   });
@@ -526,8 +599,8 @@ describe("the price ceiling", () => {
     flow();
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
-    await userEvent.click(screen.getByRole("button", { name: "Draft the mandate" }));
-    const terms = within(await screen.findByRole("list", { name: "The mandate's terms" }));
+    await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
+    const terms = within(await screen.findByRole("list", { name: "The rules" }));
     const ceiling = terms.getByText("$120.00 each").closest("li") as HTMLElement;
     expect(ceiling.querySelector(".amt-c")).toHaveTextContent(".00");
   });

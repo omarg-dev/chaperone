@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { Section, Vault } from "../design";
 import { SDK_EXAMPLE } from "./snippet";
 
@@ -10,6 +11,10 @@ export function AgentTab() {
     <div className="agent-tab">
       <Vault label="How it holds a checkout" className="agent-vault">
         <h2 className="page-heading t-section">How it works</h2>
+        <p className="agent-for">
+          This tab is for developers. To see Chaperone work without writing code,{" "}
+          <Link to="/start">run a shopper here</Link>.
+        </p>
         <p className="agent-lede">
           Chaperone's SDK wraps your agent's payment tool, so a checkout holds the cart instead of
           paying for it. Your agent keeps its own tools and loop. After it stops, Chaperone reviews
@@ -17,8 +22,8 @@ export function AgentTab() {
         </p>
         <ol className="agent-steps">
           <li>
-            <strong>Start a run</strong> in the arena marketplace and create a firewall for it, with
-            the mandate the person confirmed.
+            <strong>Start a run</strong> in the practice marketplace (the arena) and create a
+            firewall for it, with the rules the person locked (the mandate).
           </li>
           <li>
             <strong>Wrap your tools.</strong> The tool that pays is guarded. Every other tool is
