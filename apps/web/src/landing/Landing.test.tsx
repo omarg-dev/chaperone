@@ -33,7 +33,7 @@ const list: ResultsList = {
 };
 
 describe("the landing page", () => {
-  it("is what / shows, in eight sections with the two ways in", async () => {
+  it("is what / shows, in its sections, with the ways in and no section indicator", async () => {
     mockServer();
     renderApp("/");
     expect(
@@ -46,6 +46,7 @@ describe("the landing page", () => {
       "Four gates",
       "The proof",
       "Held-out attacks",
+      "The dashboard",
       "Any agent",
       "Try it",
     ]) {
@@ -60,16 +61,38 @@ describe("the landing page", () => {
       "href",
       "/dashboard",
     );
+    const agent = section("Any agent");
+    expect(within(agent).getByRole("link", { name: "Read the docs" })).toHaveAttribute(
+      "href",
+      "/docs",
+    );
+    expect(within(agent).getByRole("link", { name: "Try the API in Postman" })).toHaveAttribute(
+      "href",
+      "/docs#postman",
+    );
     expect(
-      within(section("Any agent")).getByRole("link", { name: "Read the docs" }),
-    ).toHaveAttribute("href", "/docs");
+      within(section("The dashboard")).getByRole("link", { name: "Explore every result" }),
+    ).toHaveAttribute("href", "/dashboard?view=studio");
     expect(within(section("Try it")).getByRole("link", { name: "Start a run" })).toHaveAttribute(
       "href",
       "/start",
     );
-    const index = screen.getByRole("navigation", { name: "Sections" });
-    expect(within(index).getAllByRole("button")).toHaveLength(8);
+    expect(screen.queryByRole("navigation", { name: "Sections" })).toBeNull();
     expect(screen.getByRole("link", { name: "Chaperone, home" })).toHaveAttribute("href", "/");
+  });
+
+  it("names what it works with as plain text, with no logos", async () => {
+    mockServer();
+    renderApp("/");
+    const end = section("Try it");
+    expect(await within(end).findByText("Works with")).toBeInTheDocument();
+    for (const name of ["Claude", "OpenAI", "AI SDK", "AG Studio", "Postman"]) {
+      expect(within(end).getByText(name)).toBeInTheDocument();
+    }
+    expect(end).toHaveTextContent("Built on PayPal's sandbox");
+    const line = within(end).getByText("Works with").closest("div") as HTMLElement;
+    expect(line).toHaveTextContent("Built on PayPal's sandbox");
+    expect(line.querySelector("img, svg, picture")).toBeNull();
   });
 
   it("says when there are no results, and draws no figures and no placeholder model", async () => {
@@ -77,9 +100,13 @@ describe("the landing page", () => {
     renderApp("/");
     const proof = section("The proof");
     expect(await within(proof).findByText(/No sandbox results on this server yet/)).toBeVisible();
-    for (const name of ["The proof", "Held-out attacks"]) {
-      expect(section(name).textContent).not.toMatch(/\d%|Running/);
+    expect(section("Held-out attacks")).toHaveTextContent(
+      "No held-out results on this server yet.",
+    );
+    for (const name of ["The proof", "Held-out attacks", "The dashboard"]) {
+      expect(section(name).textContent).not.toMatch(/\d%|\d of \d|Running/);
     }
+    expect(screen.queryByText(/Real payment sandbox/)).toBeNull();
   });
 
   it("draws each model with a results file, off and on, and the held-out set apart", async () => {
@@ -94,12 +121,24 @@ describe("the landing page", () => {
     expect(within(row("With Chaperone")).getByText("0.0%")).toBeInTheDocument();
     expect(row("With Chaperone")).toHaveTextContent("0 of 16");
     expect(model).toHaveTextContent("Clean carts: 0 blocked, 4 sent to you, of 49");
-    expect(proof).toHaveTextContent("Real payment sandbox · run 2026-10-26 · 2 seeds");
-    expect(proof).toHaveTextContent("gates on Claude Haiku 5.5 for every model");
+    // Where the numbers come from is said once, under both sets.
+    expect(screen.getAllByText(/Real payment sandbox/)).toHaveLength(1);
+    expect(screen.getByText(/Real payment sandbox/)).toHaveTextContent(
+      "Real payment sandbox · run 2026-10-26 · 2 seeds · gates on Claude Haiku 5.5 for every model",
+    );
 
     const held = section("Held-out attacks");
     expect(held).toHaveTextContent("3 attacks ported from published agent security benchmarks");
     expect(within(held).getAllByRole("article")).toHaveLength(1);
+    expect(within(held).getByRole("article")).toHaveTextContent(
+      "Clean carts: 0 blocked, 4 sent to you, of 49",
+    );
+
+    // The dashboard's preview draws the files' own counts, and nothing else.
+    const preview = section("The dashboard");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnOff11 of 16");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnFull tree0 of 16");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5Held-outFull tree0 of 16");
     expect(screen.queryByText(/Gemini|Running/)).toBeNull();
   });
 

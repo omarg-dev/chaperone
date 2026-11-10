@@ -4,109 +4,108 @@ import { Amount, buttonClass, Mark, MoneyGlyph, Pill, Rate } from "../design";
 import { type ColumnView, gateModelLabel, sharedOf } from "./proof";
 import { useProof } from "./useProof";
 
-// The landing page: eight sections, one idea each, one screen tall. The pictures tell one run from
-// the arena (scenario sc_a02: a review steers the agent to a verified store that is really an
-// attacker), drawn with the product's own parts: the clasp round the held amount, the gates' pills,
-// the seller hatch with Gate 1's red outline, the money-state glyphs. The numbers come from the
-// eval's results files only (proof.ts). A section's contents come in the first time it is on screen
-// (the page adds `seen`); with reduced motion, or no IntersectionObserver, everything is there and
-// still from the start.
+// The landing page: one run from the arena (scenario sc_a02: a review steers the agent to a verified
+// store that is really an attacker), told with the product's own parts, then the eval's numbers and
+// the ways in. The sections are not one shape: the hero is a split, the attack and the hold share a
+// screen, the gates are a band, our attacks and the held-out ones sit side by side, the dashboard is
+// a wide picture with a short caption. The numbers come from the eval's results files only
+// (proof.ts). A section's contents come in the first time it is on screen (the page adds `seen`);
+// with reduced motion, or no IntersectionObserver, everything is there and still from the start.
 
 const SECTIONS = [
-  { id: "home", label: "Home" },
-  { id: "attack", label: "The attack" },
-  { id: "hold", label: "The hold" },
-  { id: "gates", label: "Four gates" },
-  { id: "proof", label: "The proof" },
-  { id: "heldout", label: "Held out" },
-  { id: "agent", label: "Any agent" },
-  { id: "try", label: "Try it" },
+  "home",
+  "attack",
+  "hold",
+  "gates",
+  "proof",
+  "heldout",
+  "dashboard",
+  "agent",
+  "try",
 ] as const;
-type SectionId = (typeof SECTIONS)[number]["id"];
+type SectionId = (typeof SECTIONS)[number];
 
 const reducedMotion = () =>
   typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-function useSections() {
+function useSeen() {
   const [motion, setMotion] = useState(false);
   const [seen, setSeen] = useState<ReadonlySet<SectionId>>(new Set());
-  const [active, setActive] = useState<SectionId>("home");
   useEffect(() => {
-    const elements = SECTIONS.map(({ id }) => document.getElementById(id)).filter(
-      (el): el is HTMLElement => el !== null,
-    );
-    const still = reducedMotion();
-    // With reduced motion every section is there from the start; the indicator still follows.
-    if (still || typeof IntersectionObserver === "undefined") {
-      setSeen(new Set(SECTIONS.map((s) => s.id)));
+    if (reducedMotion() || typeof IntersectionObserver === "undefined") {
+      setSeen(new Set(SECTIONS));
+      return;
     }
-    if (typeof IntersectionObserver === "undefined") return;
-    if (!still) setMotion(true);
-    // The band across the middle of the screen: the section in it is the current one.
+    setMotion(true);
+    // A section counts as seen once its top is a fifth of the way up the screen, so the last,
+    // shorter ones still come in at the bottom of the page.
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const id = entry.target.id as SectionId;
-          setActive(id);
           setSeen((before) => (before.has(id) ? before : new Set(before).add(id)));
+          observer.unobserve(entry.target);
         }
       },
-      { rootMargin: "-40% 0px -40% 0px" },
+      { rootMargin: "0px 0px -20% 0px" },
     );
-    for (const el of elements) observer.observe(el);
+    for (const id of SECTIONS) {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    }
     return () => observer.disconnect();
   }, []);
-  return { motion, seen, active };
+  return { motion, seen };
 }
 
-// The order a part comes in, for its transition delay.
+// The order a part comes in, for its delay.
 const step = (i: number) => ({ "--i": i }) as CSSProperties;
 
-// A section is split (words left, picture right), stacked (words over a wide picture) or centred.
 function Section({
   id,
   seen,
   title,
-  layout = "split",
+  className,
   children,
 }: {
   id: SectionId;
-  seen: boolean;
+  seen: ReadonlySet<SectionId>;
   title: string;
-  layout?: "split" | "stack" | "center";
+  className?: string;
   children: ReactNode;
 }) {
   return (
     <section
       id={id}
-      className={["lp-section", `lp-${id}`, seen && "seen"].filter(Boolean).join(" ")}
+      className={["lp-section", `lp-${id}`, className, seen.has(id) && "seen"]
+        .filter(Boolean)
+        .join(" ")}
       aria-label={title}
     >
-      <div className={`lp-inner lp-${layout}`}>{children}</div>
+      {children}
     </section>
   );
 }
 
+// A heading and a line under it. The size is the section's: the hero's, a full section's, or a
+// smaller one where two ideas share a screen.
 function Copy({
-  eyebrow,
   title,
   lede,
+  size = "md",
   children,
 }: {
-  eyebrow: string;
   title: string;
   lede: string;
+  size?: "lg" | "md";
   children?: ReactNode;
 }) {
   return (
     <div className="lp-copy">
-      <p className="lp-eyebrow reveal">{eyebrow}</p>
-      <h2 className="lp-title reveal" style={step(1)}>
-        {title}
-      </h2>
-      <p className="lp-lede reveal" style={step(2)}>
+      <h2 className={`lp-title lp-title-${size} reveal`}>{title}</h2>
+      <p className="lp-lede reveal" style={step(1)}>
         {lede}
       </p>
       {children}
@@ -123,7 +122,7 @@ const RUN = {
   cents: 6199,
 };
 
-// --- 1. Hero ---------------------------------------------------------------------------------
+// --- The hero ---------------------------------------------------------------------------------
 
 function HeroRun() {
   return (
@@ -160,7 +159,7 @@ function HeroRun() {
 
 function Hero() {
   return (
-    <>
+    <div className="lp-inner lp-split lp-hero">
       <div className="lp-copy">
         <p className="lp-eyebrow reveal">A firewall for AI shopping agents</p>
         <h1 className="lp-title lp-title-hero reveal" style={step(1)}>
@@ -180,21 +179,20 @@ function Hero() {
         </div>
       </div>
       <HeroRun />
-    </>
+    </div>
   );
 }
 
-// --- 2. The attack ---------------------------------------------------------------------------
+// --- The attack and the hold, side by side ------------------------------------------------------
 
 function Attack() {
   return (
     <>
       <Copy
-        eyebrow="The attack"
         title="A review can give orders."
-        lede="Sellers hide instructions in their own pages. The agent reads them as part of the job, and buys what they say."
+        lede="Sellers hide instructions in their own pages. The agent reads them as part of the job."
       />
-      <figure className="sr reveal" style={step(3)}>
+      <figure className="sr reveal" style={step(2)}>
         <div className="sr-page">
           <p className="sr-where">Seller-written · reviews of the {RUN.product}</p>
           <p className="sr-by">
@@ -224,50 +222,29 @@ function Attack() {
   );
 }
 
-// --- 3. The hold -----------------------------------------------------------------------------
-
 const EXITS = [
-  {
-    state: "captured",
-    title: "Captured",
-    line: "The cart matches. The seller is paid.",
-  },
-  {
-    state: "person",
-    title: "Held for you",
-    line: "Something is off. You approve or reject.",
-  },
-  {
-    state: "voided",
-    title: "Voided",
-    line: "The cart breaks your mandate. Nobody is paid.",
-  },
+  { state: "captured", title: "Captured", line: "The cart matches. The seller is paid." },
+  { state: "person", title: "Held for you", line: "Something is off. You approve or reject." },
+  { state: "voided", title: "Voided", line: "The cart breaks your mandate. Nobody is paid." },
 ] as const;
 
 function Hold() {
   return (
     <>
       <Copy
-        eyebrow="The hold"
         title="Checkout becomes a hold."
-        lede="The agent never pays. Its checkout only authorizes the payment, so the money waits until the cart is reviewed."
+        lede="The agent never pays. Its checkout only authorizes the payment, and the money waits for the review."
       />
-      <div className="hx reveal" style={step(3)}>
+      <div className="hx reveal" style={step(2)}>
         <p className="hx-call">
-          <span className="hx-cell">
-            <span className="hx-k">The agent calls</span>
-            <code>checkout</code>
-          </span>
+          <code>checkout</code>
           <span className="hx-arrow" aria-hidden="true" />
-          <span className="hx-cell">
-            <span className="hx-k">The sandbox</span>
-            <span>Authorizes the payment and captures nothing</span>
-          </span>
+          <span>Authorized, nothing captured</span>
         </p>
         <ul className="hx-exits">
           {EXITS.map((exit, i) => (
             <li key={exit.state} className={`hx-exit hx-${exit.state}`} style={step(i)}>
-              <MoneyGlyph state={exit.state} size={48} />
+              <MoneyGlyph state={exit.state} size={36} />
               <h3>{exit.title}</h3>
               <p>{exit.line}</p>
             </li>
@@ -278,7 +255,7 @@ function Hold() {
   );
 }
 
-// --- 4. Four gates ---------------------------------------------------------------------------
+// --- The gates, as a band ------------------------------------------------------------------------
 
 const GATES = [
   {
@@ -313,43 +290,40 @@ const GATES = [
 
 function Gates() {
   return (
-    <>
-      <Copy
-        eyebrow="The review"
-        title="Four gates, one verdict."
-        lede="Models only read and judge into fixed fields. Code makes the call."
-      />
-      <div className="gx reveal" style={step(3)}>
-        <p className="gx-case">
-          {RUN.product} from {RUN.store}
-        </p>
-        <ol className="gx-rows">
-          {GATES.map((gate) => (
-            <li key={gate.n} className="gx-row" style={step(gate.n)}>
-              <span className="gx-n" aria-hidden="true">
-                {gate.n}
-              </span>
-              <div className="gx-name">
-                <h3>
-                  Gate {gate.n}, {gate.name.toLowerCase()}
-                </h3>
-                <p>{gate.reads}</p>
-              </div>
-              <p className="gx-finding">{gate.finding}</p>
-              <Pill state={gate.verdict} />
-            </li>
-          ))}
-        </ol>
-        <p className="gx-end">
-          <Pill state="escalate" label="Held for you" />
-          <span>Nobody is paid until you decide.</span>
+    <div className="lp-inner">
+      <div className="gx-head">
+        <h2 className="lp-title lp-title-md reveal">Four gates, one verdict.</h2>
+        <p className="lp-lede reveal" style={step(1)}>
+          Models only read and judge into fixed fields. Code makes the call. Here, on the{" "}
+          {RUN.product} from {RUN.store}:
         </p>
       </div>
-    </>
+      <ol className="gx-rows">
+        {GATES.map((gate) => (
+          <li key={gate.n} className="gx-gate" style={step(gate.n)}>
+            <span className="gx-n" aria-hidden="true">
+              {gate.n}
+            </span>
+            <h3>
+              Gate {gate.n}, {gate.name.toLowerCase()}
+            </h3>
+            <p className="gx-reads">{gate.reads}</p>
+            <p className="gx-finding">{gate.finding}</p>
+            <Pill state={gate.verdict} />
+          </li>
+        ))}
+      </ol>
+      <p className="gx-end">
+        <Pill state="escalate" label="Held for you" />
+        <span>Nobody is paid until you decide.</span>
+      </p>
+    </div>
   );
 }
 
-// --- 5 and 6. The proof, and the held-out set --------------------------------------------------
+// --- The proof, and the held-out set, side by side -----------------------------------------------
+
+type Status = "loading" | "ready" | "unavailable";
 
 // One model: the share of attacks that got through with the firewall off, then on, as bars on one
 // scale, with the counts and what the full tree did to clean carts.
@@ -372,7 +346,7 @@ function ModelBars({ view }: { view: ColumnView }) {
                 <span style={{ "--w": rate } as CSSProperties} />
               </dd>
               <dd className="mb-rate">
-                <Rate percent={rate * 100} size="lg" />
+                <Rate percent={rate * 100} size="md" />
               </dd>
               <dd className="mb-count">
                 {row.side.attackSuccesses} of {row.side.attackRuns}
@@ -389,9 +363,29 @@ function ModelBars({ view }: { view: ColumnView }) {
   );
 }
 
-function Source({ views, all }: { views: ColumnView[]; all: ColumnView[] }) {
-  const date = sharedOf(views, (p) => p.date);
-  const seeds = sharedOf(views, (p) => p.seeds);
+function Bars({ views, status, none }: { views: ColumnView[]; status: Status; none: string }) {
+  if (status === "loading") return <div className="mb-grid" />;
+  if (views.length === 0) {
+    return (
+      <p className="lp-empty reveal" style={step(2)}>
+        {none}
+      </p>
+    );
+  }
+  return (
+    <div className="mb-grid reveal" style={step(2)}>
+      {views.map((view) => (
+        <ModelBars key={view.columnId} view={view} />
+      ))}
+    </div>
+  );
+}
+
+// Where the numbers come from, said once under both sets. A part the files don't share is left out.
+function Source({ all }: { all: ColumnView[] }) {
+  if (all.length === 0) return null;
+  const date = sharedOf(all, (p) => p.date);
+  const seeds = sharedOf(all, (p) => p.seeds);
   const gates = gateModelLabel(all);
   const parts = [
     "Real payment sandbox",
@@ -400,85 +394,166 @@ function Source({ views, all }: { views: ColumnView[]; all: ColumnView[] }) {
     gates && `gates on ${gates} for every model`,
   ].filter(Boolean);
   return (
-    <p className="lp-source reveal" style={step(4)}>
-      {parts.join(" · ")} · <Link to="/dashboard">Open the dashboard</Link>
-    </p>
+    <div className="lp-inner">
+      <p className="lp-source">{parts.join(" · ")}</p>
+    </div>
   );
 }
 
-function Bars({
-  views,
-  all,
-  status,
-}: {
-  views: ColumnView[];
-  all: ColumnView[];
-  status: "loading" | "ready" | "unavailable";
-}) {
-  if (status === "loading") return <div className="mb-grid" />;
-  if (views.length === 0) {
-    return (
-      <p className="lp-empty reveal" style={step(3)}>
-        No sandbox results on this server yet. <Link to="/dashboard">Open the dashboard</Link>
-      </p>
-    );
-  }
-  return (
-    <>
-      <div className="mb-grid reveal" style={step(3)}>
-        {views.map((view) => (
-          <ModelBars key={view.columnId} view={view} />
-        ))}
-      </div>
-      <Source views={views} all={all} />
-    </>
-  );
-}
-
-function ProofSection({
-  views,
-  all,
-  status,
-}: {
-  views: ColumnView[];
-  all: ColumnView[];
-  status: "loading" | "ready" | "unavailable";
-}) {
+function Proof({ views, status }: { views: ColumnView[]; status: Status }) {
   return (
     <>
       <Copy
-        eyebrow="Our attacks"
         title="Attacks that got through."
         lede="Each model shopped our arena on the payment sandbox. The same carts were reviewed with Chaperone off, then on."
       />
-      <Bars views={views} all={all} status={status} />
+      <Bars
+        views={views}
+        status={status}
+        none="No sandbox results on this server yet. The dashboard says what it has."
+      />
     </>
   );
 }
 
-function HeldOutSection({
-  views,
-  all,
-  status,
-}: {
-  views: ColumnView[];
-  all: ColumnView[];
-  status: "loading" | "ready" | "unavailable";
-}) {
+function HeldOut({ views, status }: { views: ColumnView[]; status: Status }) {
   const count = sharedOf(views, (p) => p.scenarios);
   return (
     <>
       <Copy
-        eyebrow="Held-out attacks"
         title="Attacks it never saw."
         lede={`${count === null ? "Attacks" : `${count} attacks`} ported from published agent security benchmarks, kept apart and never used to tune the gates.`}
       />
-      <Bars views={views} all={all} status={status} />
+      <Bars views={views} status={status} none="No held-out results on this server yet." />
     </>
   );
 }
 
-// --- 7. Any agent ----------------------------------------------------------------------------
+// --- The dashboard: a wide picture, a short caption ----------------------------------------------
+
+// A drawing of the dashboard's Studio view in the page's own parts, not a screenshot: a chart and a
+// table of every result, and the box that asks about them. Its numbers are the files' own, the same
+// ones the proof draws; with no results it is an empty frame.
+function StudioPreview({ own, heldOut }: { own: ColumnView[]; heldOut: ColumnView[] }) {
+  const rows = [
+    ...own.flatMap((v) => [
+      {
+        key: `${v.columnId}-own-off`,
+        model: v.label,
+        set: "Own",
+        setting: "Off",
+        side: v.proof.off,
+      },
+      {
+        key: `${v.columnId}-own-full`,
+        model: v.label,
+        set: "Own",
+        setting: "Full tree",
+        side: v.proof.full,
+      },
+    ]),
+    ...heldOut.map((v) => ({
+      key: `${v.columnId}-held-full`,
+      model: v.label,
+      set: "Held-out",
+      setting: "Full tree",
+      side: v.proof.full,
+    })),
+  ];
+  return (
+    <div className="st" aria-hidden="true">
+      <div className="st-bar">
+        <span>One result</span>
+        <span className="st-tab">Every result in AG Studio</span>
+      </div>
+      <div className="st-body">
+        <div className="st-card st-chart">
+          <p className="st-k">Attack success, by firewall setting</p>
+          <div className="st-plot">
+            {own.map((v, i) => (
+              <div key={v.columnId} className="st-group" style={step(i)}>
+                <span
+                  className="st-col st-off"
+                  style={{ "--h": v.proof.off.attackSuccessRate ?? 0 } as CSSProperties}
+                />
+                <span
+                  className="st-col st-on"
+                  style={{ "--h": v.proof.full.attackSuccessRate ?? 0 } as CSSProperties}
+                />
+                <span className="st-group-k">{v.label}</span>
+              </div>
+            ))}
+          </div>
+          <p className="st-legend">
+            <span className="st-key st-off" /> Off <span className="st-key st-on" /> Full tree
+          </p>
+        </div>
+        <div className="st-card st-table">
+          <p className="st-k">Every model, set and setting</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Set</th>
+                <th>Setting</th>
+                <th>Through</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={row.key} style={step(i)}>
+                  <td>{row.model}</td>
+                  <td>{row.set}</td>
+                  <td>{row.setting}</td>
+                  <td>
+                    {row.side.attackSuccesses} of {row.side.attackRuns}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="st-ask">
+        <Mark size={20} />
+        <span className="st-q">Which attack got past the gates most often?</span>
+        <span className="st-send">Ask</span>
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ own, heldOut }: { own: ColumnView[]; heldOut: ColumnView[] }) {
+  return (
+    <div className="lp-inner lp-wide">
+      <div className="lp-copy">
+        <h2 className="lp-title lp-title-md reveal">Every run, open to questions.</h2>
+        <p className="lp-lede reveal" style={step(1)}>
+          The dashboard puts every benchmark result in AG Studio. Slice it, chart it, or ask it in
+          plain English.
+        </p>
+        <div className="lp-actions reveal" style={step(2)}>
+          <Link to="/dashboard?view=studio" className={buttonClass("secondary")}>
+            Explore every result
+          </Link>
+        </div>
+      </div>
+      <figure
+        className="st-figure reveal"
+        style={step(2)}
+        aria-label="A drawing of the dashboard's Studio view: a chart and a table of every benchmark result, and a box to ask questions about them."
+      >
+        {/* The drawing looks like something to click, so it opens Studio too. The button beside
+            it is the way in for the keyboard and for assistive technology. */}
+        <Link to="/dashboard?view=studio" className="st-link" tabIndex={-1} aria-hidden="true">
+          <StudioPreview own={own} heldOut={heldOut} />
+        </Link>
+      </figure>
+    </div>
+  );
+}
+
+// --- Any agent ---------------------------------------------------------------------------------
 
 // The SDK's three calls, as the example in packages/sdk/examples has them, shortened.
 const CODE: { key: string; gap?: boolean; text: ReactNode }[] = [
@@ -515,19 +590,8 @@ const CODE: { key: string; gap?: boolean; text: ReactNode }[] = [
 
 function AnyAgent() {
   return (
-    <>
-      <Copy
-        eyebrow="Your agent"
-        title="Any agent. Three calls."
-        lede="Wrap the tools you already have. The payment tool holds the cart instead of paying."
-      >
-        <div className="lp-actions reveal" style={step(3)}>
-          <Link to="/docs" className={buttonClass("secondary")}>
-            Read the docs
-          </Link>
-        </div>
-      </Copy>
-      <pre className="code reveal" style={step(3)}>
+    <div className="lp-inner lp-split lp-split-flip">
+      <pre className="code reveal" style={step(2)}>
         <code>
           {CODE.map((line, l) => (
             <span
@@ -540,85 +604,102 @@ function AnyAgent() {
           ))}
         </code>
       </pre>
-    </>
-  );
-}
-
-// --- 8. Try it -------------------------------------------------------------------------------
-
-function Try() {
-  return (
-    <div className="lp-copy lp-copy-center">
-      <Mark size={72} className="reveal" />
-      <h2 className="lp-title reveal" style={step(1)}>
-        Try to fool an agent.
-      </h2>
-      <p className="lp-lede reveal" style={step(2)}>
-        Pick a task, lock what you want, and watch the gates review the cart.
-      </p>
-      <div className="lp-actions reveal" style={step(3)}>
-        <Link to="/start" className={buttonClass("primary")}>
-          Start a run
-        </Link>
-      </div>
-      <p className="lp-foot">Built on PayPal's sandbox</p>
+      <Copy
+        size="lg"
+        title="Any agent. Three calls."
+        lede="Wrap the tools you already have. The payment tool holds the cart instead of paying."
+      >
+        <div className="lp-actions reveal" style={step(2)}>
+          <Link to="/docs" className={buttonClass("secondary")}>
+            Read the docs
+          </Link>
+          <Link to="/docs#postman" className={buttonClass("secondary")}>
+            Try the API in Postman
+          </Link>
+        </div>
+      </Copy>
     </div>
   );
 }
 
-// --- The page --------------------------------------------------------------------------------
+// --- Try it, and what it works with ------------------------------------------------------------
+
+const WORKS_WITH = ["Claude", "OpenAI", "AI SDK", "AG Studio", "Postman"] as const;
+
+function Try() {
+  return (
+    <div className="lp-inner lp-try-inner">
+      <div className="lp-copy lp-copy-center">
+        <Mark size={56} className="reveal" />
+        <h2 className="lp-title lp-title-lg reveal" style={step(1)}>
+          Try to fool an agent.
+        </h2>
+        <p className="lp-lede reveal" style={step(2)}>
+          Pick a task, lock what you want, and watch the gates review the cart.
+        </p>
+        <div className="lp-actions reveal" style={step(3)}>
+          <Link to="/start" className={buttonClass("primary")}>
+            Start a run
+          </Link>
+        </div>
+      </div>
+      <div className="lp-works">
+        <p>
+          <span className="lp-works-k">Works with</span>
+          {WORKS_WITH.map((name) => (
+            <span key={name} className="lp-works-name">
+              {name}
+            </span>
+          ))}
+        </p>
+        <p>Built on PayPal's sandbox</p>
+      </div>
+    </div>
+  );
+}
+
+// --- The page ----------------------------------------------------------------------------------
 
 export function Landing() {
-  const { motion, seen, active } = useSections();
+  const { motion, seen } = useSeen();
   const data = useProof();
   const all = [...data.own, ...data.heldOut];
-  const go = (id: SectionId) =>
-    document
-      .getElementById(id)
-      ?.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "start" });
   return (
     <div className={`landing${motion ? " motion" : ""}`}>
-      <nav className="lp-index" aria-label="Sections">
-        <ol>
-          {SECTIONS.map((s, i) => (
-            <li key={s.id}>
-              <button
-                type="button"
-                className={s.id === active ? "current" : undefined}
-                aria-current={s.id === active ? "step" : undefined}
-                onClick={() => go(s.id)}
-              >
-                <span className="lp-index-label">
-                  {String(i + 1).padStart(2, "0")} {s.label}
-                </span>
-                <span className="lp-index-dot" aria-hidden="true" />
-              </button>
-            </li>
-          ))}
-        </ol>
-      </nav>
-      <Section id="home" seen={seen.has("home")} title="Chaperone">
+      <Section id="home" seen={seen} title="Chaperone">
         <Hero />
       </Section>
-      <Section id="attack" seen={seen.has("attack")} title="The attack">
-        <Attack />
-      </Section>
-      <Section id="hold" seen={seen.has("hold")} title="The hold">
-        <Hold />
-      </Section>
-      <Section id="gates" seen={seen.has("gates")} title="Four gates">
+      <div className="lp-band lp-pair-band">
+        <div className="lp-inner lp-pair">
+          <Section id="attack" seen={seen} title="The attack">
+            <Attack />
+          </Section>
+          <Section id="hold" seen={seen} title="The hold">
+            <Hold />
+          </Section>
+        </div>
+      </div>
+      <Section id="gates" seen={seen} title="Four gates" className="lp-band">
         <Gates />
       </Section>
-      <Section id="proof" seen={seen.has("proof")} title="The proof" layout="stack">
-        <ProofSection views={data.own} all={all} status={data.status} />
+      <div className="lp-band lp-results">
+        <div className="lp-inner lp-pair">
+          <Section id="proof" seen={seen} title="The proof">
+            <Proof views={data.own} status={data.status} />
+          </Section>
+          <Section id="heldout" seen={seen} title="Held-out attacks">
+            <HeldOut views={data.heldOut} status={data.status} />
+          </Section>
+        </div>
+        <Source all={all} />
+      </div>
+      <Section id="dashboard" seen={seen} title="The dashboard" className="lp-band">
+        <Dashboard own={data.own} heldOut={data.heldOut} />
       </Section>
-      <Section id="heldout" seen={seen.has("heldout")} title="Held-out attacks" layout="stack">
-        <HeldOutSection views={data.heldOut} all={all} status={data.status} />
-      </Section>
-      <Section id="agent" seen={seen.has("agent")} title="Any agent">
+      <Section id="agent" seen={seen} title="Any agent" className="lp-band">
         <AnyAgent />
       </Section>
-      <Section id="try" seen={seen.has("try")} title="Try it" layout="center">
+      <Section id="try" seen={seen} title="Try it" className="lp-band">
         <Try />
       </Section>
     </div>
