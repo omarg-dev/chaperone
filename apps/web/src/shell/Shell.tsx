@@ -31,10 +31,6 @@ export function Shell() {
           <NavLink to="/docs" className="nav-link">
             Docs
           </NavLink>
-          <NavLink to="/arena" className="nav-link nav-link-soon">
-            Arena
-            <span className="nav-soon">Under construction</span>
-          </NavLink>
         </nav>
         <div className="topbar-end">
           {/* The one filled button on a screen, until the page it opens is the one on screen: then

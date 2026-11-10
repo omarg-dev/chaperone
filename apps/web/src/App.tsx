@@ -2,7 +2,7 @@ import { lazy, Suspense } from "react";
 import { Route, Routes } from "react-router";
 import { Docs } from "./docs/Docs";
 import { Escalations } from "./pages/Escalations";
-import { Arena, NotFound } from "./pages/Placeholders";
+import { NotFound } from "./pages/Placeholders";
 import { Runs } from "./pages/Runs";
 import { RunView } from "./run/RunView";
 import { RunsProvider } from "./runs/RunsProvider";
@@ -51,7 +51,6 @@ export function App() {
               </Suspense>
             }
           />
-          <Route path="arena" element={<Arena />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

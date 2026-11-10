@@ -65,12 +65,6 @@
   background: var(--hold);
 }
 
-.nav-soon {
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--muted);
-}
-
 .topbar-start.btn {
   min-height: 44px;
 }
