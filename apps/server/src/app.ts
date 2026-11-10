@@ -9,6 +9,8 @@ import { arenaRoutes } from "./routes/arena.js";
 import { evalRoutes } from "./routes/eval.js";
 import { eventRoutes } from "./routes/events.js";
 import { liveRoutes } from "./routes/live.js";
+import { studioRoutes } from "./routes/studio.js";
+import { createStudioAiService, type StudioAiService } from "./studio/service.js";
 import { version } from "./version.js";
 import { webHandler } from "./web.js";
 
@@ -29,6 +31,10 @@ export interface AppDependencies {
   resultsDir?: string;
   // The built web app's folder. Unset (or missing), the server is the API alone.
   webDir?: string;
+  // AG Studio on the dashboard: its licence key (AG_STUDIO_LICENSE_KEY), and its assistant's
+  // service (a model client and FIREWALL_STUDIO_DAILY_USD). Unset, Studio shows its watermark and
+  // the assistant is off: a cap nobody chose is not one to spend against.
+  studio?: { licenseKey?: string | null; ai?: StudioAiService };
 }
 
 const SHOP_STATUS: Record<ShopError["code"], ContentfulStatusCode> = {
@@ -47,6 +53,7 @@ export function createApp({
   live,
   resultsDir,
   webDir,
+  studio,
 }: AppDependencies) {
   const app = new Hono();
 
@@ -79,6 +86,13 @@ export function createApp({
   );
 
   app.route("/eval", evalRoutes(resultsDir ?? null));
+  app.route(
+    "/studio",
+    studioRoutes(
+      studio?.ai ?? createStudioAiService({ log, client: null, capUsd: 0 }),
+      studio?.licenseKey ?? null,
+    ),
+  );
 
   if (webDir) app.notFound(webHandler(webDir));
 

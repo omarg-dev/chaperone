@@ -516,3 +516,67 @@
 .chart-box {
   height: 380px;
 }
+
+/* The eval's two views, and AG Studio over every result. Studio draws inside its own box with the
+   tokens passed through its theme (dashboard/studio/theme.ts); this only places it. */
+.eval-views {
+  border-bottom: 1px solid var(--line);
+}
+
+.benchmark {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.benchmark-sources {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.benchmark-files {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-family: var(--font-mono);
+}
+
+.benchmark-studio {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.benchmark-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.benchmark-mode {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  gap: var(--space-4);
+}
+
+.benchmark-mode .tab[aria-pressed="true"] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--hold);
+  text-decoration-thickness: 3px;
+  text-underline-offset: 10px;
+}
+
+/* Studio needs a height to lay its canvas out in: most of a desktop screen, never too short for
+   the report's first page. */
+.benchmark-canvas {
+  height: 82vh;
+  min-height: 720px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}

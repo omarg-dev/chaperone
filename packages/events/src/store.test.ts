@@ -255,3 +255,40 @@ describe("test_events_cannot_be_updated_or_deleted", () => {
     expect(log.listRun("run_a")[0]?.costUsd).toBe(0);
   });
 });
+
+describe("the model spend ledger", () => {
+  it("keeps reservations and settlements by purpose, oldest first, from a time on", () => {
+    log.appendSpend({ purpose: "studio_ai", callId: "c1", kind: "reserve", costUsd: 0.007 });
+    log.appendSpend({ purpose: "other", callId: "x", kind: "reserve", costUsd: 1 });
+    log.appendSpend({
+      purpose: "studio_ai",
+      callId: "c1",
+      kind: "settle",
+      costUsd: 0.0012,
+      inputTokens: 9000,
+      outputTokens: 400,
+      latencyMs: 1500,
+    });
+    const rows = log.listSpend("studio_ai", "2026-11-01T00:00:00.000Z");
+    expect(rows.map((r) => [r.callId, r.kind, r.costUsd, r.inputTokens, r.error])).toEqual([
+      ["c1", "reserve", 0.007, 0, null],
+      ["c1", "settle", 0.0012, 9000, null],
+    ]);
+    expect(log.listSpend("studio_ai", "2026-11-01T12:00:02.000Z")).toHaveLength(1);
+  });
+
+  it("survives the log being closed and opened again", () => {
+    log.appendSpend({ purpose: "studio_ai", callId: "c1", kind: "reserve", costUsd: 0.005 });
+    log.close();
+    log = open();
+    expect(log.listSpend("studio_ai", "2026-01-01T00:00:00.000Z")).toHaveLength(1);
+  });
+
+  it("refuses updates and deletes made straight against the database", () => {
+    log.appendSpend({ purpose: "studio_ai", callId: "c1", kind: "reserve", costUsd: 0.005 });
+    const raw = new Database(path);
+    expect(() => raw.prepare("UPDATE model_spend SET cost_usd = 0").run()).toThrow(/append-only/);
+    expect(() => raw.prepare("DELETE FROM model_spend").run()).toThrow(/append-only/);
+    raw.close();
+  });
+});

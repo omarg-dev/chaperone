@@ -117,3 +117,30 @@ export interface RunSummary extends RunOutcome, RunFacets {
   eventCount: number;
   costUsd: number;
 }
+
+// One row of the model spend ledger (`model_spend` in schema.ts): a call that belongs to no run,
+// reserved at the most it could cost before it is sent, then settled at what it did cost.
+export interface SpendRow {
+  seq: number;
+  purpose: string;
+  callId: string;
+  kind: "reserve" | "settle";
+  // ISO 8601 in UTC.
+  ts: string;
+  costUsd: number;
+  inputTokens: number;
+  outputTokens: number;
+  latencyMs: number;
+  error: string | null;
+}
+
+export interface NewSpendRow {
+  purpose: string;
+  callId: string;
+  kind: "reserve" | "settle";
+  costUsd: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  latencyMs?: number;
+  error?: string | null;
+}

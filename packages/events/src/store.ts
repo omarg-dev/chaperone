@@ -1,12 +1,12 @@
 import { fileURLToPath } from "node:url";
 import Database from "better-sqlite3";
-import { and, asc, count, eq, inArray, max, min, or, sql, sum } from "drizzle-orm";
+import { and, asc, count, eq, gte, inArray, max, min, or, sql, sum } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { newEventId } from "./ids.js";
 import { facetsOf, HOLD_OPERATIONS, NO_OUTCOME, type OutcomeEvent, outcomeOf } from "./outcome.js";
-import { events } from "./schema.js";
-import type { Event, NewEvent, RunSummary } from "./types.js";
+import { events, modelSpend } from "./schema.js";
+import type { Event, NewEvent, NewSpendRow, RunSummary, SpendRow } from "./types.js";
 import { validateNewEvent } from "./validate.js";
 
 export interface EventLogOptions {
@@ -29,6 +29,10 @@ export interface EventLog {
   listRuns(): RunSummary[];
   // Called after each append. Returns a function that unsubscribes.
   subscribe(listener: (event: Event) => void): () => void;
+  // The ledger of model calls that belong to no run (`model_spend`, see schema.ts): append a
+  // reservation or a settlement, and read one purpose's rows from a time on, oldest first.
+  appendSpend(input: NewSpendRow): SpendRow;
+  listSpend(purpose: string, since: string): SpendRow[];
   close(): void;
 }
 
@@ -168,6 +172,34 @@ export function openEventLog(options: EventLogOptions): EventLog {
           ...facetsOf(mine),
         };
       });
+    },
+
+    appendSpend(input) {
+      const row = db
+        .insert(modelSpend)
+        .values({
+          purpose: input.purpose,
+          callId: input.callId,
+          kind: input.kind,
+          ts: clock().toISOString(),
+          costUsd: input.costUsd,
+          inputTokens: input.inputTokens ?? 0,
+          outputTokens: input.outputTokens ?? 0,
+          latencyMs: input.latencyMs ?? 0,
+          error: input.error ?? null,
+        })
+        .returning()
+        .get();
+      return row;
+    },
+
+    listSpend(purpose, since) {
+      return db
+        .select()
+        .from(modelSpend)
+        .where(and(eq(modelSpend.purpose, purpose), gte(modelSpend.ts, since)))
+        .orderBy(asc(modelSpend.seq))
+        .all();
     },
 
     subscribe(listener) {
