@@ -4,6 +4,18 @@ What each release brought, for the people who use it. Adding a version at the to
 into main is the release: it's tagged, published and deployed from there. Each release bumps the
 patch version, except the one minor version per milestone the repo's `CLAUDE.md` allows.
 
+## 0.3.0
+
+v1.2: Chaperone's numbers, measured against the real payment sandbox, and a site that explains itself.
+
+- A new home page says what Chaperone is in one screen, walks through one real attack, and shows the results: with the firewall on, attacks that worked 72% to 84% of the time got through 3.1% (Claude Haiku 5.5) and 0% (OpenAI GPT-6 Luna) of the time, and no honest cart was blocked.
+- The firewall was also tested against 17 attacks taken from published benchmarks that it was never tuned on: 1.5% and 4.4% got through. When an attacker plants instructions on the very product you asked for, it asks you rather than guess, so about half of those honest carts come to you to approve.
+- Explore every benchmark result on the dashboard in AG Studio: slice it, chart it, or ask it questions in plain English.
+- The gates now judge an agent on any model: the benchmark ran the same four gates in front of Claude and OpenAI shopping agents.
+- Each review notes what the real market charges for that kind of product, for reference only.
+- SDK docs at /docs, and a Postman collection to try the whole flow without writing code.
+- Pages are simpler to read: the money's route line now appears only on a run's own page.
+
 ## 0.2.0
 
 v1.1: Chaperone gets its web app, at chaperone.omarg.dev, showing every purchase an agent tried and what happened to the money.
