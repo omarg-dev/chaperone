@@ -9,9 +9,18 @@ import { createApp } from "./app.js";
 import { readConfig } from "./config.js";
 import { eventLogOptions } from "./open-log.js";
 import { paymentSetupFromEnv } from "./payments.js";
+import { studioClientFromEnv } from "./studio/client.js";
+import { createStudioAiService } from "./studio/service.js";
 import { version } from "./version.js";
 
-const { port, dataDir, resultsDir: configuredResults, liveDailyUsd } = readConfig(process.env);
+const {
+  port,
+  dataDir,
+  resultsDir: configuredResults,
+  liveDailyUsd,
+  studioDailyUsd,
+  agStudioLicenseKey,
+} = readConfig(process.env);
 
 const log = openEventLog(eventLogOptions(dataDir));
 const arena = createArenaService({ log });
@@ -43,6 +52,17 @@ try {
   console.warn(`Live runs are off. ${error instanceof Error ? error.message : error}`);
 }
 
+// The dashboard assistant (AG Studio's AI) runs on the same key, with a cap of its own. Without the
+// key it is off and the dashboard says so.
+const studioClient = studioClientFromEnv(process.env);
+if (studioClient.offReason) console.warn(studioClient.offReason);
+const studioAi = createStudioAiService({
+  log,
+  client: studioClient.client,
+  ...(studioClient.offReason && { offReason: studioClient.offReason }),
+  capUsd: studioDailyUsd,
+});
+
 const server = serve(
   {
     fetch: createApp({
@@ -52,6 +72,7 @@ const server = serve(
       live: { models, capUsd: liveDailyUsd },
       resultsDir,
       ...(webDir && { webDir }),
+      studio: { licenseKey: agStudioLicenseKey, ai: studioAi },
     }).fetch,
     port,
   },

@@ -11,6 +11,7 @@
     "import-runs": "tsx --env-file-if-exists=../../.env src/cli-main.ts import-runs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.133.0",
     "@firewall/agent": "workspace:*",
     "@firewall/arena": "workspace:*",
     "@firewall/eval": "workspace:*",

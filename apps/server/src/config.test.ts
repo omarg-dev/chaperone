@@ -8,6 +8,8 @@ describe("readConfig", () => {
       dataDir: "data",
       resultsDir: null,
       liveDailyUsd: 0.25,
+      studioDailyUsd: 0.1,
+      agStudioLicenseKey: null,
     });
   });
 
@@ -36,6 +38,20 @@ describe("readConfig", () => {
     expect(() => readConfig({ FIREWALL_LIVE_DAILY_USD: value })).toThrow(
       /FIREWALL_LIVE_DAILY_USD must be/,
     );
+  });
+
+  it("caps a day's dashboard assistant at $0.10 unless FIREWALL_STUDIO_DAILY_USD says otherwise", () => {
+    expect(readConfig({}).studioDailyUsd).toBe(0.1);
+    expect(readConfig({ FIREWALL_STUDIO_DAILY_USD: "0.5" }).studioDailyUsd).toBe(0.5);
+    expect(readConfig({ FIREWALL_STUDIO_DAILY_USD: "0" }).studioDailyUsd).toBe(0);
+    expect(() => readConfig({ FIREWALL_STUDIO_DAILY_USD: "-1" })).toThrow(
+      /FIREWALL_STUDIO_DAILY_USD must be/,
+    );
+  });
+
+  it("reads AG Studio's licence key, and leaves it unset otherwise", () => {
+    expect(readConfig({ AG_STUDIO_LICENSE_KEY: " key " }).agStudioLicenseKey).toBe("key");
+    expect(readConfig({ AG_STUDIO_LICENSE_KEY: "" }).agStudioLicenseKey).toBeNull();
   });
 
   it.each(["abc", "0", "70000", "3000.5"])("refuses PORT=%s", (value) => {
