@@ -7,7 +7,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { PaymentSetup } from "../payments.js";
 
-const decision = z.object({
+export const decisionBody = z.object({
   decision: z.enum(["approve", "reject"]),
   note: z.string().trim().min(1).max(500).optional(),
 });
@@ -98,7 +98,7 @@ export function eventRoutes(log: EventLog, options: EventRoutesOptions = {}) {
     .get("/runs", (c) => c.json(runList(log)))
     .get("/runs/:runId", (c) => c.json(log.listRun(c.req.param("runId"))))
     .get("/runs/:runId/payees", (c) => c.json(payeesOf(log.listRun(c.req.param("runId")))))
-    .post("/runs/:runId/decision", zValidator("json", decision), async (c) => {
+    .post("/runs/:runId/decision", zValidator("json", decisionBody), async (c) => {
       const runId = c.req.param("runId");
       const { decision: answer, note } = c.req.valid("json");
       if (log.listRun(runId).length === 0) {
