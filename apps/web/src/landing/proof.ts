@@ -2,15 +2,12 @@ import type { ConfigMetricsView, ResultsSummary, ResultsView } from "@firewall/e
 
 // What the landing page says about the eval, from the results files and nothing typed in. Two
 // steps, both pure: `selectResults` picks which files to read from the server's list, and
-// `proofOf` takes the numbers out of a file, as the file counted them.
+// `proofViews` takes the numbers out of them, as the files counted them. A model is shown only when
+// a file for it exists: there is no placeholder for a model that hasn't run.
 
-// The agent columns the page shows, in order. The label is what the page says until a file names
-// the column itself.
-export const COLUMNS = [
-  { columnId: "claude-haiku-5-5", label: "Claude Haiku 5.5" },
-  { columnId: "gpt-6-luna", label: "OpenAI GPT-6 Luna" },
-  { columnId: "gemini-3.5-flash-lite", label: "Gemini 3.5 Flash-Lite" },
-] as const;
+// The order the page draws the models it has files for. A model not named here comes after, by its
+// label, so a new column shows up without a change here.
+export const COLUMN_ORDER: readonly string[] = ["claude-haiku-5-5", "gpt-6-luna"];
 
 // A held-out scenario is one ported from a published benchmark, and its id starts "sc_h". A file is
 // the held-out set when every scenario in it is one. Our own set is every other sandbox file.
@@ -18,29 +15,47 @@ export const isHeldOutScenario = (scenarioId: string) => scenarioId.startsWith("
 export const isHeldOutFile = (file: Pick<ResultsSummary, "scenarios">) =>
   file.scenarios.length > 0 && file.scenarios.every(isHeldOutScenario);
 
-export interface Selection {
-  // One entry per column: the newest sandbox file of our own scenarios, or null while it runs.
-  columns: { columnId: string; label: string; file: string | null }[];
-  // The newest sandbox file of the held-out set, or null when there isn't one.
-  heldOut: string | null;
+export interface Picked {
+  columnId: string;
+  label: string;
+  file: string;
 }
 
-const newest = (files: ResultsSummary[]) =>
-  [...files].sort(
-    (a, b) => b.startedAt.localeCompare(a.startedAt) || b.name.localeCompare(a.name),
-  )[0];
+export interface Selection {
+  // The newest sandbox file of each model that has one, for our own scenarios and for the held-out
+  // set, in the page's order.
+  own: Picked[];
+  heldOut: Picked[];
+}
+
+const newerFirst = (a: ResultsSummary, b: ResultsSummary) =>
+  b.startedAt.localeCompare(a.startedAt) || b.name.localeCompare(a.name);
+
+const rank = (columnId: string) => {
+  const at = COLUMN_ORDER.indexOf(columnId);
+  return at < 0 ? COLUMN_ORDER.length : at;
+};
+
+function newestPerColumn(files: ResultsSummary[]): Picked[] {
+  const picked = new Map<string, ResultsSummary>();
+  for (const file of [...files].sort(newerFirst)) {
+    if (!picked.has(file.column.columnId)) picked.set(file.column.columnId, file);
+  }
+  return [...picked.values()]
+    .sort(
+      (a, b) =>
+        rank(a.column.columnId) - rank(b.column.columnId) ||
+        a.column.label.localeCompare(b.column.label),
+    )
+    .map((file) => ({ columnId: file.column.columnId, label: file.column.label, file: file.name }));
+}
 
 // A fake file is never picked: its money is practice money.
 export function selectResults(list: readonly ResultsSummary[]): Selection {
   const sandbox = list.filter((file) => file.paymentAdapter === "sandbox");
-  const own = sandbox.filter((file) => !isHeldOutFile(file));
   return {
-    columns: COLUMNS.map(({ columnId, label }) => ({
-      columnId,
-      label,
-      file: newest(own.filter((file) => file.column.columnId === columnId))?.name ?? null,
-    })),
-    heldOut: newest(sandbox.filter(isHeldOutFile))?.name ?? null,
+    own: newestPerColumn(sandbox.filter((file) => !isHeldOutFile(file))),
+    heldOut: newestPerColumn(sandbox.filter(isHeldOutFile)),
   };
 }
 
@@ -53,13 +68,15 @@ export interface Side {
 export interface Proof {
   label: string;
   date: string;
-  seeds: string[];
+  seeds: number;
+  // How many scenarios the matrix ran.
+  scenarios: number;
   gateModel: string;
   // The firewall off, and the full tree, on the same carts.
   off: Side;
   full: Side;
-  // Attacks where the agent was fooled, with the firewall off.
-  fooled: number;
+  // Carts with nothing wrong in them (benign runs, and attacks the agent wasn't fooled by), and what
+  // the full tree did to them by mistake.
   cleanCarts: number;
   falseBlocks: number;
   falseEscalations: number;
@@ -79,36 +96,50 @@ export function proofOf(results: ResultsView): Proof | null {
   return {
     label: results.meta.column.label,
     date: results.meta.date,
-    seeds: results.meta.seeds,
+    seeds: results.meta.seeds.length,
+    scenarios: new Set(results.meta.scenarios).size,
     gateModel: results.meta.gateModel,
     off: side(off),
     full: side(full),
-    fooled: off.attackFooled,
     cleanCarts: full.cleanCarts,
     falseBlocks: full.cleanBlocked,
     falseEscalations: full.cleanEscalated,
   };
 }
 
-// What the page draws for one column: still running (no file, or one with nothing to compare), or
-// the proof.
-export type ColumnView =
-  | { status: "running"; columnId: string; label: string }
-  | { status: "ready"; columnId: string; label: string; file: string; proof: Proof };
+// One model's numbers, as the page draws them.
+export interface ColumnView {
+  columnId: string;
+  label: string;
+  file: string;
+  proof: Proof;
+}
 
-export function columnViews(
-  selection: Selection,
+// The picked files that were read and have something to compare; any other is left out, so the page
+// never draws a model it has no numbers for.
+export function proofViews(
+  picked: readonly Picked[],
   files: Readonly<Record<string, ResultsView>>,
 ): ColumnView[] {
-  return selection.columns.map(({ columnId, label, file }): ColumnView => {
-    const view = file === null ? undefined : files[file];
+  return picked.flatMap(({ columnId, file }) => {
+    const view = files[file];
     const proof = view ? proofOf(view) : null;
-    return file !== null && proof
-      ? { status: "ready", columnId, label: proof.label, file, proof }
-      : { status: "running", columnId, label };
+    return proof ? [{ columnId, label: proof.label, file, proof }] : [];
   });
 }
 
-// The headline column is the first one with a file: its off number is the page's big number.
-export const headlineOf = (views: readonly ColumnView[]) =>
-  views.find((v): v is Extract<ColumnView, { status: "ready" }> => v.status === "ready") ?? null;
+// What every view has in common, said once under the section, or null where they differ (then each
+// model says its own).
+export function sharedOf<T>(views: readonly ColumnView[], pick: (proof: Proof) => T): T | null {
+  const first = views[0];
+  if (!first) return null;
+  const value = pick(first.proof);
+  return views.every((v) => pick(v.proof) === value) ? value : null;
+}
+
+// The gate model by its column's label when a column runs on it ("Claude Haiku 5.5"), else its id.
+export function gateModelLabel(views: readonly ColumnView[]): string | null {
+  const id = sharedOf(views, (p) => p.gateModel);
+  if (id === null) return null;
+  return views.find((v) => v.columnId === id)?.label ?? id;
+}

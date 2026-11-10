@@ -1,6 +1,6 @@
 import type { ResultsSummary, ResultsView } from "@firewall/eval/view";
 import { describe, expect, it } from "vitest";
-import { columnViews, headlineOf, proofOf, selectResults } from "./proof";
+import { gateModelLabel, proofOf, proofViews, selectResults, sharedOf } from "./proof";
 
 const file = (
   name: string,
@@ -10,7 +10,7 @@ const file = (
 ): ResultsSummary => ({
   name,
   paymentAdapter: "sandbox",
-  column: { columnId, label: columnId, modelId: columnId },
+  column: { columnId, label: `Label ${columnId}`, modelId: columnId },
   gateModel: "claude-haiku-5-5",
   seeds: ["1"],
   scenarios: ["sc_a01", "sc_b01"],
@@ -19,15 +19,33 @@ const file = (
   ...over,
 });
 
+const held = { scenarios: ["sc_h01", "sc_h02"] };
+
 describe("selectResults", () => {
-  it("picks the newest sandbox file of our own scenarios for each column", () => {
+  it("picks the newest sandbox file of our own scenarios for each model that has one", () => {
     const picked = selectResults([
       file("old", "claude-haiku-5-5", "2026-11-06T10:00:00Z"),
       file("new", "claude-haiku-5-5", "2026-11-07T10:00:00Z"),
-      file("gem", "gemini-3.5-flash-lite", "2026-11-07T11:00:00Z"),
+      file("luna", "gpt-6-luna", "2026-11-07T11:00:00Z"),
     ]);
-    expect(picked.columns.map((c) => c.file)).toEqual(["new", null, "gem"]);
-    expect(picked.heldOut).toBeNull();
+    expect(picked.own.map((p) => p.file)).toEqual(["new", "luna"]);
+    expect(picked.heldOut).toEqual([]);
+  });
+
+  it("shows only models with a file, with no placeholder for one that never ran", () => {
+    const picked = selectResults([file("luna", "gpt-6-luna", "2026-11-07T11:00:00Z")]);
+    expect(picked.own.map((p) => p.columnId)).toEqual(["gpt-6-luna"]);
+    expect(selectResults([])).toEqual({ own: [], heldOut: [] });
+  });
+
+  it("puts the known models first, in order, and any other after them by label", () => {
+    const picked = selectResults([
+      file("zeta", "zeta-model", "2026-11-07T12:00:00Z"),
+      file("alpha", "alpha-model", "2026-11-07T12:00:00Z"),
+      file("luna", "gpt-6-luna", "2026-11-07T12:00:00Z"),
+      file("haiku", "claude-haiku-5-5", "2026-11-07T12:00:00Z"),
+    ]);
+    expect(picked.own.map((p) => p.file)).toEqual(["haiku", "luna", "alpha", "zeta"]);
   });
 
   it("never picks a fake file, even when it is the newest", () => {
@@ -35,26 +53,34 @@ describe("selectResults", () => {
       file("real", "claude-haiku-5-5", "2026-11-06T10:00:00Z"),
       file("fake", "claude-haiku-5-5", "2026-11-07T10:00:00Z", { paymentAdapter: "fake" }),
       file("only-fake", "gpt-6-luna", "2026-11-07T10:00:00Z", { paymentAdapter: "fake" }),
+      file("fake-held", "gpt-6-luna", "2026-11-07T10:00:00Z", {
+        paymentAdapter: "fake",
+        ...held,
+      }),
     ]);
-    expect(picked.columns.map((c) => c.file)).toEqual(["real", null, null]);
+    expect(picked.own.map((p) => p.file)).toEqual(["real"]);
+    expect(picked.heldOut).toEqual([]);
   });
 
-  it("keeps the held-out set apart from our own", () => {
+  it("keeps the held-out set apart from our own, one file per model", () => {
     const picked = selectResults([
       file("own", "claude-haiku-5-5", "2026-11-06T10:00:00Z"),
-      file("held", "claude-haiku-5-5", "2026-11-07T10:00:00Z", { scenarios: ["sc_h01", "sc_h02"] }),
+      file("held-old", "claude-haiku-5-5", "2026-11-06T10:00:00Z", held),
+      file("held", "claude-haiku-5-5", "2026-11-07T10:00:00Z", held),
+      file("held-luna", "gpt-6-luna", "2026-11-07T10:00:00Z", held),
     ]);
-    expect(picked.columns[0]?.file).toBe("own");
-    expect(picked.heldOut).toBe("held");
+    expect(picked.own.map((p) => p.file)).toEqual(["own"]);
+    expect(picked.heldOut.map((p) => p.file)).toEqual(["held", "held-luna"]);
   });
 });
 
-const view = (over: { attackRuns?: number } = {}): ResultsView =>
+const view = (over: { attackRuns?: number; label?: string; date?: string } = {}): ResultsView =>
   ({
     meta: {
-      column: { label: "Claude Haiku 5.5" },
-      date: "2026-11-07",
+      column: { label: over.label ?? "Claude Haiku 5.5" },
+      date: over.date ?? "2026-11-07",
       seeds: ["1", "2"],
+      scenarios: ["sc_h01", "sc_h02", "sc_h01"],
       gateModel: "claude-haiku-5-5",
     },
     metrics: {
@@ -84,14 +110,15 @@ const view = (over: { attackRuns?: number } = {}): ResultsView =>
   }) as unknown as ResultsView;
 
 describe("proofOf", () => {
-  it("takes the file's own counts and rates", () => {
+  it("takes the file's own counts and rates, and what the full tree did to clean carts", () => {
     expect(proofOf(view())).toMatchObject({
-      fooled: 23,
-      off: { attackSuccesses: 23, attackSuccessRate: 0.71875 },
-      full: { attackSuccesses: 1, attackSuccessRate: 0.03125 },
+      off: { attackSuccesses: 23, attackRuns: 32, attackSuccessRate: 0.71875 },
+      full: { attackSuccesses: 1, attackRuns: 32, attackSuccessRate: 0.03125 },
       cleanCarts: 97,
       falseBlocks: 0,
       falseEscalations: 1,
+      seeds: 2,
+      scenarios: 2,
     });
   });
 
@@ -100,13 +127,42 @@ describe("proofOf", () => {
   });
 });
 
-describe("columnViews", () => {
-  it("shows a column with no file, or an unread one, as running", () => {
-    const selection = selectResults([file("a", "claude-haiku-5-5", "2026-11-07T10:00:00Z")]);
-    const views = columnViews(selection, { a: view() });
-    expect(views.map((v) => v.status)).toEqual(["ready", "running", "running"]);
-    expect(columnViews(selection, {})[0]?.status).toBe("running");
-    expect(headlineOf(views)?.columnId).toBe("claude-haiku-5-5");
-    expect(headlineOf(columnViews(selectResults([]), {}))).toBeNull();
+describe("proofViews", () => {
+  it("leaves out a model whose file wasn't read or has nothing to compare", () => {
+    const picked = selectResults([
+      file("a", "claude-haiku-5-5", "2026-11-07T10:00:00Z"),
+      file("b", "gpt-6-luna", "2026-11-07T10:00:00Z"),
+    ]).own;
+    expect(proofViews(picked, { a: view() }).map((v) => v.file)).toEqual(["a"]);
+    expect(proofViews(picked, { a: view(), b: view({ attackRuns: 0 }) })).toHaveLength(1);
+    expect(proofViews(picked, {})).toEqual([]);
+  });
+
+  it("names a model by the label its file gives it", () => {
+    const picked = selectResults([file("b", "gpt-6-luna", "2026-11-07T10:00:00Z")]).own;
+    expect(proofViews(picked, { b: view({ label: "OpenAI GPT-6 Luna" }) })[0]?.label).toBe(
+      "OpenAI GPT-6 Luna",
+    );
+  });
+});
+
+describe("what the views share", () => {
+  const picked = selectResults([
+    file("a", "claude-haiku-5-5", "2026-11-07T10:00:00Z"),
+    file("b", "gpt-6-luna", "2026-11-07T10:00:00Z"),
+  ]).own;
+
+  it("is said once when every model agrees, and not at all when they differ", () => {
+    const same = proofViews(picked, { a: view(), b: view({ label: "Luna" }) });
+    expect(sharedOf(same, (p) => p.date)).toBe("2026-11-07");
+    const apart = proofViews(picked, { a: view(), b: view({ date: "2026-11-08" }) });
+    expect(sharedOf(apart, (p) => p.date)).toBeNull();
+    expect(sharedOf([], (p) => p.date)).toBeNull();
+  });
+
+  it("names the gate model by its column's label when a column runs on it", () => {
+    const views = proofViews(picked, { a: view(), b: view({ label: "Luna" }) });
+    expect(gateModelLabel(views)).toBe("Claude Haiku 5.5");
+    expect(gateModelLabel(views.slice(1))).toBe("claude-haiku-5-5");
   });
 });

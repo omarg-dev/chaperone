@@ -1,75 +1,126 @@
 /*
- * The landing page (landing/Landing.tsx): seven sections, one idea each, one screen tall. No route
- * line here: the route line belongs to the run page. Colours, type and radius come from the
- * tokens. Motion is CSS: a section's contents come in when it is first seen (`.seen`), and under
- * prefers-reduced-motion everything is complete and still.
+ * The landing page (landing/Landing.tsx). No route line here: the route line belongs to the run
+ * page. The sections are not one shape: a split hero, the attack and the hold side by side, the
+ * gates as a band, the two result sets side by side, the dashboard as a wide picture. The pictures
+ * are drawn with the product's own parts (the clasp, the pills, the seller hatch, the glyphs).
+ * Colours, type and radius come from the tokens. Motion is CSS: a section's contents come in when
+ * it is first seen (`.seen`), nothing loops, and under prefers-reduced-motion everything is
+ * complete and still.
  */
 
 .landing {
   position: relative;
 }
 
-.lp-section {
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-height: calc(100vh - 72px);
-  padding: var(--space-8) 0;
-  border-bottom: 1px solid var(--line);
-  overflow: hidden;
+.lp-inner {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-7);
 }
 
-.lp-inner {
+/* A band is a section that runs the page's width, with its own rule above. */
+.lp-band {
+  padding: var(--space-8) 0;
+  border-top: 1px solid var(--line);
+}
+
+/* Words left, picture right. */
+.lp-split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
   align-items: center;
   gap: var(--space-8);
-  width: 100%;
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 0 max(var(--space-8), 8vw) 0 max(var(--space-7), 6vw);
 }
 
-.lp-copy {
+/* Picture left, words right. */
+.lp-split-flip {
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+}
+
+/* Two ideas on one screen, with a rule between them. */
+.lp-pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-8);
+}
+
+.lp-pair > .lp-section {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
   min-width: 0;
 }
 
-.lp-copy-wide {
-  grid-column: 1 / -1;
-  max-width: 900px;
+.lp-pair > .lp-section + .lp-section {
+  position: relative;
+}
+
+.lp-pair > .lp-section + .lp-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(var(--space-8) / -2);
+  width: 1px;
+  background: var(--line);
+}
+
+.lp-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
 .lp-copy-center {
-  grid-column: 1 / -1;
   align-items: center;
   text-align: center;
 }
 
+.lp-eyebrow {
+  margin: 0 0 calc(var(--space-1) * -1);
+  color: var(--hold);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .lp-title {
   margin: 0;
-  max-width: 17ch;
   font-family: var(--font-display);
-  font-size: var(--text-hero);
   font-weight: 700;
-  line-height: 1.02;
   letter-spacing: -0.015em;
   text-wrap: balance;
 }
 
-.lp-copy-wide .lp-title,
-.lp-copy-center .lp-title {
-  max-width: 20ch;
+.lp-title-hero {
+  max-width: 12ch;
+  font-size: var(--text-hero);
+  line-height: 1;
+}
+
+.lp-title-lg {
+  max-width: 14ch;
+  font-size: var(--text-landing);
+  line-height: 1.04;
+}
+
+/* Where two ideas share a screen, or a band leads with its picture. */
+.lp-title-md {
+  font-size: clamp(1.875rem, 2.6vw, 2.5rem);
+  line-height: 1.08;
 }
 
 .lp-lede {
   margin: 0;
   max-width: 34em;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   line-height: 1.5;
   color: var(--ink-2);
+  text-wrap: pretty;
 }
 
 .lp-actions {
@@ -79,683 +130,721 @@
   margin-top: var(--space-2);
 }
 
-.lp-art {
-  min-width: 0;
-}
-
-.lp-art svg {
-  display: block;
-  width: 100%;
-  height: auto;
-  overflow: visible;
-}
-
-.lp-foot {
-  margin: var(--space-6) 0 0;
-  color: var(--muted);
-}
-
-/* The hero's ground: a soft wash of the hold's tint rising from the bottom edge. */
-.lp-home::after {
-  content: "";
-  position: absolute;
-  inset: auto 0 0;
-  height: 40%;
-  background: linear-gradient(to top, var(--hold-tint), transparent);
-  pointer-events: none;
-}
-
-.lp-home .lp-inner {
-  position: relative;
-  z-index: 1;
-}
-
-/* --- The section indicator, fixed at the right edge --------------------------------------- */
-
-.lp-index {
-  position: fixed;
-  top: 50%;
-  right: var(--space-5);
-  z-index: 5;
-  transform: translateY(-50%);
-}
-
-.lp-index ol {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
+.lp-source,
+.lp-empty {
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.lp-index button {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-3);
-  width: 100%;
-  min-height: 28px;
-  padding: 0;
-  border: 0;
-  background: none;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: var(--text-data);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  cursor: pointer;
+  line-height: 1.6;
 }
 
-.lp-index-label {
-  opacity: 0;
-  transform: translateX(6px);
-  transition:
-    opacity 0.25s,
-    transform 0.25s;
+.lp-empty {
+  font-size: var(--text-body);
 }
 
-.lp-index button:hover .lp-index-label,
-.lp-index button:focus-visible .lp-index-label,
-.lp-index button.current .lp-index-label {
-  opacity: 1;
-  transform: none;
+/* --- The hero ------------------------------------------------------------------------------ */
+
+.lp-home {
+  display: flex;
+  align-items: center;
+  min-height: min(calc(100vh - 72px), 720px);
+  padding: var(--space-7) 0;
 }
 
-.lp-index button.current {
-  color: var(--ink);
+.lp-hero .lp-copy {
+  gap: var(--space-5);
 }
 
-.lp-index-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--line-strong);
-  transition:
-    background 0.25s,
-    transform 0.25s;
+.lp-hero .lp-lede {
+  font-size: 1.25rem;
 }
 
-.lp-index button.current .lp-index-dot {
-  background: var(--hold);
-  transform: scale(1.5);
+/* The run, in the vault. */
+
+.hr {
+  margin: 0;
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  border-radius: var(--radius-clasp);
+  background: var(--vault);
+  box-shadow: inset 0 0 0 1px var(--vault-line);
+  color: var(--vault-ink);
 }
 
-@media (max-width: 900px) {
-  .lp-inner {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 0 var(--space-5);
-    gap: var(--space-6);
-  }
-
-  .lp-index {
-    display: none;
-  }
+.hr-row {
+  display: grid;
+  gap: var(--space-2);
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--vault-line);
 }
 
-/* --- Coming in ---------------------------------------------------------------------------- */
-
-.landing.motion .lp-section:not(.seen) .reveal {
-  opacity: 0;
-  transform: translateY(24px);
-}
-
-.landing.motion .reveal {
-  transition:
-    opacity 0.7s ease,
-    transform 0.7s ease;
-  transition-delay: calc(var(--i, 0) * 120ms);
-}
-
-/* --- 1. The hero's picture ----------------------------------------------------------------- */
-
-.art-mono {
-  fill: var(--vault-muted);
+.hr-k {
+  color: var(--vault-muted);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 0.75rem;
   letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
-.art-small {
-  fill: var(--vault-muted);
-  font-family: var(--font-ui);
-  font-size: 13px;
-}
-
-.art-item {
-  fill: var(--ink);
-  font-family: var(--font-ui);
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.art-money {
-  fill: var(--vault-ink);
-  font-family: var(--font-display);
-  font-size: 56px;
-  font-weight: 700;
-}
-
-.art-money-s {
-  font-size: 40px;
-}
-
-.art-voice {
-  fill: var(--ink);
+.hr-quote {
+  margin: 0;
   font-family: var(--font-voice);
+  font-size: 1.1875rem;
   font-style: italic;
-  font-size: 20px;
+  line-height: 1.45;
 }
 
-.hero-art > .art-mono,
-.hero-art > .art-small {
-  fill: var(--muted);
+.hr-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
 }
 
-.hero-track {
-  stroke: var(--line-strong);
-  stroke-width: 2;
-  stroke-dasharray: 5 6;
+.hr-item span {
+  color: var(--vault-muted);
+  font-weight: 400;
 }
 
-.hero-vault rect {
-  fill: var(--vault);
-}
-
-.hero-chip rect {
-  fill: var(--z-cat);
-  stroke: var(--z-cat-line);
-  stroke-width: 1.5;
-}
-
-.hero-chip .art-small {
-  fill: var(--z-cat-ink);
-}
-
-.hero-chip .art-item {
-  fill: var(--z-cat-ink);
-}
-
-.hero-check circle {
-  fill: none;
-  stroke: var(--v-approve);
-  stroke-width: 2;
-}
-
-.hero-check path {
-  fill: none;
-  stroke: var(--v-approve);
-  stroke-width: 2.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.hero-check .art-small {
-  fill: var(--vault-ink);
-}
-
-.landing.motion .lp-section.seen .hero-chip {
-  animation: hero-travel 9s ease-in-out infinite;
-}
-
-.landing.motion .lp-section.seen .hero-check {
-  animation: hero-checked 9s ease-in-out infinite;
-}
-
-.landing.motion .lp-section.seen .hero-vault rect {
-  animation: hero-pulse 9s ease-in-out infinite;
-}
-
-@keyframes hero-travel {
-  0%,
-  8% {
-    transform: translateX(0);
-    opacity: 1;
-  }
-  38%,
-  52% {
-    transform: translateX(158px);
-    opacity: 1;
-  }
-  62%,
-  100% {
-    transform: translateX(158px);
-    opacity: 0;
-  }
-}
-
-@keyframes hero-checked {
-  0%,
-  44% {
-    opacity: 0;
-  }
-  54%,
-  92% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-@keyframes hero-pulse {
-  0%,
-  36% {
-    stroke: transparent;
-  }
-  42%,
-  60% {
-    stroke: var(--v-approve);
-    stroke-width: 2;
-  }
-  70%,
-  100% {
-    stroke: transparent;
-  }
-}
-
-/* --- 2. The attack ------------------------------------------------------------------------- */
-
-.review {
+/* The clasp: the bracket's left arm round the held amount, as the run page draws it. */
+.hr-clasp {
   position: relative;
-  max-width: 30em;
-  margin: var(--space-3) 0 0;
-  padding: var(--space-5);
-  border: 1.5px solid var(--z-seller-ink);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: var(--space-5) 0;
+  padding: var(--space-4) 0 var(--space-4) 68px;
+}
+
+.hr-arm {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 52px;
+  border: 8px solid var(--vault-muted);
+  border-right: 0;
+  border-radius: 22px 0 0 22px;
+  transform-origin: top;
+}
+
+.hr-label {
+  color: var(--vault-muted);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.hr-clasp .amt-hero {
+  font-size: clamp(4.5rem, 7vw, 6.5rem);
+}
+
+.hr-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--vault-line);
+  color: var(--vault-muted);
+  font-size: var(--text-body);
+}
+
+.hr .pill-escalate,
+.hr .glyph-person {
+  color: var(--v-escalate);
+}
+
+/* --- The attack: the seller's page, behind the hatch -------------------------------------- */
+
+.sr {
+  margin: 0;
+}
+
+.sr-page {
+  padding: var(--space-5) var(--space-6) var(--space-6);
   border-radius: var(--radius);
-  background:
-    repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 8px), var(--z-seller);
+  background-color: var(--z-seller);
+  background-image: repeating-linear-gradient(135deg, var(--hatch) 0 1px, transparent 1px 7px);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
   color: var(--z-seller-ink);
 }
 
-.review p {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-lede);
-  line-height: 1.45;
+/* Text on the hatch gets its own ground, so it stays readable. */
+.sr-where,
+.sr-by,
+.sr-text span,
+.sr-text mark {
+  background: var(--z-seller);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
 }
 
-.review .review-stars {
-  letter-spacing: 0.15em;
-}
-
-.review .review-hidden {
-  padding: var(--space-3);
-  border: 2px solid var(--attacker);
+.sr-where,
+.sr-by {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0 4px;
   border-radius: var(--radius);
-  background: var(--attacker-tint);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.sr-where {
+  display: flex;
+  width: fit-content;
+}
+
+.sr-stars {
+  letter-spacing: 0.12em;
+}
+
+.sr-text {
+  margin: var(--space-2) 0 0;
+  font-family: var(--font-display);
+  font-size: 1.1875rem;
+  line-height: 1.75;
+}
+
+.sr-text span {
+  padding: 2px 0;
+}
+
+/* What Gate 1 copied as steering: outlined in the attacker's red, never filled. */
+.sr-text mark {
+  padding: 2px 3px;
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 1.5px var(--attacker);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.sr-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  padding: 6px 12px;
+  border: 1.5px solid var(--attacker);
+  border-radius: var(--radius);
   color: var(--attacker);
-  font-family: var(--font-mono);
   font-size: 0.875rem;
+  font-weight: 700;
 }
 
-.review .review-tag {
-  color: var(--attacker);
+.sr-flag-mark {
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--attacker);
+  border-radius: 50%;
 }
 
-.landing.motion .lp-section.seen .review-hidden {
-  animation: flag 4.5s ease-in-out 1.2s infinite;
+
+/* --- The hold: the call, and the three ways it ends ------------------------------------------ */
+
+.hx-call {
+  display: grid;
+  grid-template-columns: auto 48px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-4);
+  margin: 0 0 var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ink-2);
+  font-size: var(--text-body);
 }
 
-@keyframes flag {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-  50% {
-    box-shadow: 0 0 0 6px var(--attacker-tint);
-  }
+.hx-call code {
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  background: var(--sunk);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.9375rem;
 }
 
-.lp-stat {
-  min-width: 0;
+.hx-arrow {
+  position: relative;
+  width: 100%;
+  height: 2px;
+  background: var(--line-strong);
 }
 
-.stat-number {
+.hx-arrow::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  border-top: 2px solid var(--line-strong);
+  border-right: 2px solid var(--line-strong);
+  transform: rotate(45deg);
+}
+
+.hx-exits {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.hx-exit {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  column-gap: var(--space-4);
+  align-items: center;
+  padding: var(--space-4) var(--space-5);
+}
+
+.hx-exit + .hx-exit {
+  border-top: 1px solid var(--line);
+}
+
+.hx-exit .glyph {
+  grid-row: span 2;
+}
+
+.hx-exit h3 {
   margin: 0;
   font-family: var(--font-display);
-  font-size: var(--text-stat);
+  font-size: 1.1875rem;
   font-weight: 700;
-  line-height: 0.95;
-  letter-spacing: -0.03em;
-  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
 }
 
-.stat-running {
-  color: var(--muted);
-  font-size: var(--text-hero);
-}
-
-.stat-caption {
-  max-width: 24em;
-  margin: var(--space-4) 0 var(--space-3);
-  font-size: 1.25rem;
-  line-height: 1.45;
+.hx-exit p {
+  margin: 2px 0 0;
   color: var(--ink-2);
+  font-size: var(--text-body);
 }
 
-.source {
-  margin: 0;
-  color: var(--muted);
+.hx-captured h3 {
+  color: var(--approve-ink);
 }
 
-.source a {
-  color: var(--ink);
+.hx-person h3 {
+  color: var(--escalate-ink);
 }
 
-/* --- 3. The hold --------------------------------------------------------------------------- */
+/* --- The gates: a band of four, joined by one line ------------------------------------------- */
 
-.hold-vault rect {
-  fill: var(--vault);
+.lp-gates {
+  background: var(--surface);
 }
 
-.hold-bracket {
-  fill: none;
-  stroke: var(--vault-ink);
-  stroke-width: 5;
-  stroke-linecap: round;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
+.gx-head {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  align-items: end;
+  gap: var(--space-8);
+  margin-bottom: var(--space-7);
 }
 
-.hold-dot {
-  fill: var(--vault-ink);
-}
-
-.hold-out rect {
-  fill: var(--surface);
-  stroke: var(--line-strong);
-  stroke-width: 1.5;
-}
-
-.out-line {
-  fill: none;
-  stroke: var(--line-strong);
-  stroke-width: 2;
-  stroke-dasharray: 5 6;
-}
-
-.out-approve .out-dot {
-  fill: var(--approve);
-}
-
-.out-escalate .out-dot {
-  fill: var(--escalate);
-}
-
-.out-block .out-dot {
-  fill: var(--block);
-}
-
-.hold-out .art-small {
-  fill: var(--muted);
-}
-
-.landing.motion .lp-section.seen .hold-bracket {
-  animation: hold-draw 7s ease-in-out infinite;
-}
-
-.landing.motion .lp-section.seen .hold-out rect {
-  animation: out-light 7s ease-in-out infinite;
-}
-
-@keyframes hold-draw {
-  0% {
-    stroke-dashoffset: 1;
-  }
-  25%,
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes out-light {
-  0%,
-  35% {
-    stroke: var(--line-strong);
-  }
-  50%,
-  80% {
-    stroke: var(--hold);
-  }
-  100% {
-    stroke: var(--line-strong);
-  }
-}
-
-/* --- 4. Four gates ------------------------------------------------------------------------- */
-
-.gates {
+.gx-rows {
   position: relative;
-  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-5);
-  margin: var(--space-4) 0 0;
+  gap: var(--space-6);
+  margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.gates-rail {
+/* The line the cart travels along, through the four numbers. */
+.gx-rows::before {
+  content: "";
   position: absolute;
-  top: 27px;
-  left: 28px;
-  right: calc(25% - 28px);
-  height: 3px;
+  top: 19px;
+  right: 0;
+  left: 0;
+  height: 2px;
   background: var(--line-strong);
 }
 
-.gates-fill {
-  display: block;
-  height: 100%;
-  background: var(--hold);
-  transform-origin: left;
-}
-
-.gates-pulse {
-  position: absolute;
-  top: -5px;
-  left: 0;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: var(--hold);
-  opacity: 0;
-}
-
-.gate {
+.gx-gate {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
   min-width: 0;
 }
 
-.gate-node {
+.gx-n {
   display: grid;
   place-items: center;
-  width: 56px;
-  height: 56px;
-  border: 3px solid var(--line-strong);
-  border-radius: var(--radius-clasp);
-  background: var(--bg);
-  color: var(--ink);
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--space-2);
+  border: 2px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.1875rem;
   font-weight: 700;
 }
 
-.gate-name {
-  margin: var(--space-4) 0 var(--space-1);
+.gx-gate h3 {
+  margin: 0;
   font-size: var(--text-item);
   font-weight: 700;
 }
 
-.gate-line {
+.gx-reads {
   margin: 0;
-  max-width: 17em;
+  color: var(--muted);
+  font-size: var(--text-meta);
+  line-height: 1.4;
+}
+
+.gx-finding {
+  flex: 1;
+  margin: var(--space-2) 0;
+  color: var(--ink);
   font-size: var(--text-body);
   line-height: 1.45;
+}
+
+.gx-end {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-4);
+  margin: var(--space-6) 0 0;
+  padding: var(--space-3) var(--space-5);
+  border-radius: var(--radius);
+  background: var(--escalate-tint);
   color: var(--ink-2);
+  font-size: var(--text-body);
 }
 
-.landing:not(.motion) .gates-fill,
-.landing.motion .lp-section.seen .gates-fill {
-  transform: scaleX(1);
+/* --- The results: our attacks and the held-out ones, side by side ---------------------------- */
+
+.lp-results .lp-source {
+  margin-top: var(--space-6);
 }
 
-.landing.motion .lp-section.seen .gates-fill {
-  animation: gates-run 8s ease-in-out infinite;
-}
-
-.landing.motion .lp-section.seen .gates-pulse {
-  animation: gates-pulse 8s ease-in-out infinite;
-}
-
-.landing.motion .lp-section.seen .gate-node {
-  animation: gate-on 8s ease-in-out infinite;
-  animation-delay: calc(var(--g) * 1.25s);
-}
-
-@keyframes gates-run {
-  0% {
-    transform: scaleX(0);
-  }
-  60%,
-  90% {
-    transform: scaleX(1);
-  }
-  100% {
-    transform: scaleX(0);
-  }
-}
-
-@keyframes gates-pulse {
-  0% {
-    left: 0;
-    opacity: 1;
-  }
-  60% {
-    left: calc(100% - 13px);
-    opacity: 1;
-  }
-  64%,
-  100% {
-    left: calc(100% - 13px);
-    opacity: 0;
-  }
-}
-
-@keyframes gate-on {
-  0%,
-  4% {
-    border-color: var(--line-strong);
-    background: var(--bg);
-  }
-  10%,
-  80% {
-    border-color: var(--hold);
-    background: var(--hold-tint);
-  }
-  95%,
-  100% {
-    border-color: var(--line-strong);
-    background: var(--bg);
-  }
-}
-
-/* --- 5. The proof -------------------------------------------------------------------------- */
-
-.proof-grid {
-  grid-column: 1 / -1;
+.mb-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: var(--space-6);
+  min-height: 200px;
 }
 
-.proof-card {
+.mb {
   min-width: 0;
-  padding-top: var(--space-4);
+  padding-top: var(--space-3);
   border-top: 2px solid var(--ink);
 }
 
-.proof-model {
-  margin: 0 0 var(--space-3);
+.mb-model {
+  margin: 0;
   font-size: var(--text-section);
   font-weight: 800;
 }
 
-.proof-rates {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: clamp(2.25rem, 3.6vw, 3.5rem);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
+.mb-rows {
+  margin: var(--space-3) 0 0;
 }
 
-.proof-arrow {
-  color: var(--muted);
-  font-family: var(--font-ui);
-  font-size: 0.6em;
-}
-
-.proof-sub {
-  margin: var(--space-3) 0 var(--space-4);
-  font-size: var(--text-body);
-  line-height: 1.45;
-  color: var(--ink-2);
-}
-
-.proof-facts {
+.mb-row {
   display: grid;
-  gap: var(--space-2);
-  margin: 0;
+  grid-template-columns: minmax(0, 1fr) 6rem 4.5rem;
+  grid-template-areas:
+    "k k k"
+    "bar rate count";
+  align-items: center;
+  column-gap: var(--space-4);
+  margin-bottom: var(--space-2);
 }
 
-.proof-facts div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--space-3);
-  font-size: var(--text-body);
-}
-
-.proof-facts dt {
+.mb-row dt {
+  grid-area: k;
   color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 700;
 }
 
-.proof-facts dd {
+.mb-row dd {
   margin: 0;
+}
+
+.mb-bar {
+  grid-area: bar;
+  height: 12px;
+  border-radius: var(--radius);
+  background: var(--sunk);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.mb-bar span {
+  display: block;
+  width: calc(var(--w) * 100%);
+  height: 100%;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  transform-origin: left;
+}
+
+.mb-on .mb-bar span {
+  background: var(--hold);
+}
+
+.mb-rate {
+  grid-area: rate;
+  text-align: right;
+}
+
+.mb-on .mb-rate .amt {
+  color: var(--hold);
+}
+
+.mb-count {
+  grid-area: count;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-data);
+  text-align: right;
+}
+
+.mb-clean {
+  margin: var(--space-1) 0 0;
+  color: var(--muted);
   font-family: var(--font-mono);
   font-size: var(--text-data);
 }
 
-.proof-wait {
-  margin: 0 0 var(--space-3);
-  font-family: var(--font-display);
-  font-size: clamp(2.25rem, 3.6vw, 3.5rem);
-  font-weight: 700;
-  line-height: 1;
+/* The held-out set is the result to trust most, so it sits on a ground of its own. */
+.lp-results .lp-heldout {
+  margin: calc(var(--space-6) * -1) 0 calc(var(--space-6) * -1) calc(var(--space-6) * -1);
+  padding: var(--space-6);
+  border-radius: var(--radius);
+  background: var(--hold-tint);
+}
+
+.lp-results .lp-heldout::before {
+  display: none;
+}
+
+.lp-heldout .mb-bar {
+  background: var(--bg);
+}
+
+/* --- The dashboard: a wide picture, a short caption ------------------------------------------ */
+
+.lp-wide {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+  align-items: center;
+  gap: var(--space-7);
+}
+
+.st-figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.st-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.st-link:hover .st {
+  border-color: var(--hold);
+}
+
+.st {
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+
+.st-bar {
+  display: flex;
+  gap: var(--space-5);
+  padding: 0 var(--space-5);
+  border-bottom: 1px solid var(--line);
+  background: var(--surface);
   color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 700;
 }
 
-.proof-running {
-  border-top-color: var(--line-strong);
+.st-bar span {
+  padding: var(--space-3) 0;
 }
 
-#proof .source {
-  grid-column: 1 / -1;
+.st-tab {
+  box-shadow: inset 0 -2px 0 var(--hold);
+  color: var(--ink);
 }
 
-/* --- 6. Any agent -------------------------------------------------------------------------- */
+.st-body {
+  display: grid;
+  grid-template-columns: minmax(0, 4fr) minmax(0, 5fr);
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.st-card {
+  min-width: 0;
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.st-k {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-meta);
+  font-weight: 700;
+}
+
+.st-plot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  gap: var(--space-4);
+  height: 150px;
+  padding: 0 var(--space-2);
+  border-bottom: 1px solid var(--line-strong);
+  background-image: linear-gradient(var(--line) 1px, transparent 1px);
+  background-size: 100% 25%;
+}
+
+.st-group {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 100%;
+}
+
+.st-col {
+  display: block;
+  width: 28px;
+  height: calc(var(--h) * 100%);
+  min-height: 2px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  transform-origin: bottom;
+}
+
+.st-off {
+  background: var(--ink-2);
+}
+
+.st-on {
+  background: var(--hold);
+}
+
+.st-group-k {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--muted);
+  font-size: 0.6875rem;
+  white-space: nowrap;
+}
+
+.st-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 32px 0 0;
+  color: var(--muted);
+  font-size: 0.6875rem;
+}
+
+.st-key {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius);
+}
+
+.st-key + .st-key,
+.st-legend .st-on {
+  margin-left: var(--space-2);
+}
+
+.st-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75rem;
+}
+
+.st-table th {
+  padding: 0 var(--space-2) var(--space-2) 0;
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--muted);
+  font-weight: 700;
+  text-align: left;
+}
+
+.st-table td {
+  padding: 6px var(--space-2) 6px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.st-table th:last-child,
+.st-table td:last-child {
+  padding-right: 0;
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.st-ask {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0 var(--space-4) var(--space-4);
+  padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: inset 0 0 0 1.5px var(--hold);
+  color: var(--hold);
+}
+
+.st-q {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  font-family: var(--font-voice);
+  font-size: 1.0625rem;
+  font-style: italic;
+}
+
+.st-send {
+  padding: 4px 14px;
+  border-radius: var(--radius);
+  background: var(--hold);
+  color: var(--surface);
+  font-size: var(--text-meta);
+  font-weight: 700;
+}
+
+/* --- Any agent ------------------------------------------------------------------------------- */
 
 .code {
   min-width: 0;
   margin: 0;
-  padding: var(--space-5);
+  padding: var(--space-6);
   border-radius: var(--radius-clasp);
   background: var(--vault);
+  box-shadow: inset 0 0 0 1px var(--vault-line);
   color: var(--vault-ink);
   font-family: var(--font-mono);
   font-size: 0.9375rem;
@@ -773,13 +862,6 @@
   white-space: pre;
 }
 
-.code-line i {
-  display: inline-block;
-  width: 2em;
-  color: var(--vault-muted);
-  font-style: normal;
-}
-
 .code-line b {
   color: var(--v-escalate);
   font-weight: 400;
@@ -790,13 +872,312 @@
   font-style: normal;
 }
 
-.landing.motion .lp-section:not(.seen) .code-line {
+.code-line i {
+  color: var(--vault-muted);
+  font-style: normal;
+}
+
+.code-gap {
+  margin-top: var(--space-3);
+}
+
+/* --- Try it, and what it works with --------------------------------------------------------- */
+
+.lp-try {
+  padding-bottom: var(--space-7);
+}
+
+.lp-try-inner {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-8);
+}
+
+.lp-works {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-meta);
+  text-align: center;
+}
+
+.lp-works p {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-2) var(--space-5);
+  margin: 0;
+}
+
+.lp-works-k {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lp-works-name {
+  color: var(--ink-2);
+}
+
+/* --- Small screens -------------------------------------------------------------------------- */
+
+@media (max-width: 960px) {
+  .lp-inner {
+    padding: 0 var(--space-5);
+  }
+
+  .lp-band {
+    padding: var(--space-7) 0;
+  }
+
+  .lp-split,
+  .lp-split-flip,
+  .lp-pair,
+  .lp-wide,
+  .gx-head {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  /* The words come before the code on a narrow screen. */
+  .lp-split-flip .code {
+    order: 1;
+  }
+
+  .lp-pair > .lp-section + .lp-section {
+    padding-top: var(--space-7);
+  }
+
+  .lp-pair > .lp-section + .lp-section::before {
+    top: 0;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    width: auto;
+    height: 1px;
+  }
+
+  .lp-results .lp-heldout {
+    margin: var(--space-5) calc(var(--space-5) * -1) 0;
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .gx-rows {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: var(--space-6) var(--space-5);
+  }
+
+  .gx-rows::before {
+    display: none;
+  }
+
+  .st-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* No sideways scroll in the code: a long line wraps. */
+  .code-line {
+    white-space: pre-wrap;
+  }
+}
+
+@media (max-width: 560px) {
+  .gx-rows {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mb-row {
+    grid-template-columns: minmax(0, 1fr) 6rem 4rem;
+    column-gap: var(--space-3);
+  }
+
+  .st-table th:nth-child(2),
+  .st-table td:nth-child(2) {
+    display: none;
+  }
+
+  .st-q {
+    font-size: 0.9375rem;
+  }
+}
+
+/* --- Coming in, once ------------------------------------------------------------------------- */
+
+.landing.motion .lp-section:not(.seen) .reveal {
   opacity: 0;
 }
 
-.landing.motion .code-line {
-  transition: opacity 0.6s ease;
-  transition-delay: calc(0.5s + var(--l) * 0.45s);
+.landing.motion .lp-section.seen .reveal {
+  animation: lp-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 100ms);
+}
+
+@keyframes lp-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+
+@keyframes lp-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes lp-slide {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+}
+
+@keyframes lp-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+/* The hero's run plays once: the cart, the clasp closing round the money, then the verdict. */
+.landing.motion .lp-home.seen .hr-cart {
+  animation: lp-slide 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.8s both;
+}
+
+.landing.motion .lp-home.seen .hr-arm {
+  animation: arm-grow 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 1.3s both;
+}
+
+.landing.motion .lp-home.seen .hr-label,
+.landing.motion .lp-home.seen .hr-clasp .amt {
+  animation: lp-fade 0.6s ease 1.6s both;
+}
+
+.landing.motion .lp-home.seen .hr-verdict {
+  animation: lp-slide 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 2.4s both;
+}
+
+.landing.motion .lp-home.seen .hr-verdict .glyph {
+  animation: ring 0.9s ease-out 2.9s both;
+}
+
+@keyframes arm-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes ring {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The attack: Gate 1's outline is drawn on the steering passages after the page is read. */
+.landing.motion .lp-attack.seen .sr-text mark {
+  animation: outline-in 0.5s ease 1.2s both;
+}
+
+.landing.motion .lp-attack.seen .sr-flag {
+  animation: lp-slide 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 1.6s both;
+}
+
+@keyframes outline-in {
+  from {
+    box-shadow: 0 0 0 1.5px transparent;
+  }
+}
+
+/* The hold: the three exits, one after the other. */
+.landing.motion .lp-hold.seen .hx-exit {
+  animation: lp-slide 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.8s + var(--i) * 0.2s);
+}
+
+/* The gates: each rules in turn along the line, then the verdict. */
+.landing.motion .lp-gates:not(.seen) .gx-gate,
+.landing.motion .lp-gates:not(.seen) .gx-end {
+  opacity: 0;
+}
+
+.landing.motion .lp-gates.seen .gx-gate {
+  animation: lp-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.4s + var(--i) * 0.3s);
+}
+
+.landing.motion .lp-gates.seen .gx-rows::before {
+  animation: line-grow 1.3s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both;
+}
+
+.landing.motion .lp-gates.seen .gx-end {
+  animation: lp-fade 0.6s ease 1.8s both;
+}
+
+@keyframes line-grow {
+  from {
+    transform: scaleX(0);
+    transform-origin: left;
+  }
+  to {
+    transform-origin: left;
+  }
+}
+
+/* The proof: the bars grow to their value. */
+.landing.motion .lp-section.seen .mb-bar span {
+  animation: bar-grow 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s both;
+}
+
+.landing.motion .lp-section.seen .mb-on .mb-bar span {
+  animation-delay: 0.9s;
+}
+
+@keyframes bar-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+/* The dashboard: the columns rise, the table fills in, then the question. */
+.landing.motion .lp-dashboard.seen .st-col {
+  animation: col-grow 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: calc(0.6s + var(--i) * 0.2s);
+}
+
+.landing.motion .lp-dashboard.seen .st-group .st-on {
+  animation-delay: calc(0.9s + var(--i) * 0.2s);
+}
+
+.landing.motion .lp-dashboard.seen .st-table tbody tr {
+  animation: lp-fade 0.4s ease both;
+  animation-delay: calc(0.7s + var(--i) * 0.1s);
+}
+
+.landing.motion .lp-dashboard.seen .st-ask {
+  animation: lp-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 1.5s both;
+}
+
+@keyframes col-grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+/* The code, a line at a time. */
+.landing.motion .lp-agent.seen .code-line {
+  animation: lp-fade 0.5s ease both;
+  animation-delay: calc(0.5s + var(--l) * 0.25s);
 }
 
 /* --- Reduced motion: complete and still ----------------------------------------------------- */
@@ -810,16 +1191,9 @@
   }
 
   .landing .reveal,
-  .landing .code-line {
+  .landing .gx-gate,
+  .landing .gx-end {
     opacity: 1 !important;
     transform: none !important;
-  }
-
-  .landing .gates-fill {
-    transform: scaleX(1);
-  }
-
-  .landing .hero-check {
-    opacity: 1;
   }
 }
