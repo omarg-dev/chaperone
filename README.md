@@ -8,7 +8,7 @@ The product name isn't final, and the repository will be renamed before submissi
 
 ## Status
 
-Building the MVP. The decisions, milestones and the step in progress are in [docs/PLAN.md](docs/PLAN.md).
+v1.2 is merged: Gate 3 (the trace auditor), the eval on two agent columns (Claude Haiku 5.5 and OpenAI GPT-6 Luna), the held-out set of 17 attacks, the gate freeze, a landing page at `/`, the SDK docs at `/docs`, and the route line on the run page only. The headline numbers are in [Results](#results). An AG Studio dashboard and a landing page redesign are in progress, and refunds after capture come last, if there is time. The decisions, milestones and the steps still open are in [docs/PLAN.md](docs/PLAN.md).
 
 ## Running it locally
 
@@ -20,7 +20,7 @@ cp .env.example .env
 pnpm dev            # the server, restarting on changes, at http://localhost:3000
 ```
 
-`curl localhost:3000/health` answers `{"status":"ok","version":"0.1.0"}`.
+`curl localhost:3000/health` answers `{"status":"ok","version":"0.2.0"}`, the version in `package.json`.
 
 ### The web app
 
@@ -31,7 +31,7 @@ pnpm dev                                 # the server, at http://localhost:3000
 pnpm --filter @firewall/web dev          # the web app, at http://localhost:5173
 ```
 
-Open http://localhost:5173. Vite proxies `/health`, `/events`, `/arena`, `/eval` and `/live` to the server (`PORT` sets which), so the app calls the API with relative URLs, exactly as it does in production. `/arena` is both an API prefix and a page of the app: a browser navigation gets the app and anything else gets the API.
+Open http://localhost:5173. Vite proxies `/health`, `/events`, `/arena`, `/eval` and `/live` to the server (`PORT` sets which), so the app calls the API with relative URLs, exactly as it does in production. `/arena` is the API's prefix only: the arena has no page in the app.
 
 In production there is one process. `pnpm build` builds the web app into `apps/web/dist`, and the server's build copies it next to the bundle (`dist/web`, and into the Docker image). The Hono server serves those files at `/` and answers the app's pages (`/runs`, `/arena` and the rest) with `index.html` when a browser asks for them; the API routes and `/health` are where they were. Run from source, the server serves `apps/web/dist` too when it exists, so `pnpm --filter @firewall/web build && pnpm dev` shows the whole thing on port 3000.
 
@@ -48,6 +48,26 @@ The Runs history and the dashboard's table use AG Grid **Enterprise** (master/de
 ### Live runs from the web
 
 The Start a run page (`/start`) lets a person pick a scenario, confirm a mandate and start a real run in the browser, and follow it in the run view. It needs the app's own model key; without `FIREWALL_ANTHROPIC_API_KEY` the page says live runs are off and replay still works. What a day of live runs may spend is capped: `FIREWALL_LIVE_DAILY_USD` (default `0.25`, a UTC day, counted from the event log), and only one live run goes at a time. The money is the sandbox's when the `SANDBOX_*` variables and `SANDBOX_BUYER_VAULT_ID` are set, otherwise one in-memory fake the server owns ("Practice money"), which is not a sandbox result. The same page has a "Connect your own agent" tab with the SDK example below.
+
+## Results
+
+The headline matrix ran against the payment platform's real sandbox, not the in-memory fake: adapter `sandbox`, agent columns **Claude Haiku 5.5** and **OpenAI GPT-6 Luna**, gate model **Claude Haiku 5.5** in both, seeds **1 to 4**, run **Nov 7, 2026**. Each cell's firewall settings review the same recorded checkout. An attack succeeds only when the agent was fooled and the money was captured. A clean cart is one the scenario doesn't attack.
+
+Own scenario set (30 scenarios, 120 cells per model, 32 attack cells):
+
+| Agent model | Attack success, firewall off | Attack success, full tree | False block | False escalation |
+|---|---|---|---|---|
+| Claude Haiku 5.5 | 71.9% (23/32) | 3.1% (1/32) | 0% | 1.0% (1/97) |
+| OpenAI GPT-6 Luna | 84.4% (27/32) | 0.0% (0/32) | 0% | 2.2% (2/93) |
+
+Held-out set (17 attacks, 68 cells per model, see [docs/held-out.md](docs/held-out.md)):
+
+| Agent model | Attack success, firewall off | Attack success, full tree |
+|---|---|---|
+| Claude Haiku 5.5 | 14.7% (10/68) | 1.5% (1/68) |
+| OpenAI GPT-6 Luna | 25.0% (17/68) | 4.4% (3/68) |
+
+No clean cart was blocked in the held-out set. One attack still gets through the full tree in the own set (one Claude Haiku 5.5 cell of 32), and the held-out results are reported as they came out: the gates were frozen before that run. A full-tree review costs about $0.003 and takes about 5 seconds.
 
 ## The arena API
 
@@ -87,7 +107,7 @@ pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --firewall off       
 pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --adapter sandbox --firewall off  # the sandbox
 ```
 
-It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; `run-scenario` runs the Claude Haiku 5.5 column (the eval has two more, below). The tests drive the loop with scripted model turns and never call a model.
+It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; `run-scenario` runs the Claude Haiku 5.5 column (the eval's OpenAI column is below). The tests drive the loop with scripted model turns and never call a model.
 
 ## Building a mandate
 
@@ -265,11 +285,11 @@ pnpm --filter @firewall/eval run-matrix --scenarios all --seeds 1,2 --column ope
 pnpm --filter @firewall/eval run-matrix --scenarios sc_b01,sc_a02 --seeds 1 --column haiku     # the real thing
 ```
 
-`--column` picks the shopping agent's model, each one model with no fallback: `haiku` (Claude Haiku 5.5, needs `FIREWALL_ANTHROPIC_API_KEY`), `openai` (OpenAI GPT-6 Luna, needs `FIREWALL_OPENAI_API_KEY`) or `gemini` (Gemini 3.5 Flash-Lite, needs `FIREWALL_GEMINI_API_KEY`, through Google's OpenAI-compatible endpoint). The gates run on Claude Haiku 5.5 in every column, so every column also needs the Anthropic key, and a column without its own key refuses to run and names the variable. `--scenarios` takes IDs, `all`, `attacks`, `benign` or `held-out`; `--adapter fake|sandbox` picks the payment adapter (default `fake`); `--max-usd` (default 0.50) stops the matrix starting new cells once it is spent, on top of the agent's own per-run cap (`--agent-max-usd`); `--concurrency` (default 3) is how many cells run at once. It calls models: a cell is about half a cent to a cent (the dry run prices the column you picked). The tests call none.
+`--column` picks the shopping agent's model, each one model with no fallback: `haiku` (Claude Haiku 5.5, needs `FIREWALL_ANTHROPIC_API_KEY`) or `openai` (OpenAI GPT-6 Luna, needs `FIREWALL_OPENAI_API_KEY`). A `gemini` column (Gemini 3.5 Flash-Lite, through Google's OpenAI-compatible endpoint) is in the code, but its benchmark was cut on Nov 9: two models make the point, and the results above have no Gemini numbers. The gates run on Claude Haiku 5.5 in every column, so every column also needs the Anthropic key, and a column without its own key refuses to run and names the variable. `--scenarios` takes IDs, `all`, `attacks`, `benign` or `held-out`; `--adapter fake|sandbox` picks the payment adapter (default `fake`); `--max-usd` (default 0.50) stops the matrix starting new cells once it is spent, on top of the agent's own per-run cap (`--agent-max-usd`); `--concurrency` (default 3) is how many cells run at once. It calls models: a cell is about half a cent to a cent (the dry run prices the column you picked). The tests call none.
 
 `all` and `attacks` are our own scenarios. `held-out` is the held-out set: 17 attacks ported, with attribution, from published benchmarks (StakeBench, Magentic Marketplace, AgentDojo and InjecAgent), written without reading the gates and never used to tune them, so the numbers show the firewall wasn't fitted to our own attacks. It runs on its own, never mixed with ours, and its files say so and end their names in `-held-out`. [docs/held-out.md](docs/held-out.md) lists the sources, licences, what was ported and what was left out.
 
-Each run writes `<date>-<adapter>-<column>.json` (every cell and configuration), a `.md` summary and the `.events.db` event log holding every run, under `results/`, which git ignores. **Every file says which payment adapter produced it.** Numbers from the `fake` adapter are for development; only a run against the sandbox may be shown in the video or the write-up. [results/README.md](results/README.md) explains the file and how each rate is counted. The cell functions (`runCell`, `evaluateCell`) are plain async functions over serialisable records, so the same code can run as tasks on Render Workflows later.
+Each run writes `<date>-<adapter>-<column>.json` (every cell and configuration), a `.md` summary and the `.events.db` event log holding every run, under `results/`, which git ignores. **Every file says which payment adapter produced it.** Numbers from the `fake` adapter are for development; only a run against the sandbox may be shown in the video or the write-up. [results/README.md](results/README.md) explains the file and how each rate is counted. The cell functions (`runCell`, `evaluateCell`) are plain async functions over serialisable records.
 
 ## Layout
 
@@ -284,9 +304,10 @@ Each run writes `<date>-<adapter>-<column>.json` (every cell and configuration),
 | `packages/firewall` | The review tree: Gate 0, deterministic policy, Gate 1, the quarantined extractor, Gate 2, the intent auditor, their shared result type, and enforcement of the verdict |
 | `packages/sdk` | The SDK: `createFirewall` and `firewall.wrap` put the firewall in front of an agent's payment tools, with the arena as its catalog source |
 | `packages/eval` | The eval harness: the matrix runner, the metrics and the results file |
+| `apps/web` | The web app: the landing page, the Runs history, the run view, the escalation inbox, the dashboard and `/docs`, in React and Vite |
 | `deploy` | What runs on the server: the compose file, the env example, the backup script and the Caddy site block |
 | `packages/` | Other libraries the apps share, added as each step needs them |
-| `docs/` | The plan |
+| `docs/` | The plan, the SDK guide (`sdk.md`), the held-out sources and the design notes |
 
 ## Deploying (one-time setup)
 
