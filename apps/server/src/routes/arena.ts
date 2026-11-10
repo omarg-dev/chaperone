@@ -9,20 +9,20 @@ import { zValidator } from "@hono/zod-validator";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
 
-const startRun = z.object({
+export const startRunBody = z.object({
   scenarioId: z.string().min(1),
   seed: z.string().min(1).default("1"),
 });
-const searchQuery = z.object({
+export const searchQuery = z.object({
   q: z.string().optional(),
   category: z.enum(CATEGORIES).optional(),
   maxPriceCents: z.coerce.number().int().positive().optional(),
 });
-const addLine = z.object({
+export const addLineBody = z.object({
   listingId: z.string().min(1),
   quantity: z.number().int().positive().default(1),
 });
-const coupon = z.object({ code: z.string().min(1) });
+export const couponBody = z.object({ code: z.string().min(1) });
 
 // An agent can name the event that made this call (its own tool call), so the arena's event
 // joins the causal chain. Optional: a plain HTTP client just leaves it out.
@@ -48,7 +48,7 @@ export function arenaRoutes(arena: ArenaService) {
           })),
         ),
       )
-      .post("/runs", zValidator("json", startRun), (c) => {
+      .post("/runs", zValidator("json", startRunBody), (c) => {
         const { scenarioId, seed } = c.req.valid("json");
         const run = arena.start(scenarioId, seed);
         return c.json({ runId: run.runId, scenarioId, seed, request: run.scenario.request }, 201);
@@ -69,7 +69,7 @@ export function arenaRoutes(arena: ArenaService) {
         c.json(arena.reviews(c.req.param("runId"), c.req.param("listingId"), callOptions(c))),
       )
       .get("/runs/:runId/cart", (c) => c.json(arena.cart(c.req.param("runId"))))
-      .post("/runs/:runId/cart", zValidator("json", addLine), (c) => {
+      .post("/runs/:runId/cart", zValidator("json", addLineBody), (c) => {
         const { listingId, quantity } = c.req.valid("json");
         return c.json(arena.addToCart(c.req.param("runId"), listingId, quantity, callOptions(c)));
       })
@@ -78,7 +78,7 @@ export function arenaRoutes(arena: ArenaService) {
           arena.removeFromCart(c.req.param("runId"), c.req.param("listingId"), callOptions(c)),
         ),
       )
-      .post("/runs/:runId/coupons", zValidator("json", coupon), (c) =>
+      .post("/runs/:runId/coupons", zValidator("json", couponBody), (c) =>
         c.json(arena.applyCoupon(c.req.param("runId"), c.req.valid("json").code, callOptions(c))),
       )
       .post("/runs/:runId/checkout", (c) =>

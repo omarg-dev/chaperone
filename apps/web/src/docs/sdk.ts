@@ -11,7 +11,14 @@ export interface Heading {
   depth: number;
 }
 
+// A heading can name its own anchor with a trailing {#id}, so a link such as /docs#postman keeps
+// working when the heading's wording changes. The marker is not part of the heading's text.
+const EXPLICIT_ID = /\s*\{#([a-z0-9-]+)\}\s*$/;
+
+const withoutId = (text: string): string => text.replace(EXPLICIT_ID, "");
+
 const slug = (text: string): string =>
+  EXPLICIT_ID.exec(text)?.[1] ??
   text
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
@@ -23,7 +30,7 @@ export function headingsOf(markdown: string): Heading[] {
     .lexer(markdown)
     .flatMap((token) =>
       token.type === "heading"
-        ? [{ text: token.text, depth: token.depth, id: slug(token.text) }]
+        ? [{ text: withoutId(token.text), depth: token.depth, id: slug(token.text) }]
         : [],
     );
 }
@@ -31,7 +38,7 @@ export function headingsOf(markdown: string): Heading[] {
 const renderer = new Marked({
   renderer: {
     heading({ tokens, depth, text }) {
-      return `<h${depth} id="${slug(text)}">${this.parser.parseInline(tokens)}</h${depth}>\n`;
+      return `<h${depth} id="${slug(text)}">${withoutId(this.parser.parseInline(tokens))}</h${depth}>\n`;
     },
   },
 });

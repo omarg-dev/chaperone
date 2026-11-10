@@ -73,3 +73,15 @@ Your tools do need to be AI SDK `tool()` objects. For another framework, you nee
 The gates need two things the agent can't be trusted to report: the merchant's catalog, meaning what each listing really is, costs and is sold by, and the page content the agent was shown. The arena provides both and writes them to the event log as it serves them.
 
 Both come through the `CatalogSource` interface (`packages/sdk/src/source.ts`). The arena's source, `arenaSource`, is the only one today, so the SDK protects agents shopping in the arena. A source for a real marketplace would give the same two things from that merchant. That is future work.
+
+## Try the API in Postman {#postman}
+
+You can try the whole flow without code. The collection `docs/postman/chaperone.postman_collection.json` has every public call of the server, in the order you would use them: check the server, start a live run, confirm the mandate, let the agent shop, read its events, decide a held cart, read the benchmark results, and the arena calls an agent's tools make. It sits beside the SDK: the SDK puts the firewall in front of your own agent, and the collection lets you watch and drive the firewall's own.
+
+To use it:
+
+1. In Postman, choose Import and pick the collection file. Import `docs/postman/local.postman_environment.json` too if you run the server yourself.
+2. The collection's `baseUrl` is `https://chaperone.omarg.dev`. For a local server (`pnpm dev`, port 3000), select the "Chaperone, local server" environment.
+3. Send the requests in each folder from the top. "Start a live run" saves the run's ID into `runId`, and the requests after it use it.
+
+There is no sign-in and no key. Live runs spend from a daily cap (`FIREWALL_LIVE_DAILY_USD`, $0.25 by default) and only one goes at a time, so "Start a live run" answers 429 once the day's budget is used and 503 on a server with no model key; everything else still works. A decision is refused with a 409 for a run that isn't held for a person.
