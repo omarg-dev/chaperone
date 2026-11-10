@@ -49,6 +49,10 @@ The Runs history and the dashboard's table use AG Grid **Enterprise** (master/de
 
 The Start a run page (`/start`) lets a person pick a scenario, confirm a mandate and start a real run in the browser, and follow it in the run view. It needs the app's own model key; without `FIREWALL_ANTHROPIC_API_KEY` the page says live runs are off and replay still works. What a day of live runs may spend is capped: `FIREWALL_LIVE_DAILY_USD` (default `0.25`, a UTC day, counted from the event log), and only one live run goes at a time. The money is the sandbox's when the `SANDBOX_*` variables and `SANDBOX_BUYER_VAULT_ID` are set, otherwise one in-memory fake the server owns ("Practice money"), which is not a sandbox result. The same page has a "Connect your own agent" tab with the SDK example below.
 
+### The benchmark in AG Studio
+
+The dashboard's "Every result in AG Studio" tab (`/dashboard?view=studio`) puts every sandbox results file the server has (the newest of each model on each scenario set) into [AG Studio](https://www.ag-grid.com/studio/), one row per cell and firewall setting, and opens on a report of attack success off and on, the held-out set, false escalations and cost. "Build your own" lets anyone rearrange it in their own tab, and has Studio's AI assistant, which runs on Claude Haiku 5.5 through the server (`POST /studio/ai`) so the browser holds no key, capped by `FIREWALL_STUDIO_DAILY_USD`. Studio's licence key, `AG_STUDIO_LICENSE_KEY`, is read by the server at runtime; without it Studio shows its watermark.
+
 ## The arena API
 
 The server runs the marketplace a shopping agent is tested in. A run is one agent visiting one scenario with one seed; the same scenario and seed always give the same arena.
@@ -367,6 +371,8 @@ Runs imported with a time from today count toward that UTC day's live-run spend,
 | nothing | replays, the dashboard, the escalation inbox and the arena work; the Start a run page says live runs are off |
 | `FIREWALL_ANTHROPIC_API_KEY` | live runs on, with one fake payment adapter ("Practice money", not a sandbox result) |
 | `FIREWALL_LIVE_DAILY_USD` | the most live runs may spend in a UTC day (default `0.25`; `0` turns live runs off). Counted from the event log, so a restart can't reset it |
+| `FIREWALL_STUDIO_DAILY_USD` | the most the dashboard's AG Studio assistant may spend in a UTC day (default `0.10`; `0` turns it off). It needs `FIREWALL_ANTHROPIC_API_KEY`, and is counted in the event log's database |
+| `AG_STUDIO_LICENSE_KEY` | AG Studio's licence key, served to the dashboard at runtime. Unset, Studio shows its watermark |
 | `SANDBOX_CLIENT_ID`, `SANDBOX_CLIENT_SECRET` and the six `SANDBOX_MERCHANT_*` | decisions on held purchases use the real sandbox |
 | the above and `SANDBOX_BUYER_VAULT_ID` | live runs use the real sandbox as well. Without the vault ID they are off and the page says what is missing |
 | `FIREWALL_CHANNEL3_API_KEY` | Gate 2 checks prices against the real market |

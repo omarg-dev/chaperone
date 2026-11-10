@@ -9,6 +9,7 @@ import { LiveStrip } from "./LiveStrip";
 import { Provenance } from "./Provenance";
 import { ResultsGrid } from "./ResultsGrid";
 import { gridRows, headlineOf } from "./results";
+import { Benchmark } from "./studio/Benchmark";
 import { useResultsFile, useResultsList } from "./useResults";
 
 // The picker's text: when it ran and what produced it, so an older result can't be mistaken for the
@@ -95,6 +96,15 @@ export function Dashboard() {
   const knownRunIds = useMemo(() => new Set(runs.map((r) => r.runId)), [runs]);
 
   const list = state.status === "ready" ? state.value : null;
+  // Two views of the eval: one results file as the harness counted it, or every sandbox file at
+  // once in AG Studio (`?view=studio`), each kept in the address so a view can be shared.
+  const view = params.get("view") === "studio" ? "studio" : "file";
+  const setView = (next: "studio" | "file") => {
+    const copy = new URLSearchParams(params);
+    if (next === "studio") copy.set("view", "studio");
+    else copy.delete("view");
+    setParams(copy, { replace: true });
+  };
   const asked = params.get("result");
   // The address names the result, so a view can be shared; a name the server doesn't list is the
   // newest instead of an error.
@@ -136,7 +146,31 @@ export function Dashboard() {
       <LiveStrip />
 
       <Section heading="The eval" className="eval">
-        {picker}
+        <div className="tabs eval-views" role="tablist" aria-label="How to read the eval">
+          <button
+            type="button"
+            role="tab"
+            id="tab-file"
+            aria-selected={view === "file"}
+            aria-controls="panel-eval"
+            className="tab"
+            onClick={() => setView("file")}
+          >
+            One result
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-studio"
+            aria-selected={view === "studio"}
+            aria-controls="panel-eval"
+            className="tab"
+            onClick={() => setView("studio")}
+          >
+            Every result in AG Studio
+          </button>
+        </div>
+        {view === "file" && picker}
         {state.status === "loading" && (
           <p className="t-meta" role="status">
             Loading the results…
@@ -155,11 +189,17 @@ export function Dashboard() {
           </EmptyState>
         )}
         {list && !selected && <NoResults available={list.available} unreadable={list.unreadable} />}
-        {list && selected && (
-          <>
+        {list && selected && view === "file" && (
+          <div role="tabpanel" id="panel-eval" aria-labelledby="tab-file">
             <Results key={selected.name} name={selected.name} knownRunIds={knownRunIds} />
             <Unreadable files={list.unreadable} />
-          </>
+          </div>
+        )}
+        {list && selected && view === "studio" && (
+          <div role="tabpanel" id="panel-eval" aria-labelledby="tab-studio">
+            <Benchmark list={list.results} />
+            <Unreadable files={list.unreadable} />
+          </div>
         )}
       </Section>
     </Page>

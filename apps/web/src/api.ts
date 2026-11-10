@@ -225,3 +225,17 @@ export const postStart = (runId: string, firewall: FirewallSetting) =>
     `/live/runs/${encodeURIComponent(runId)}/start`,
     { firewall },
   );
+
+// AG Studio on the dashboard (GET /studio/config): the licence key the server holds (null, and
+// Studio shows its watermark), and whether its assistant is on, with today's budget.
+export interface StudioConfig {
+  licenseKey: string | null;
+  ai: {
+    available: boolean;
+    // Why it is off, for a person: no model key, or the day's budget spent.
+    reason: string | null;
+    budget: { capUsd: number; spentUsd: number; remainingUsd: number; resetsAt: string };
+  };
+}
+
+export const fetchStudioConfig = () => getJson<StudioConfig>("/studio/config");
