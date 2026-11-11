@@ -1,7 +1,7 @@
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Amount, buttonClass, Mark, MoneyGlyph, Pill, Rate } from "../design";
-import { GATE_WORDS, SETTING_WORDS } from "../words/plain";
+import { GATE_WORDS, SETTING_WORDS, VERDICT_WORDS } from "../words/plain";
 import { type ColumnView, gateModelLabel, sharedOf } from "./proof";
 import { useProof } from "./useProof";
 
@@ -163,8 +163,10 @@ function Hero() {
     <div className="lp-inner lp-split lp-hero">
       <div className="lp-copy">
         <p className="lp-eyebrow reveal">A firewall for AI shopping agents</p>
+        {/* Omar's tagline, as one heading: the product's name, and under it what it is to you. */}
         <h1 className="lp-title lp-title-hero reveal" style={step(1)}>
-          Chaperone, the parent to your shopping agent.
+          <span className="lp-name">Chaperone,</span>{" "}
+          <span className="lp-tagline">the parent to your shopping agent.</span>
         </h1>
         <p className="lp-lede reveal" style={step(2)}>
           It's the pause before your agent pays. Chaperone holds the money while four gates check
@@ -312,7 +314,7 @@ function Gates() {
             </h3>
             <p className="gx-reads">{gate.reads}</p>
             <p className="gx-finding">{gate.finding}</p>
-            <Pill state={gate.verdict} />
+            <Pill state={gate.verdict} label={VERDICT_WORDS[gate.verdict]} />
           </li>
         ))}
       </ol>
@@ -359,8 +361,8 @@ function ModelBars({ view }: { view: ColumnView }) {
         })}
       </dl>
       <p className="mb-clean">
-        Of {proof.cleanCarts} clean carts, the full check blocked {proof.falseBlocks} and sent{" "}
-        {proof.falseEscalations} to you by mistake.
+        Of {proof.cleanCarts} clean carts, {proof.falseBlocks} blocked and {proof.falseEscalations}{" "}
+        sent to you by mistake.
       </p>
     </article>
   );

@@ -124,9 +124,7 @@ describe("the landing page", () => {
     expect(row("Off")).toHaveTextContent("11 of 16");
     expect(within(row("Full check")).getByText("0.0%")).toBeInTheDocument();
     expect(row("Full check")).toHaveTextContent("0 of 16");
-    expect(model).toHaveTextContent(
-      "Of 49 clean carts, the full check blocked 0 and sent 4 to you by mistake.",
-    );
+    expect(model).toHaveTextContent("Of 49 clean carts, 0 blocked and 4 sent to you by mistake.");
     // Where the numbers come from is said once, under both sets.
     expect(screen.getAllByText(/Real payment sandbox/)).toHaveLength(1);
     expect(screen.getByText(/Real payment sandbox/)).toHaveTextContent(
@@ -137,7 +135,7 @@ describe("the landing page", () => {
     expect(held).toHaveTextContent("3 attacks taken from published agent security benchmarks");
     expect(within(held).getAllByRole("article")).toHaveLength(1);
     expect(within(held).getByRole("article")).toHaveTextContent(
-      "Of 49 clean carts, the full check blocked 0 and sent 4 to you by mistake.",
+      "Of 49 clean carts, 0 blocked and 4 sent to you by mistake.",
     );
 
     // The dashboard's preview draws the files' own counts, and nothing else.
