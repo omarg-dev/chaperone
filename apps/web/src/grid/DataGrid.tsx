@@ -97,6 +97,8 @@ export interface ExcelRequest<Row = unknown> {
   fileName: string;
   sheetName: string;
   intro: string[];
+  // The columns to write, in order, by ID; hidden ones too. Omitted, the columns on screen.
+  columns?: readonly string[];
   cell: (row: Row, colId: string) => string | number | null;
 }
 
@@ -226,13 +228,14 @@ export function DataGrid<Row>({
   useImperativeHandle(
     handle,
     () => ({
-      exportExcel: ({ fileName, sheetName, intro, cell }) => {
+      exportExcel: ({ fileName, sheetName, intro, columns, cell }) => {
         const api = grid.current?.api;
         if (!api || !ENTERPRISE) return;
         api.exportDataAsExcel({
           fileName,
           sheetName,
           skipRowGroups: true,
+          ...(columns ? { columnKeys: [...columns] } : {}),
           prependContent: [
             ...intro.map((line) => ({
               cells: [{ data: { type: "String" as const, value: line } }],

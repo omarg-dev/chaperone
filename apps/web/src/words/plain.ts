@@ -16,6 +16,29 @@ export const GATE_WORDS: Record<GateName, { name: string; does: string }> = {
   gate3: { name: "Agent's path", does: "An AI reviewer checks how the agent came to choose it." },
 };
 
+// How much Chaperone checks, in the words a person picks between on Start a run. The run history,
+// the dashboard and the benchmark say the same three, so "Full check" is one thing everywhere. The
+// log and the results files call them full, gate0 and off.
+export const SETTING_WORDS = {
+  full: "Full check",
+  gate0: "Rules only",
+  off: "Off",
+} as const;
+export type SettingName = keyof typeof SETTING_WORDS;
+
+export const settingWords = (setting: string) =>
+  setting in SETTING_WORDS ? SETTING_WORDS[setting as SettingName] : setting;
+
+// A task's name for a person: its title from the task list or, for one of the held-out attacks
+// (other people's attacks, which the task list leaves out), "Held-out attack 3". Anything else
+// keeps its ID.
+export function taskWords(scenarioId: string, titles: Record<string, string>): string {
+  const known = titles[scenarioId];
+  if (known) return known;
+  const heldOut = /^sc_h(\d+)$/.exec(scenarioId);
+  return heldOut ? `Held-out attack ${Number(heldOut[1])}` : scenarioId;
+}
+
 export const gateWords = (gate: string) => GATE_WORDS[gate as GateName]?.name ?? gate;
 
 // A check's ruling, as what it means for the purchase.

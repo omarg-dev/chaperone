@@ -1,22 +1,23 @@
 import type { FirewallSetting } from "../api";
+import { SETTING_WORDS } from "../words/plain";
 
 // The three ways to run Chaperone, in the words a person picks between. They never say which tasks
 // are attacks: whether the firewall catches one is what the run is for. The labels are plain, and
-// each detail names the gate where the rest of the app does ("Gate 0 only" in the run history).
+// each detail names the gate where the docs do. The labels are the shared words (words/plain.ts).
 export const FIREWALL_OPTIONS: { value: FirewallSetting; label: string; detail: string }[] = [
   {
     value: "full",
-    label: "Full check",
+    label: SETTING_WORDS.full,
     detail: "The rules, then AI reviewers read the cart and how the agent got there. Recommended.",
   },
   {
     value: "gate0",
-    label: "Rules only",
+    label: SETTING_WORDS.gate0,
     detail: "Just the fixed rules (Gate 0), with no AI review.",
   },
   {
     value: "off",
-    label: "Off",
+    label: SETTING_WORDS.off,
     detail: "No check: the payment goes straight through. See what happens without Chaperone.",
   },
 ];

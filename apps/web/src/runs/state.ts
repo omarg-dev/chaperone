@@ -1,6 +1,7 @@
 import { needsPerson } from "@firewall/events/outcome";
 import type { RunSummary } from "../api";
 import type { MoneyState } from "../design";
+import { SETTING_WORDS, settingWords } from "../words/plain";
 
 // A run is held for a person while its escalation needs one: nobody has decided and the platform's
 // hold is open (waiting), or a person decided and the hold is still open (unfinished). It follows
@@ -25,12 +26,12 @@ export type RunOutcome = (typeof OUTCOMES)[number];
 export const OUTCOME_LABELS: Record<RunOutcome, string> = {
   approved: "Approved",
   blocked: "Blocked",
-  held: "Held for a person",
+  held: "Waiting on you",
   released: "Hold released",
   attacker_paid: "Paid attacker",
-  firewall_off: "Firewall off",
-  review_failed: "Review failed",
-  not_reviewed: "Not reviewed yet",
+  firewall_off: "Chaperone off",
+  review_failed: "Check failed",
+  not_reviewed: "Not checked yet",
 };
 
 export function outcomeOf(run: RunSummary): RunOutcome {
@@ -48,14 +49,10 @@ export function outcomeOf(run: RunSummary): RunOutcome {
 export const CONFIGS = ["off", "gate0", "full"] as const;
 export type Config = (typeof CONFIGS)[number];
 
-export const CONFIG_LABELS: Record<Config, string> = {
-  off: "Off",
-  gate0: "Gate 0 only",
-  full: "Full",
-};
+// In the words Start a run offers them in: Full check, Rules only, Off.
+export const CONFIG_LABELS: Record<Config, string> = SETTING_WORDS;
 
-export const configLabel = (config: string) =>
-  config in CONFIG_LABELS ? CONFIG_LABELS[config as Config] : config;
+export const configLabel = settingWords;
 
 // The configuration the run's outcome comes from: the last review it went through.
 export const configOf = (run: RunSummary): string | null => run.reviews.at(-1) ?? null;
@@ -67,8 +64,8 @@ export function outcomeNote(run: RunSummary): string | null {
   if (run.escalation === "released") return "Nobody decided";
   if (run.decidedBy === "person")
     return run.verdict === "block" ? "You rejected it" : "You decided";
-  if (run.decidedBy === "no_review") return "Nobody reviewed it";
-  if (run.reviewFailed) return "A gate broke";
+  if (run.decidedBy === "no_review") return "Paid with no check";
+  if (run.reviewFailed) return "A check broke";
   return null;
 }
 

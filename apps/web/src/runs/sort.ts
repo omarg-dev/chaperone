@@ -1,4 +1,5 @@
 import type { RunSummary } from "../api";
+import { taskWords } from "../words/plain";
 import { CONFIGS, configOf, outcomeRank } from "./state";
 
 // How the history is ordered, kept in the address as `sort=started` (oldest first), `sort=-started`
@@ -46,7 +47,7 @@ const time = (run: RunSummary) => Date.parse(run.startedAt) || 0;
 
 // What the scenario column shows first: the title when the server knows it, else the ID.
 export const scenarioName = (run: RunSummary, titles: Record<string, string>): string =>
-  run.scenarioId ? (titles[run.scenarioId] ?? run.scenarioId) : "";
+  run.scenarioId ? taskWords(run.scenarioId, titles) : "";
 
 // Ascending order of one column. Equal runs compare equal, so a stable sort keeps the order they
 // came in (newest first) among them.
