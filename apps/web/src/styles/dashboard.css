@@ -117,6 +117,9 @@
 
 /* The comparison: a label column and one column for each setting, each on its own ground. */
 .cmp-wrap {
+  /* Positioned, so the amounts' screen-reader text stays inside the frame that scrolls sideways
+     instead of widening the page on a phone. */
+  position: relative;
   overflow-x: auto;
 }
 
@@ -579,4 +582,129 @@
   border: 1px solid var(--line);
   border-radius: var(--radius);
   overflow: hidden;
+}
+
+/* What the benchmark is and how to read it, above both views. */
+.guide {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 72ch;
+}
+
+.guide-intro {
+  margin: 0;
+  color: var(--ink-2);
+}
+
+.guide-sources {
+  margin: 0;
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--hold);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.guide-terms {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+
+.guide-terms dt {
+  font-weight: 700;
+}
+
+.guide-terms dd {
+  margin: 2px 0 0;
+  color: var(--ink-2);
+  font-size: var(--text-meta);
+  line-height: 1.45;
+}
+
+.benchmark-sources summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+/* The benchmark on a phone: the headline figures, and the explorer behind a button. */
+.benchmark-phone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.headline-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.headline-table th,
+.headline-table td {
+  padding: var(--space-2) var(--space-1);
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  vertical-align: top;
+}
+
+.headline-table th:first-child {
+  text-align: left;
+}
+
+.headline-table thead th {
+  color: var(--muted);
+  font-size: var(--text-meta);
+  font-weight: 700;
+}
+
+.headline-table tbody th {
+  font-weight: 700;
+}
+
+.headline-table tbody th .t-meta {
+  display: block;
+  font-weight: 400;
+}
+
+.headline-table td {
+  font-variant-numeric: lining-nums tabular-nums;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.benchmark-assistant-off summary {
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .guide-terms {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* The assistant, said where Studio's tabs are: what it is for, a few questions, and the way in. */
+.benchmark-assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  max-width: 72ch;
+  padding: var(--space-3) var(--space-4);
+  border-left: 3px solid var(--hold);
+  background: var(--hold-tint);
+}
+
+.benchmark-assistant p {
+  margin: 0;
+}
+
+.benchmark-examples {
+  margin: 0;
+  padding-left: var(--space-4);
+  font-family: var(--font-voice);
+  font-style: italic;
 }

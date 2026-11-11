@@ -175,6 +175,49 @@ export const sourceLine = (file: ResultsSummary): string =>
     formatDate(file.date),
   ].join(" · ");
 
+// Seeds as a person reads them: "1 to 4" when they run on without a gap, else "1, 3 and 7".
+export function seedsWords(seeds: readonly string[]): string {
+  const numbers = [...new Set(seeds)].map(Number).sort((a, b) => a - b);
+  if (numbers.length === 0 || numbers.some((n) => !Number.isInteger(n))) return seeds.join(", ");
+  const first = numbers[0] as number;
+  const last = numbers.at(-1) as number;
+  if (numbers.length > 2 && last - first === numbers.length - 1) return `${first} to ${last}`;
+  return listWords(numbers.map(String));
+}
+
+const listWords = (items: readonly string[]) =>
+  items.length < 2 ? (items[0] ?? "") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
+
+// Where the benchmark's numbers come from, in one sentence a person reads: the payment platform, the
+// dates, the seeds, the agents' models, the sets, and the model the checks ran on. Every part comes
+// from the files; a part that differs between them is listed, never smoothed over.
+export function sourcesSentence(files: readonly ResultsSummary[]): string | null {
+  if (files.length === 0) return null;
+  const unique = (values: string[]) => [...new Set(values)];
+  const where = files.every((f) => f.paymentAdapter === "sandbox")
+    ? "PayPal's payment sandbox"
+    : "the fake payment adapter, not the sandbox";
+  const dates = listWords(
+    unique(files.map((f) => f.date))
+      .sort()
+      .map(formatDate),
+  );
+  const seeds = seedsWords(files.flatMap((f) => f.seeds));
+  const models = listWords(unique(files.map((f) => f.column.label)));
+  const sets = unique(files.map(scenarioSetOf));
+  const setWords =
+    sets.length === 2
+      ? "on our own tasks and on the held-out attacks"
+      : sets[0] === "Held-out"
+        ? "on the held-out attacks"
+        : "on our own tasks";
+  // A gate model is named by the agent column that runs on it ("Claude Haiku 5.5"), else its id.
+  const labelOf = (id: string) => files.find((f) => f.column.columnId === id)?.column.label ?? id;
+  const gates = listWords(unique(files.map((f) => labelOf(f.gateModel))));
+  const agents = unique(files.map((f) => f.column.label)).length;
+  return `Run on ${where} on ${dates}, seeds ${seeds}: ${models} as the shopping ${agents === 1 ? "agent" : "agents"}, ${setWords}. Chaperone's AI checks ran on ${gates}.`;
+}
+
 export function leftOutNote(selection: BenchmarkSelection): string | null {
   const parts = [
     selection.fake.length > 0

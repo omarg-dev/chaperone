@@ -34,7 +34,7 @@ describe("what a result says about itself", () => {
     expect(Object.fromEntries(p.facts.map((f) => [f.label, f.value]))).toEqual({
       "Payment adapter": "fake",
       Agent: "Claude Haiku 5.5 (claude-haiku-5-5)",
-      Gates: "claude-haiku-5-5",
+      "Checks ran on": "claude-haiku-5-5",
       Seeds: "1, 2",
       Date: "26 Oct 2026",
     });
@@ -53,7 +53,7 @@ describe("what a result says about itself", () => {
     const facts = Object.fromEntries(provenanceOf(openai).facts.map((f) => [f.label, f.value]));
     expect(facts.Agent).toBe("OpenAI GPT-6 Luna (gpt-6-luna)");
     // The gates stay on Claude Haiku 5.5.
-    expect(facts.Gates).toBe("claude-haiku-5-5");
+    expect(facts["Checks ran on"]).toBe("claude-haiku-5-5");
   });
 
   it("says when a spend cap cut the matrix short", () => {
@@ -71,8 +71,8 @@ describe("what a result says about itself", () => {
     );
   });
 
-  it("says what the full tree let through, from the file's counts", () => {
-    expect(headlineOf(fakeResults)).toBe("With the full tree, no attack reached the attacker.");
+  it("says what the full check let through, from the file's counts", () => {
+    expect(headlineOf(fakeResults)).toBe("With the full check, no attack reached the attacker.");
     const leaky: ResultsView = {
       ...fakeResults,
       metrics: {
@@ -82,7 +82,7 @@ describe("what a result says about itself", () => {
         ),
       },
     };
-    expect(headlineOf(leaky)).toBe("With the full tree, 2 of 16 attack runs still got through.");
+    expect(headlineOf(leaky)).toBe("With the full check, 2 of 16 attack runs still got through.");
     const none: ResultsView = {
       ...fakeResults,
       metrics: {
@@ -97,7 +97,7 @@ describe("what a result says about itself", () => {
 describe("the comparison", () => {
   const configs = configsOf(fakeResults);
 
-  it("orders the settings off, Gate 0 only, full whatever order the file kept", () => {
+  it("orders the settings off, Rules only, full whatever order the file kept", () => {
     const shuffled: ResultsView = {
       ...fakeResults,
       metrics: { ...fakeResults.metrics, configs: [...fakeResults.metrics.configs].reverse() },
@@ -153,7 +153,7 @@ describe("the comparison", () => {
     expect(failedReviewsNote(configs)).toBeNull();
     const broken = configs.map((c) => (c.config === "full" ? { ...c, reviewFailed: 2 } : c));
     expect(failedReviewsNote(broken)).toBe(
-      "Left out of the rates because a gate broke: 2 reviews under Full tree.",
+      "Left out of the rates because a gate broke: 2 reviews under Full check.",
     );
   });
 });
@@ -247,7 +247,7 @@ describe("the table of runs", () => {
     expect(filterRows(rows, { ...NO_ROW_FILTERS, kind: "benign" })).toHaveLength(44);
   });
 
-  it("filters by what a setting did: what Gate 0 only let through, what the full tree held", () => {
+  it("filters by what a setting did: what Rules only let through, what the full check held", () => {
     const let_through = filterRows(rows, {
       ...NO_ROW_FILTERS,
       outcome: "attacker",
@@ -331,7 +331,7 @@ describe("the table grouped by attack", () => {
     }
   });
 
-  it("says what Gate 0 only let through: the attacks the rules can't see", () => {
+  it("says what Rules only let through: the attacks the rules can't see", () => {
     const gate0 = (name: string) => tallyGroup(groups.get(name) ?? [], "gate0");
     expect(gate0("A1 (verified)")).toEqual({ runs: 2, attacks: 2, succeeded: 2, paidAttacker: 2 });
     expect(gate0("A1 (unverified)").succeeded).toBe(0);

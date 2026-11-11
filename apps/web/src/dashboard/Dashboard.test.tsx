@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ResultsList } from "../api";
 import { escalated, loadDashboard, mockDevice, mockServer, renderApp, run } from "../test-utils";
+import { viewOf } from "./Dashboard";
 import { fakeResults, sandboxResults } from "./fixtures";
 
 // Every page of results mounts the data grid with its 60 rows, which jsdom draws slowly: seconds
@@ -42,14 +43,14 @@ const at = "2026-10-24T10:00:00Z";
 describe("the dashboard, with no results", () => {
   it("says the server has no results folder", async () => {
     mockServer();
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     expect(await screen.findByText("This server has no results folder.")).toBeInTheDocument();
     expect(screen.getByText(/RESULTS_DIR/)).toBeInTheDocument();
   });
 
   it("says an empty folder is empty", async () => {
     mockServer({ results: { list: { available: true, results: [], unreadable: [] } } });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     expect(await screen.findByText("No eval results yet.")).toBeInTheDocument();
     expect(screen.getByText(/run-matrix/)).toBeInTheDocument();
   });
@@ -64,7 +65,7 @@ describe("the dashboard, with no results", () => {
         },
       },
     });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     expect(
       await screen.findByText(/One file in the results folder couldn't be read/),
     ).toHaveTextContent("broken (The file isn't valid JSON)");
@@ -72,8 +73,8 @@ describe("the dashboard, with no results", () => {
 
   it("says when the server can't be read at all, and can try again", async () => {
     mockServer({ down: true });
-    renderApp("/dashboard");
-    expect(await screen.findByText("The eval results couldn't be read.")).toBeInTheDocument();
+    renderApp("/dashboard?view=result");
+    expect(await screen.findByText("The benchmark results couldn't be read.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
   });
 });
@@ -81,7 +82,7 @@ describe("the dashboard, with no results", () => {
 describe("the dashboard, with results", () => {
   it("shows the newest result by default, and says what produced it", async () => {
     mockServer({ results: { list, files } });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     // The newest is the sandbox one: no banner, and it says so.
     expect(await screen.findByText(/Sandbox result/)).toBeInTheDocument();
     expect(screen.queryByText(/not a sandbox result/i)).not.toBeInTheDocument();
@@ -95,7 +96,7 @@ describe("the dashboard, with results", () => {
 
   it("carries a banner on a fake result, in the escalate amber and not the attacker's red", async () => {
     mockServer({ results: { list: { ...list, results: [list.results[1] as never] }, files } });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const banner = await screen.findByRole("note", { name: "" });
     expect(banner).toHaveTextContent("Development numbers, not a sandbox result.");
     expect(banner).toHaveTextContent("fake payment adapter");
@@ -107,12 +108,12 @@ describe("the dashboard, with results", () => {
 
   it("shows the harness's headline numbers for each firewall setting", async () => {
     mockServer({ results: { list: { ...list, results: [list.results[1] as never] }, files } });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const comparison = await screen.findByRole("region", {
-      name: "Off, Gate 0 only and the full tree, compared",
+      name: "Off, Rules only and the full check, compared",
     });
     expect(
-      screen.getByRole("heading", { name: "With the full tree, no attack reached the attacker." }),
+      screen.getByRole("heading", { name: "With the full check, no attack reached the attacker." }),
     ).toBeInTheDocument();
     const text = comparison.textContent ?? "";
     for (const expected of [
@@ -144,14 +145,16 @@ describe("the dashboard, with results", () => {
   it("opens an older result from the picker, and keeps the choice in the address", async () => {
     const user = userEvent.setup();
     mockServer({ results: { list, files } });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const picker = await screen.findByRole("combobox", { name: "Result" });
     expect(picker).toHaveDisplayValue(/Newest: 30 Oct 2026 · sandbox/);
     await user.selectOptions(picker, OLDEST);
     expect(
       await screen.findByText("Development numbers, not a sandbox result."),
     ).toBeInTheDocument();
-    expect(screen.getByTestId("location")).toHaveTextContent(`/dashboard?result=${OLDEST}`);
+    expect(screen.getByTestId("location")).toHaveTextContent(
+      `/dashboard?view=result&result=${OLDEST}`,
+    );
     // The picker says what each result is, so an old one isn't mistaken for the newest.
     expect(
       within(picker).getByRole("option", {
@@ -179,7 +182,7 @@ describe("the dashboard, with results", () => {
         files: { [NEWEST]: { error: 422, message: "The file isn't valid JSON." } },
       },
     });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     expect(await screen.findByText("That result couldn't be read.")).toBeInTheDocument();
     expect(screen.getByText("The file isn't valid JSON.")).toBeInTheDocument();
   });
@@ -190,7 +193,7 @@ describe("the table of runs", () => {
 
   it("draws each run's outcome under each firewall setting, attacks first", async () => {
     mockServer({ results: onlyFake });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const table = await screen.findByRole("region", { name: "Every run in this matrix" });
     await waitFor(() => expect(table.querySelectorAll(".ag-row").length).toBeGreaterThan(0));
     for (const header of [
@@ -199,8 +202,8 @@ describe("the table of runs", () => {
       "Kind",
       "Agent",
       "Off",
-      "Gate 0 only",
-      "Full tree",
+      "Rules only",
+      "Full check",
       "Run",
     ]) {
       expect(within(table).getByText(header)).toBeInTheDocument();
@@ -215,7 +218,7 @@ describe("the table of runs", () => {
   it("filters by kind and by what a setting did, and says how many are left", async () => {
     const user = userEvent.setup();
     mockServer({ results: onlyFake });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     await screen.findByText("60 runs");
     await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "attack");
     expect(screen.getByText("16 of 60 runs")).toBeInTheDocument();
@@ -239,7 +242,7 @@ describe("the table of runs", () => {
       results: onlyFake,
       runs: [run(runId, "sc_a01", at, { verdict: "block", decidedBy: "review", kind: "attack" })],
     });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const table = await screen.findByRole("region", { name: "Every run in this matrix" });
     await waitFor(() => expect(table.querySelectorAll(".ag-row").length).toBeGreaterThan(0));
     const row = table.querySelector('.ag-row[row-index="0"]') as HTMLElement;
@@ -269,13 +272,13 @@ describe("the drill-down under a run", () => {
         { scenarioId: "sc_a02", title: "Wired keyboard", request: "x" },
       ],
     });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const table = await screen.findByRole("region", { name: "Every run in this matrix" });
     await waitFor(() => expect(table.querySelectorAll(".ag-row").length).toBeGreaterThan(0));
     return table;
   }
 
-  it("opens the cell under off, Gate 0 only and the full tree when its row is clicked", async () => {
+  it("opens the cell under off, Rules only and the full check when its row is clicked", async () => {
     const user = userEvent.setup();
     const table = await openTable();
     expect(opened()).toBeNull();
@@ -289,11 +292,11 @@ describe("the drill-down under a run", () => {
     // A column for each setting, in the page's order, with what each is.
     const headers = within(detail).getAllByRole("columnheader");
     expect(headers.map((h) => h.textContent)).toEqual([
-      "OffNo review",
-      "Gate 0 onlyRules, no model",
-      "Full treeEvery gate",
+      "OffNobody checks",
+      "Rules onlyFixed rules, no AI",
+      "Full checkRules and AI reviewers",
     ]);
-    // Gate 0 blocked this checkout, so the full tree stopped there and Gates 1 and 2 never ran.
+    // Gate 0 blocked this checkout, so the full check stopped there and Gates 1 and 2 never ran.
     const gate0 = within(detail).getByRole("row", { name: /^Gate 0 / });
     expect(within(gate0).getAllByRole("img", { name: "Verdict: Block" })).toHaveLength(2);
     expect(
@@ -301,7 +304,7 @@ describe("the drill-down under a run", () => {
     ).toBeVisible();
     expect(
       within(detail).getByText(
-        "Gate 1 and Gate 2 didn't run under Full tree. Gate 0 blocked, which ends the review.",
+        "Gate 1 and Gate 2 didn't run under Full check. Gate 0 blocked, which ends the review.",
       ),
     ).toBeVisible();
     const verdict = within(detail).getByRole("row", { name: /^Verdict/ });
@@ -316,7 +319,7 @@ describe("the drill-down under a run", () => {
     expect(detail.querySelector(".pill-attacker")).toBeNull();
   });
 
-  it("shows what each gate cost where the full tree ran its model gates", async () => {
+  it("shows what each gate cost where the full check ran its model gates", async () => {
     const user = userEvent.setup();
     const table = await openTable();
     // An attack the unverified-seller rule can't see: Gate 0 passes it and the model gates judge it.
@@ -415,7 +418,7 @@ describe("the table grouped by attack", () => {
       results: onlyFake,
       scenarios: [{ scenarioId: "sc_a01", title: "Wireless keyboard", request: "x" }],
     });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const table = await screen.findByRole("region", { name: "Every run in this matrix" });
     await waitFor(() => expect(table.querySelectorAll(".ag-row").length).toBeGreaterThan(0));
     await user.click(screen.getByRole("checkbox", { name: "Group by attack" }));
@@ -427,14 +430,14 @@ describe("the table grouped by attack", () => {
 
   it("is off until asked for, and a group row says how many of its runs got through", async () => {
     const { table } = await groupedTable();
-    // What Gate 0 only let through is one view: the attacks its rules can't see.
+    // What Rules only let through is one view: the attacks its rules can't see.
     const verified = groupRow(table, "A1 (verified)") as HTMLElement;
     expect(verified).toHaveTextContent("2 runs");
     const cell = (config: string) => verified.querySelector(`[col-id="${config}"]`) as HTMLElement;
     expect(cell("off")).toHaveTextContent("2 of 2 got through");
     expect(cell("gate0")).toHaveTextContent("2 of 2 got through");
     expect(cell("full")).toHaveTextContent("0 of 2 got through");
-    // Money that reached an attacker is red, and the full tree's zero isn't.
+    // Money that reached an attacker is red, and the full check's zero isn't.
     expect(cell("gate0").querySelector(".group-figure-attacker")).not.toBeNull();
     expect(cell("full").querySelector(".group-figure-attacker")).toBeNull();
     const unverified = groupRow(table, "A1 (unverified)") as HTMLElement;
@@ -487,7 +490,7 @@ describe("charting the table", () => {
 
   it("offers a chart of the attacks, and a chart of picked cells once some are picked", async () => {
     mockServer({ results: onlyFake });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     await screen.findByRole("region", { name: "Every run in this matrix" });
     expect(screen.getByRole("button", { name: "Chart attacks" })).toBeEnabled();
     // Nothing is picked until someone drags across cells, and the button says how to.
@@ -501,7 +504,7 @@ describe("charting the table", () => {
   it("has nothing to chart when no attack is shown", async () => {
     const user = userEvent.setup();
     mockServer({ results: onlyFake });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     await screen.findByRole("region", { name: "Every run in this matrix" });
     await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
     expect(screen.getByRole("button", { name: "Chart attacks" })).toBeDisabled();
@@ -519,9 +522,11 @@ describe("this server's runs", () => {
         run("e", "sc_b03", at, { verdict: "approve", decidedBy: "review" }),
       ],
     });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const strip = await screen.findByRole("region", { name: "This server's runs" });
-    expect(strip).toHaveTextContent("Counted from the run log here, not from the eval.");
+    expect(strip).toHaveTextContent(
+      "Counted from the runs on this server, not from the benchmark.",
+    );
     const stat = (label: string) =>
       within(strip).getByRole("link", { name: new RegExp(label) }).textContent;
     expect(stat("Runs")).toBe("5Runs");
@@ -538,8 +543,57 @@ describe("this server's runs", () => {
 
   it("says so when there are none", async () => {
     mockServer({ runs: [] });
-    renderApp("/dashboard");
+    renderApp("/dashboard?view=result");
     const strip = await screen.findByRole("region", { name: "This server's runs" });
     expect(await within(strip).findByText("No runs on this server yet.")).toBeInTheDocument();
+  });
+});
+
+describe("the dashboard's two views", () => {
+  it("opens on AG Studio, says what the benchmark is, and keeps one result a tab away", async () => {
+    const user = userEvent.setup();
+    // Only a fake file, so the Studio view says it has nothing to explore and loads no canvas.
+    mockServer({
+      results: {
+        list: { available: true, results: [list.results[1] as never], unreadable: [] },
+        files,
+      },
+    });
+    renderApp("/dashboard");
+    const studio = await screen.findByRole("tab", { name: "Every result in AG Studio" });
+    expect(studio).toHaveAttribute("aria-selected", "true");
+    expect(await screen.findByText("No sandbox results to explore yet.")).toBeInTheDocument();
+    // The four words every number is in, once, above both views.
+    for (const term of ["Attack", "Clean cart", "Attack success", "False escalation"]) {
+      expect(screen.getByText(term, { selector: "dt" })).toBeInTheDocument();
+    }
+    await user.click(screen.getByRole("tab", { name: "One result, run by run" }));
+    expect(screen.getByTestId("location")).toHaveTextContent("/dashboard?view=result");
+    expect(
+      await screen.findByText(
+        "Development numbers, not a sandbox result.",
+        {},
+        { timeout: 10_000 },
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("says where the numbers come from, from the sandbox files", async () => {
+    mockServer({ results: { list, files } });
+    renderApp("/dashboard?view=result");
+    const note = await screen.findByRole("note", { name: "Where these numbers come from" });
+    expect(note).toHaveTextContent(/^Run on PayPal's payment sandbox on 30 Oct 2026, seeds/);
+  });
+});
+
+describe("which view the address asks for", () => {
+  it("is Studio unless it asks for one result, or names one", () => {
+    const view = (query: string) => viewOf(new URLSearchParams(query));
+    expect(view("")).toBe("studio");
+    expect(view("view=studio")).toBe("studio");
+    expect(view("view=studio&result=x")).toBe("studio");
+    expect(view("view=result")).toBe("file");
+    expect(view("view=file")).toBe("file");
+    expect(view("result=x")).toBe("file");
   });
 });

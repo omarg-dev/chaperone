@@ -45,7 +45,7 @@ export const FIELDS: AgFieldDefinition[] = [
     "setting",
     "Firewall setting",
     "textFormat",
-    "Off: no review. Gate 0 only: the rules, no model. Full tree: every gate. Each cell's checkout is reviewed under all three.",
+    "Off: no review. Rules only: the rules, no model. Full check: every gate. Each cell's checkout is reviewed under all three.",
   ),
   field("scenario", "Scenario", "textFormat", "The scenario's title."),
   field("scenarioId", "Scenario ID", "textFormat", "The scenario's ID; sc_h are held-out."),
@@ -147,7 +147,7 @@ export function benchmarkSource(rows: BenchmarkRow[]): AgSimpleDataSourceDefinit
     id: SOURCE,
     name: "Benchmark",
     description:
-      "Every cell of Chaperone's eval, one row per cell and firewall setting: an AI shopping agent bought something in a seeded marketplace with honest and attacker sellers, and the checkout was reviewed with the firewall off, with Gate 0 only, and with the full tree.",
+      "Every cell of Chaperone's eval, one row per cell and firewall setting: an AI shopping agent bought something in a seeded marketplace with honest and attacker sellers, and the checkout was reviewed with the firewall off, with Rules only, and with the full check.",
     data: rows as unknown as AgSimpleDataSourceDefinition["data"],
     fields: FIELDS,
   };
@@ -171,8 +171,13 @@ const tile = (text: string, under: string) => ({
 const axis = (text: string) => ({
   style: { custom: { valueAxis: { title: { enabled: true, text } } } },
 });
-// Off, Gate 0 only, Full tree read in that order when the setting is sorted downwards.
-const settingsInOrder = [{ field: ref("setting"), direction: "desc" as const }];
+// Off, Rules only, Full check, in the order a person reads them. Their names don't sort into it and
+// Studio sorts a chart by what it draws, so a chart is sorted by its value: each setting adds checks
+// to the one before, so what gets through only goes down along them, and what a review costs or
+// takes only goes up.
+const byValue = (field: ReturnType<typeof ref>, direction: "asc" | "desc") => [
+  { field, direction },
+];
 
 // The report Studio opens on: the questions the eval is for, answered from the rows.
 export const INITIAL_REPORT: AgReportState = {
@@ -194,22 +199,22 @@ export const INITIAL_REPORT: AgReportState = {
         "kpi-full": {
           type: "value",
           dataMapping: { value: [avg("attackGotThrough")] },
-          format: tile("Attacks through", "Our scenarios, full tree"),
+          format: tile("Attacks through", "Our scenarios, full check"),
         },
         "kpi-false": {
           type: "value",
           dataMapping: { value: [avg("falseEscalation")] },
-          format: tile("Clean carts escalated", "Our scenarios, full tree"),
+          format: tile("Clean carts escalated", "Our scenarios, full check"),
         },
         "kpi-held": {
           type: "value",
           dataMapping: { value: [avg("attackGotThrough")] },
-          format: tile("Attacks through", "Held-out set, full tree"),
+          format: tile("Attacks through", "Held-out set, full check"),
         },
         "kpi-held-false": {
           type: "value",
           dataMapping: { value: [avg("falseEscalation")] },
-          format: tile("Clean carts escalated", "Held-out set, full tree"),
+          format: tile("Clean carts escalated", "Held-out set, full check"),
         },
         "own-by-setting": {
           type: "column-chart-grouped",
@@ -218,7 +223,7 @@ export const INITIAL_REPORT: AgReportState = {
             valueKey: [avg("attackGotThrough")],
             legendKey: [ref("model")],
           },
-          sort: settingsInOrder,
+          sort: byValue(avg("attackGotThrough"), "desc"),
           format: {
             ...title("Attack success on our scenarios, by firewall setting"),
             ...axis("Share of attack runs (1 is all)"),
@@ -231,7 +236,7 @@ export const INITIAL_REPORT: AgReportState = {
             valueKey: [avg("attackGotThrough")],
             legendKey: [ref("model")],
           },
-          sort: settingsInOrder,
+          sort: byValue(avg("attackGotThrough"), "desc"),
           format: {
             ...title("Attack success on the held-out set, by firewall setting"),
             ...axis("Share of attack runs (1 is all)"),
@@ -267,10 +272,10 @@ export const INITIAL_REPORT: AgReportState = {
       filter: {
         widget: {
           "kpi-off": [only("setting", "Off"), only("scenarioSet", "Own")],
-          "kpi-full": [only("setting", "Full tree"), only("scenarioSet", "Own")],
-          "kpi-held": [only("setting", "Full tree"), only("scenarioSet", "Held-out")],
-          "kpi-false": [only("setting", "Full tree"), only("scenarioSet", "Own")],
-          "kpi-held-false": [only("setting", "Full tree"), only("scenarioSet", "Held-out")],
+          "kpi-full": [only("setting", "Full check"), only("scenarioSet", "Own")],
+          "kpi-held": [only("setting", "Full check"), only("scenarioSet", "Held-out")],
+          "kpi-false": [only("setting", "Full check"), only("scenarioSet", "Own")],
+          "kpi-held-false": [only("setting", "Full check"), only("scenarioSet", "Held-out")],
           "own-by-setting": [only("scenarioSet", "Own")],
           "held-by-setting": [only("scenarioSet", "Held-out")],
         },
@@ -287,7 +292,7 @@ export const INITIAL_REPORT: AgReportState = {
             legendKey: [ref("model")],
           },
           sort: [{ field: total("gotThrough"), direction: "desc" }],
-          format: title("Attacks that got through the full tree, by attack"),
+          format: title("Attacks that got through the full check, by attack"),
         },
         "attack-grid": {
           type: "grid",
@@ -311,7 +316,7 @@ export const INITIAL_REPORT: AgReportState = {
       },
       filter: {
         page: [only("kind", "Attack")],
-        widget: { "through-by-attack": [only("setting", "Full tree")] },
+        widget: { "through-by-attack": [only("setting", "Full check")] },
       },
     },
     {
@@ -320,17 +325,17 @@ export const INITIAL_REPORT: AgReportState = {
         "kpi-cost": {
           type: "value",
           dataMapping: { value: [avg("reviewCostUsd")] },
-          format: tile("Cost per review", "Full tree, every model and set"),
+          format: tile("Cost per review", "Full check, every model and set"),
         },
         "kpi-time": {
           type: "value",
           dataMapping: { value: [avg("reviewLatencyMs")] },
-          format: tile("Review time (ms)", "Full tree, mean"),
+          format: tile("Review time (ms)", "Full check, mean"),
         },
         "kpi-escalated": {
           type: "value",
           dataMapping: { value: [total("escalated")] },
-          format: tile("Sent to a person", "Full tree, every model and set"),
+          format: tile("Sent to a person", "Full check, every model and set"),
         },
         "cost-by-setting": {
           type: "column-chart-grouped",
@@ -339,7 +344,7 @@ export const INITIAL_REPORT: AgReportState = {
             valueKey: [avg("reviewCostUsd")],
             legendKey: [ref("model")],
           },
-          sort: settingsInOrder,
+          sort: byValue(avg("reviewCostUsd"), "asc"),
           format: { ...title("Cost per review, by firewall setting"), ...axis("US dollars") },
         },
         "time-by-setting": {
@@ -349,7 +354,7 @@ export const INITIAL_REPORT: AgReportState = {
             valueKey: [avg("reviewLatencyMs")],
             legendKey: [ref("model")],
           },
-          sort: settingsInOrder,
+          sort: byValue(avg("reviewLatencyMs"), "asc"),
           format: { ...title("Mean review time, by firewall setting"), ...axis("Milliseconds") },
         },
       },
@@ -362,9 +367,9 @@ export const INITIAL_REPORT: AgReportState = {
       },
       filter: {
         widget: {
-          "kpi-cost": [only("setting", "Full tree")],
-          "kpi-time": [only("setting", "Full tree")],
-          "kpi-escalated": [only("setting", "Full tree")],
+          "kpi-cost": [only("setting", "Full check")],
+          "kpi-time": [only("setting", "Full check")],
+          "kpi-escalated": [only("setting", "Full check")],
         },
       },
     },

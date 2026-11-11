@@ -45,14 +45,14 @@ function Dots({ tally }: { tally: AttackTally }) {
   );
 }
 
-// Off, Gate 0 only and the full tree, side by side: the attack success the eval is for, then the
+// Off, Rules only and the full check, side by side: the attack success the eval is for, then the
 // cost of getting it. Every number is the one the harness computed and wrote into the file.
 export function Comparison({ results }: { results: ResultsView }) {
   const configs = configsOf(results);
   const measures = measuresOf(configs);
   const failed = failedReviewsNote(configs);
   return (
-    <section className="cmp-wrap" aria-label="Off, Gate 0 only and the full tree, compared">
+    <section className="cmp-wrap" aria-label="Off, Rules only and the full check, compared">
       <div className="cmp">
         <span className="cmp-corner" />
         {configs.map((c) => (

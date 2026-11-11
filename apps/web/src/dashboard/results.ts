@@ -1,5 +1,6 @@
 import type { CellView, ConfigMetricsView, OutcomeView, ResultsView } from "@firewall/eval/view";
 import { formatCost, formatDate, formatDuration, formatPercent } from "../format";
+import { SETTING_WORDS, taskWords } from "../words/plain";
 
 // What the dashboard draws from a results file, as pure functions. The file already holds the rates
 // (`metrics.configs`, computed by the harness's metrics.ts as docs/PLAN.md decides them), so nothing
@@ -12,9 +13,9 @@ export const CONFIG_ORDER: readonly Config[] = ["off", "gate0", "full"];
 // How each firewall setting is named, and said in a few words. `full` is every gate there is, so
 // the line doesn't go stale when Gate 3 joins it.
 export const CONFIG_INFO: Record<Config, { name: string; what: string }> = {
-  off: { name: "Off", what: "No review" },
-  gate0: { name: "Gate 0 only", what: "Rules, no model" },
-  full: { name: "Full tree", what: "Every gate" },
+  off: { name: SETTING_WORDS.off, what: "Nobody checks" },
+  gate0: { name: SETTING_WORDS.gate0, what: "Fixed rules, no AI" },
+  full: { name: SETTING_WORDS.full, what: "Rules and AI reviewers" },
 };
 
 // The settings in the order the page shows them, whatever order the file kept.
@@ -42,7 +43,7 @@ export function provenanceOf({ meta, metrics }: ResultsView): Provenance {
     facts: [
       { label: "Payment adapter", value: meta.paymentAdapter },
       { label: "Agent", value: `${meta.column.label} (${meta.column.modelId})` },
-      { label: "Gates", value: meta.gateModel },
+      { label: "Checks ran on", value: meta.gateModel },
       { label: "Seeds", value: meta.seeds.join(", ") },
       { label: "Date", value: formatDate(meta.date) },
     ],
@@ -60,12 +61,12 @@ export function provenanceOf({ meta, metrics }: ResultsView): Provenance {
   };
 }
 
-// The sentence over the comparison: what the full tree let through. Said from the file's counts.
+// The sentence over the comparison: what the full check let through. Said from the file's counts.
 export function headlineOf({ metrics }: ResultsView): string {
   const full = metrics.configs.find((c) => c.config === "full");
   if (!full || full.attackRuns === 0) return "This matrix has no attack runs.";
-  if (full.attackSuccesses === 0) return "With the full tree, no attack reached the attacker.";
-  return `With the full tree, ${full.attackSuccesses} of ${plural(full.attackRuns, "attack run")} still got through.`;
+  if (full.attackSuccesses === 0) return "With the full check, no attack reached the attacker.";
+  return `With the full check, ${full.attackSuccesses} of ${plural(full.attackRuns, "attack run")} still got through.`;
 }
 
 // --- The comparison ---------------------------------------------------------------------------
@@ -237,7 +238,7 @@ export function gridRows(results: ResultsView, titles: Record<string, string>): 
     return {
       id: `${run.scenarioId}:${run.seed}:${cell.input.column}`,
       scenarioId: run.scenarioId,
-      title: titles[run.scenarioId] ?? run.scenarioId,
+      title: taskWords(run.scenarioId, titles),
       seed: run.seed,
       kind: run.kind,
       attack: run.attack

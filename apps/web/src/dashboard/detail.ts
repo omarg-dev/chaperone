@@ -22,7 +22,7 @@ export type GateCell =
   | { kind: "ran"; verdict: Verdict; time: string; cost: string | null }
   // The tree stopped before it. A block ends a review.
   | { kind: "skipped"; why: string }
-  // The setting doesn't include this gate (Off has none, Gate 0 only has the first).
+  // The setting doesn't include this gate (Off has none, Rules only has the first).
   | { kind: "absent" };
 
 export interface SettingDetail {
@@ -104,7 +104,7 @@ export const cellOf = (results: ResultsView, rowId: string): CellView | undefine
 const list = (names: string[]) =>
   names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 
-// "Gate 1 and Gate 2 didn't run under Full tree. Gate 0 blocked, which ends the review."
+// "Gate 1 and Gate 2 didn't run under Full check. Gate 0 blocked, which ends the review."
 function notesOf(settings: readonly SettingDetail[]): string[] {
   return settings.flatMap((setting) => {
     const byReason = new Map<string, GateName[]>();

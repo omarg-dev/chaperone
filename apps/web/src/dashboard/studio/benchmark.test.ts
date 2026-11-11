@@ -2,7 +2,14 @@ import { type ResultsSummary, summarize } from "@firewall/eval/view";
 import { describe, expect, it } from "vitest";
 import { fakeResults, sandboxResults } from "../fixtures";
 import { CONFIG_INFO } from "../results";
-import { benchmarkRows, leftOutNote, selectBenchmarkFiles, sourceLine } from "./benchmark";
+import {
+  benchmarkRows,
+  leftOutNote,
+  seedsWords,
+  selectBenchmarkFiles,
+  sourceLine,
+  sourcesSentence,
+} from "./benchmark";
 
 const sum = (values: (number | null)[]) => values.reduce<number>((a, b) => a + (b ?? 0), 0);
 const avg = (values: (number | null)[]) => {
@@ -17,7 +24,7 @@ describe("benchmarkRows", () => {
     expect(rows).toHaveLength(fakeResults.cells.length * 3);
     expect(new Set(rows.map((r) => r.id)).size).toBe(rows.length);
     expect(new Set(rows.map((r) => r.setting))).toEqual(
-      new Set(["Off", "Gate 0 only", "Full tree"]),
+      new Set(["Off", "Rules only", "Full check"]),
     );
   });
 
@@ -97,5 +104,20 @@ describe("selectBenchmarkFiles", () => {
     expect(sourceLine(summary("h", { ...heldOut, date: "2026-11-07" }))).toBe(
       "Claude Haiku 5.5 · held-out set · sandbox adapter · gates on claude-haiku-5-5 · seeds 1, 2 · 7 Nov 2026",
     );
+  });
+
+  it("says where the numbers come from in one sentence, from the files", () => {
+    const own = summary("o", { date: "2026-11-07" });
+    const held = summary("h", { ...heldOut, date: "2026-11-07" });
+    expect(sourcesSentence([own, held])).toBe(
+      "Run on PayPal's payment sandbox on 7 Nov 2026, seeds 1 and 2: Claude Haiku 5.5 as the shopping agent, on our own tasks and on the held-out attacks. Chaperone's AI checks ran on Claude Haiku 5.5.",
+    );
+    expect(sourcesSentence([])).toBeNull();
+  });
+
+  it("writes seeds as a run when they have no gap", () => {
+    expect(seedsWords(["1", "2", "3", "4", "4"])).toBe("1 to 4");
+    expect(seedsWords(["1", "3", "7"])).toBe("1, 3 and 7");
+    expect(seedsWords(["2"])).toBe("2");
   });
 });

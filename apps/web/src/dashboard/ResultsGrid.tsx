@@ -278,7 +278,7 @@ function Select<T extends string>({
 }
 
 // Every run of the matrix, one row each, with what each firewall setting did to its money. It is
-// filtered by scenario kind, by setting and outcome ("what did Gate 0 only let through?") and by a
+// filtered by scenario kind, by setting and outcome ("what did Rules only let through?") and by a
 // search, and sorted by any column.
 export function ResultsGrid({
   results,

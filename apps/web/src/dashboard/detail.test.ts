@@ -15,12 +15,12 @@ const detailFor = (rowId: string) => {
   return detailOf(cell, row(rowId));
 };
 
-// A cell the full tree approved and Gate 0 alone did too: every gate ran under the full tree.
+// A cell the full check approved and Gate 0 alone did too: every gate ran under the full check.
 const approved = rows.find((r) => {
   const cell = cellOf(fakeResults, r.id);
   return cell?.outcomes.find((o) => o.config === "full")?.gates.length === 3;
 });
-// A cell Gate 0 blocked: the full tree stopped there, and skipped the model gates.
+// A cell Gate 0 blocked: the full check stopped there, and skipped the model gates.
 const stopped = rows.find((r) => {
   const cell = cellOf(fakeResults, r.id);
   return (cell?.outcomes.find((o) => o.config === "full")?.skipped.length ?? 0) > 0;
@@ -34,11 +34,11 @@ describe("the drill-down's data", () => {
 
   it("has the three settings in the page's order, whatever order the file has them", () => {
     const detail = detailFor((approved ?? rows[0])?.id ?? "");
-    expect(detail.settings.map((s) => s.name)).toEqual(["Off", "Gate 0 only", "Full tree"]);
+    expect(detail.settings.map((s) => s.name)).toEqual(["Off", "Rules only", "Full check"]);
     expect(detail.settings.map((s) => s.what)).toEqual([
-      "No review",
-      "Rules, no model",
-      "Every gate",
+      "Nobody checks",
+      "Fixed rules, no AI",
+      "Rules and AI reviewers",
     ]);
   });
 
@@ -52,7 +52,7 @@ describe("the drill-down's data", () => {
     expect(approved).toBeDefined();
     const detail = detailFor(approved?.id ?? "");
     const [, gate0, full] = detail.settings;
-    // Gate 0 only runs the rules; the full tree runs all three, and the model gates cost money.
+    // Rules only runs the rules; the full check runs all three, and the model gates cost money.
     expect(gate0?.gates.gate0).toMatchObject({ kind: "ran", verdict: "approve", cost: null });
     expect(gate0?.gates.gate1).toEqual({ kind: "absent" });
     const cell = cellOf(fakeResults, approved?.id ?? "");
@@ -78,7 +78,7 @@ describe("the drill-down's data", () => {
     expect(full?.gates.gate2).toMatchObject({ kind: "skipped" });
     // The reason is said once, for the two gates that share it.
     expect(detail.notes).toEqual([
-      "Gate 1 and Gate 2 didn't run under Full tree. Gate 0 blocked, which ends the review.",
+      "Gate 1 and Gate 2 didn't run under Full check. Gate 0 blocked, which ends the review.",
     ]);
   });
 
