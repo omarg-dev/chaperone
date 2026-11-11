@@ -2,7 +2,7 @@
 
 The look is **Clasp, round two**, approved by Omar on Nov 3. It replaces Spine (Oct 28), whose rules carry over. The boards are in [design/clasp/](design/clasp/): `R2Signature` (the four carriers), `R2Type` (the display face), `R2Start` and `R2StartDark`, `R2Runs` and `R2RunsDark`, `R2Inbox`, `R2Dash` and `R2Empty`, with round one's `ClaspRun` (the run view) and `ClaspSpec` (the motion and the glyphs). They are HTML with inline styles, kept as the source of truth; they load Google Fonts and a `support.js` that isn't kept here, so they show best in the design canvas. The app self-hosts its fonts. Screenshots of the built pages, light and dark, are in [screenshots/clasp/](screenshots/clasp/).
 
-The code is in `apps/web`: tokens in `src/styles/tokens.css`, the components in `src/design/`, the route line's styles in `src/styles/route.css`, the plain pages' and the vault's in `src/styles/page.css`, the theme in `src/theme/`.
+The code is in `apps/web`: tokens in `src/styles/tokens.css`, the components in `src/design/`, the route line's styles in `src/styles/route.css`, the plain pages' and the vault's in `src/styles/page.css`, the theme in `src/theme/`, the top bar and the footer in `src/shell/`.
 
 ## The idea
 
@@ -31,7 +31,7 @@ The clasp moment is plain CSS driven by the run's state and the replay position 
 - **Each fact is said once.** A screen doesn't repeat a verdict, an amount or a reason in a second place. An amount is written once, in its place column; a summary row can open to detail, but the detail doesn't restate it.
 - **A state reads without colour.** The eight glyphs have eight silhouettes.
 - **Copy is short, in sentence case, with no em dashes.** Say what happened, then what is the person's to decide.
-- **English only, desktop first, no sign-in.** The top bar wraps below 760px and the route's offsets shrink, but desktop is what is designed and screenshotted.
+- **English only, desktop first, no sign-in.** Desktop is what is designed; a phone (390px) has to work well, not be a second design: nothing scrolls sideways outside its own frame, text is readable and controls are at least 44px tall. Below 760px the top bar folds into a menu (see The shell) and the route's offsets shrink.
 - No PayPal branding in the product's name, logo or graphics.
 
 ## Tokens
@@ -55,7 +55,15 @@ Defined once in `tokens.css`, light and dark; components use the names and never
 
 ### Theme
 
-The theme follows the device until the person picks one. The switch has three options: match the device, light and dark. An explicit pick is stored in this browser (`localStorage`, key `chaperone-theme`) and written to `<html data-theme>`; matching the device removes both, so the `prefers-color-scheme` rules in `tokens.css` decide.
+The theme follows the device until the person picks one. The switch is **one button between light and dark** (`ThemeSwitch`), drawn as the icon of the theme a click switches to (a moon on light, a sun on dark) and named for what it does, "Switch to dark theme". A pick is stored in this browser (`localStorage`, key `chaperone-theme`) and written to `<html data-theme>`. Switching back to the theme the device shows drops the pick, so the page follows the device again and the one button undoes itself (`toggled` in `theme.ts`): there is no third "match device" option to explain (Omar found the three icons awkward, Nov 11).
+
+## The shell
+
+`src/shell/` is the top bar, the page and the footer, on every page.
+
+- **The top bar** is one row, 72px, sticky: the wordmark (home), Runs, Waiting on you with its count (the inbox, at `/escalations`; the label is what the count counts), Dashboard, Docs, then the theme button and "Start a run", the one filled button, at the far end. Where you are is a dot of the hold's colour beside the link.
+- **On a phone** (760px and under) the bar is 56px: the wordmark, Start a run, and a **Menu** button. The button opens the links and the theme button as a panel under the bar (`aria-expanded`, `aria-controls`); opening it moves the focus to the first link, Escape closes it and gives the focus back, and following a link or pressing the page closes it. Closed, the panel isn't drawn, so it isn't read or tabbed to. The closed button shows the count when a purchase is waiting ("Menu, 1 purchase waiting on you"). Under 380px the button is its icon alone, and under 340px the wordmark is the mark alone.
+- **The footer** (`Footer.tsx`) is on every page: "Made by Omar Ghazal" and his address as a mailto link, Docs, "Source on GitHub", "MIT licence" (the LICENSE file on GitHub), and "Built on PayPal's sandbox. Sandbox money only." Words and links only: no company's logo, there or anywhere. A page doesn't say what it is built on a second time; the home page keeps its own "Works with" line above it.
 
 ## The mark and the wordmark
 
@@ -140,7 +148,7 @@ A finished run (or one waiting on a person) has "Replay this run" above its time
 
 ## Escalation inbox
 
-`/escalations` (`src/pages/Escalations.tsx`, with `src/inbox/`) is every purchase held for a person: each escalated run whose hold is still open, whether nobody has decided it or a person decided and the money hasn't moved, the same rule as the count in the top bar (`isHeldForPerson`, see the Runs page). A hold released with no decision isn't listed. The oldest hold comes first, since it has waited longest. It is what the Spine-Decision mockup becomes when there are several, with the decision made from the list.
+`/escalations` (`src/pages/Escalations.tsx`, with `src/inbox/`; "Waiting on you" in the top bar and as its title) is every purchase held for a person: each escalated run whose hold is still open, whether nobody has decided it or a person decided and the money hasn't moved, the same rule as the count in the top bar (`isHeldForPerson`, see the Runs page). A hold released with no decision isn't listed. The oldest hold comes first, since it has waited longest. It is what the Spine-Decision mockup becomes when there are several, with the decision made from the list.
 
 - **An item says what the run page says.** The request, the held cart, and one line for each gate that escalated come from `buildRun` (`heldReasons` is the title of that gate's card in the run view), so the inbox can't disagree with the run. It is read from the run's events once, and again only when the run has grown. A gate's line never quotes seller text, and the inbox has no seller zone.
 - **How long it has been held** is the time since the review escalated ("Held for 7 hours", on hover the time itself), and **when the hold ends** is the authorization's expiry as the payments lane recorded it ("Hold ends in 28 days"). The sandbox may not report an expiry; then nothing is said, and it is never worked out. A hold already released says nothing either.

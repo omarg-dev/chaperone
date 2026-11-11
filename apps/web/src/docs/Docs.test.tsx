@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import README from "../../../../README.md?raw";
 import { mockDevice, mockServer, renderApp } from "../test-utils";
@@ -21,7 +21,8 @@ describe("the docs page", () => {
     for (const { level, name } of headings) {
       expect(screen.getByRole("heading", { level, name })).toBeInTheDocument();
     }
-    expect(screen.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/docs");
+    const nav = screen.getByRole("navigation", { name: "Main" });
+    expect(within(nav).getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/docs");
   });
 
   it("lands /docs#postman on the Postman section", () => {

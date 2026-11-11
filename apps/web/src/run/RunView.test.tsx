@@ -240,7 +240,8 @@ describe("the run view", () => {
     expect(screen.queryByRole("region", { name: "Your decision" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Approve and pay|Reject and release/ })).toBeNull();
     // Not waiting on anyone, and not following the run as if more were coming.
-    expect(screen.queryByText("Waiting on you")).toBeNull();
+    // (The top bar's link to the inbox is called that, so the page itself is what is asked.)
+    expect(within(screen.getByRole("main")).queryByText("Waiting on you")).toBeNull();
     expect(screen.queryByText("Following this run as it happens.")).toBeNull();
   });
 

@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { mockDevice } from "../test-utils";
 import { ThemeProvider } from "./ThemeProvider";
 import { ThemeSwitch } from "./ThemeSwitch";
-import { readPreference, resolveTheme, THEME_KEY } from "./theme";
+import { readPreference, resolveTheme, THEME_KEY, toggled } from "./theme";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -16,7 +16,8 @@ const mount = () =>
   );
 
 const root = document.documentElement;
-const switchEl = () => screen.getByRole("group", { name: "Theme" });
+const toggle = (to: "light" | "dark") =>
+  screen.getByRole("button", { name: `Switch to ${to} theme` });
 
 describe("resolveTheme", () => {
   it("follows the device until a theme is picked", () => {
@@ -38,20 +39,37 @@ describe("resolveTheme", () => {
       }),
     ).toBe("system");
   });
+
+  it("switches to the other theme, and follows the device again when that is the device's", () => {
+    // On a light device: dark is a pick, and back to light is no pick at all.
+    expect(toggled("light", false)).toBe("dark");
+    expect(toggled("dark", false)).toBe("system");
+    // On a dark device, the other way round.
+    expect(toggled("dark", true)).toBe("light");
+    expect(toggled("light", true)).toBe("system");
+  });
 });
 
 describe("the theme switch", () => {
+  it("is one button, named for what a click does", () => {
+    mockDevice(false);
+    mount();
+    expect(screen.getAllByRole("button")).toHaveLength(1);
+    expect(toggle("dark")).toHaveAttribute("data-resolved", "light");
+    expect(screen.queryByRole("radio")).toBeNull();
+  });
+
   it("follows the device by default, and keeps following it as it changes", async () => {
     const setDevice = mockDevice(true);
     mount();
 
-    expect(screen.getByRole("radio", { name: "Match device" })).toBeChecked();
+    expect(toggle("light")).toHaveAttribute("data-resolved", "dark");
     expect(root).not.toHaveAttribute("data-theme");
-    expect(switchEl()).toHaveAttribute("data-resolved", "dark");
 
     setDevice(false);
-    await vi.waitFor(() => expect(switchEl()).toHaveAttribute("data-resolved", "light"));
+    await vi.waitFor(() => expect(toggle("dark")).toHaveAttribute("data-resolved", "light"));
     expect(root).not.toHaveAttribute("data-theme");
+    expect(localStorage.getItem(THEME_KEY)).toBeNull();
   });
 
   it("remembers a choice in this browser", async () => {
@@ -59,30 +77,33 @@ describe("the theme switch", () => {
     const user = userEvent.setup();
     const first = mount();
 
-    await user.click(screen.getByRole("radio", { name: "Dark" }));
+    await user.click(toggle("dark"));
     expect(root).toHaveAttribute("data-theme", "dark");
     expect(localStorage.getItem(THEME_KEY)).toBe("dark");
-    expect(switchEl()).toHaveAttribute("data-resolved", "dark");
+    expect(toggle("light")).toHaveAttribute("data-resolved", "dark");
 
     // A later visit starts from the choice, whatever the device says.
     first.unmount();
     root.removeAttribute("data-theme");
     mount();
-    expect(screen.getByRole("radio", { name: "Dark" })).toBeChecked();
+    expect(toggle("light")).toBeInTheDocument();
     expect(root).toHaveAttribute("data-theme", "dark");
   });
 
-  it("goes back to following the device, and forgets the choice", async () => {
-    mockDevice(true);
+  it("goes back to following the device when switched back to its theme, and forgets the choice", async () => {
+    const setDevice = mockDevice(true);
     localStorage.setItem(THEME_KEY, "light");
     const user = userEvent.setup();
     mount();
-    expect(screen.getByRole("radio", { name: "Light" })).toBeChecked();
     expect(root).toHaveAttribute("data-theme", "light");
 
-    await user.click(screen.getByRole("radio", { name: "Match device" }));
+    await user.click(toggle("dark"));
     expect(root).not.toHaveAttribute("data-theme");
     expect(localStorage.getItem(THEME_KEY)).toBeNull();
-    expect(switchEl()).toHaveAttribute("data-resolved", "dark");
+    expect(toggle("light")).toHaveAttribute("data-resolved", "dark");
+
+    // Following again: the device going light takes the page with it.
+    setDevice(false);
+    await vi.waitFor(() => expect(toggle("dark")).toHaveAttribute("data-resolved", "light"));
   });
 });

@@ -7,6 +7,7 @@ import {
   resolveTheme,
   safeStorage,
   type ThemePreference,
+  toggled,
   writePreference,
 } from "./theme";
 
@@ -15,6 +16,8 @@ interface ThemeState {
   // What is showing now, whether the person picked it or the device did.
   resolved: ResolvedTheme;
   setPreference: (preference: ThemePreference) => void;
+  // Switches to the other theme. Landing back on what the device shows is following it again.
+  toggle: () => void;
 }
 
 const ThemeContext = createContext<ThemeState | null>(null);
@@ -40,10 +43,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setPreferenceState(next);
   }, []);
 
+  const resolved = resolveTheme(preference, deviceIsDark);
+  const toggle = useCallback(
+    () => setPreference(toggled(resolved, deviceIsDark)),
+    [resolved, deviceIsDark, setPreference],
+  );
+
   return (
-    <ThemeContext.Provider
-      value={{ preference, resolved: resolveTheme(preference, deviceIsDark), setPreference }}
-    >
+    <ThemeContext.Provider value={{ preference, resolved, setPreference, toggle }}>
       {children}
     </ThemeContext.Provider>
   );

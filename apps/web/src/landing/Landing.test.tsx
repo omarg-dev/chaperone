@@ -89,10 +89,11 @@ describe("the landing page", () => {
     for (const name of ["Claude", "OpenAI", "AI SDK", "AG Studio", "Postman"]) {
       expect(within(end).getByText(name)).toBeInTheDocument();
     }
-    expect(end).toHaveTextContent("Built on PayPal's sandbox");
     const line = within(end).getByText("Works with").closest("div") as HTMLElement;
-    expect(line).toHaveTextContent("Built on PayPal's sandbox");
     expect(line.querySelector("img, svg, picture")).toBeNull();
+    // The footer says what it is built on, once: the home page doesn't say it a second time.
+    expect(screen.getAllByText(/Built on PayPal's sandbox/)).toHaveLength(1);
+    expect(end).not.toHaveTextContent("Built on PayPal's sandbox");
   });
 
   it("says when there are no results, and draws no figures and no placeholder model", async () => {

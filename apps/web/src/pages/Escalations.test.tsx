@@ -606,7 +606,7 @@ describe("keeping the inbox current", () => {
     expect(
       screen.getByRole("listitem", { name: "Mechanical keyboard, tactile" }),
     ).toBeInTheDocument();
-    expect(screen.queryByText("Escalations didn't load.")).toBeNull();
+    expect(screen.queryByText("The list didn't load.")).toBeNull();
   });
 });
 
@@ -614,7 +614,7 @@ describe("when the server is down", () => {
   it("says the inbox didn't load and offers another try", async () => {
     mockServer({ down: true });
     renderApp("/escalations");
-    expect(await screen.findByText("Escalations didn't load.")).toBeInTheDocument();
+    expect(await screen.findByText("The list didn't load.")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
     expect(screen.queryByText("Nothing is waiting on you.")).toBeNull();
   });

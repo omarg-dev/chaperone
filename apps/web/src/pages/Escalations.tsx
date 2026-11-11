@@ -247,18 +247,18 @@ export function Escalations() {
   return (
     <Page
       className="inbox"
-      title="Escalations"
+      title="Waiting on you"
       lede="Purchases Chaperone put on hold because it wasn't sure they are what you asked for. Nothing is charged until you approve. Oldest first."
     >
       {status === "error" && runs.length === 0 && (
-        <EmptyState title="Escalations didn't load." action={reloadButton}>
+        <EmptyState title="The list didn't load." action={reloadButton}>
           Chaperone's server didn't answer. Check your connection, then try again.
         </EmptyState>
       )}
 
       {status === "loading" && runs.length === 0 && (
         <p className="t-meta" role="status">
-          Loading escalations…
+          Loading what is waiting…
         </p>
       )}
 

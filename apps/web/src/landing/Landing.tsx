@@ -652,7 +652,6 @@ function Try() {
             </span>
           ))}
         </p>
-        <p>Built on PayPal's sandbox</p>
       </div>
     </div>
   );
