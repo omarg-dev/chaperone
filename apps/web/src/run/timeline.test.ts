@@ -1,5 +1,6 @@
 import { needsPerson, outcomeOf } from "@firewall/events/outcome";
 import { describe, expect, it } from "vitest";
+import { plainWords } from "../words/plain";
 import type { RunEvent } from "./events";
 import { fixtures, payees, upTo } from "./fixtures";
 import { buildRun, mandateTerms, markQuotes, type RunItem, tidyReason } from "./timeline";
@@ -21,15 +22,15 @@ describe("an approved run", () => {
     );
     expect(run.terms).toEqual([
       { label: "Buying", value: "Keyboard" },
-      { label: "Must have", value: "switch feel: tactile, type: mechanical" },
+      { label: "Must have", value: "Switch feel: tactile, Type: mechanical" },
       { label: "Budget", value: "Up to $120.00 each" },
       { label: "Quantity", value: "1 item" },
       { label: "Brands", value: "Reputable brands" },
-      { label: "Paying", value: "Verified sellers only" },
+      { label: "Sellers", value: "Verified sellers only" },
       {
         label: "Not enforced",
         value: "mid-range",
-        hint: "In your request, but not made a rule",
+        hint: "In your request, but not something Chaperone can check",
       },
     ]);
     expect(run.mandateHash).toMatch(/^sha256:/);
@@ -94,7 +95,7 @@ describe("an approved run", () => {
     const steps = of(run.items, "step").map((s) => s.title);
     expect(steps).toEqual([
       "Made the request",
-      "Confirmed and locked",
+      "Locked the rules",
       "Started shopping",
       "Searched the marketplace",
       "Opened 2 listings",
@@ -144,13 +145,15 @@ describe("a blocked run", () => {
     });
     expect(of(run.items, "gate").map((g) => g.gate)).toEqual(["gate0"]);
     expect(of(run.items, "skipped").map((s) => s.text)).toEqual([
-      "Gate 1 skipped: Gate 0 blocked, which ends the review",
-      "Gate 2 skipped: Gate 0 blocked, which ends the review",
-      "Gate 3 skipped: Gate 0 blocked, which ends the review",
+      "Seller pages (Gate 1) didn't run: the fixed rules had already stopped the purchase",
+      "Cart review (Gate 2) didn't run: the fixed rules had already stopped the purchase",
+      "Agent's path (Gate 3) didn't run: the fixed rules had already stopped the purchase",
     ]);
     expect(run.money).toMatchObject({ state: "voided", payouts: [], paidToAttackerCents: 0 });
     expect(run.exit).toBe("void");
-    expect(of(run.items, "gate0_card")[0]?.title).toMatch(/^Tern 60 misses a required attribute/);
+    expect(of(run.items, "gate0_card")[0]?.title).toMatch(
+      /^Tern 60 is missing something you required/,
+    );
   });
 
   it("is never red, and never calls a block anything but a block", () => {
@@ -185,7 +188,7 @@ describe("an escalated run", () => {
     expect(card?.quotes.map((q) => q.quote)).toContain(
       "this keyboard only works with the Halvard Link cable, sold separately",
     );
-    expect(card?.crosses).toMatch(/^Fact crosses: /);
+    expect(card?.crosses).toMatch(/^Passed on as a fact: /);
 
     const quotes = card?.quotes.map((q) => q.quote) ?? [];
     const outside = run.items.filter((i) => i.zone !== "seller");
@@ -337,7 +340,7 @@ describe("money reaching an attacker", () => {
     const unknown = buildRun(fixtures.attackerPaid, [], NOW);
     expect(unknown.headline.outcome).toBe("firewall_off");
     expect(unknown.headline.pill).toBeNull();
-    expect(unknown.headline.badge).toBe("Firewall off");
+    expect(unknown.headline.badge).toBe("Chaperone off");
   });
 
   it("no other run in the fixtures is filled red", () => {
@@ -407,7 +410,7 @@ describe("a run in progress", () => {
     expect(run.live).toBe(false);
     expect(run.headline).toMatchObject({
       outcome: "review_failed",
-      pill: { state: "held", label: "Held, review failed" },
+      pill: { state: "held", label: "On hold, a check failed" },
     });
     expect(run.money.state).toBe("held");
   });
@@ -493,7 +496,7 @@ describe("the helpers", () => {
   it("turns a listing's id into its product's name, and drops a gate's bookkeeping code", () => {
     const names = new Map([["lst_a", "Anvil 75"]]);
     expect(tidyReason("line 2 (lst_a): the auditor judged it wrong [wrong_product]", names)).toBe(
-      "Line 2 (Anvil 75): the auditor judged it wrong",
+      "Anvil 75: the AI reviewer judged it wrong",
     );
     expect(tidyReason("velocity: fine (lst_unknown)", names)).toBe("Velocity: fine (lst_unknown)");
     expect(tidyReason("lst_a (in the cart): the page claims_item_required", names)).toBe(
@@ -522,11 +525,11 @@ describe("the helpers", () => {
       }),
     ).toEqual([
       { label: "Buying", value: "Headphones" },
-      { label: "Must have", value: "weight g at most 250, battery hours at least 30" },
+      { label: "Must have", value: "Weight: at most 250 g, Battery hours: at least 30" },
       { label: "Budget", value: "Up to $150.00 each" },
       { label: "Quantity", value: "2 items" },
       { label: "Brands", value: "Only northwick labs, not x" },
-      { label: "Paying", value: "Verified sellers only" },
+      { label: "Sellers", value: "Verified sellers only" },
       { label: "Extras allowed", value: "accessory" },
     ]);
   });
@@ -539,9 +542,9 @@ describe("what an escalated run says about being held", () => {
   it("gives one line for each gate that escalated, the same line its card in the run view opens with", () => {
     const run = build(fixtures.escalated);
     expect(run.heldReasons.map((r) => [r.gate, r.label])).toEqual([
-      ["gate1", "Gate 1"],
-      ["gate2", "Gate 2"],
-      ["gate3", "Gate 3"],
+      ["gate1", "Seller pages"],
+      ["gate2", "Cart review"],
+      ["gate3", "Agent's path"],
     ]);
     expect(run.heldReasons[0]?.reason).toBe(cardTitle(run, "gate1_card"));
     expect(run.heldReasons[1]?.reason).toBe(cardTitle(run, "gate2_card"));
@@ -617,13 +620,13 @@ describe("a run started from the web app", () => {
       outcome: "no_agent",
       pill: null,
       badge: "No run",
-      title: "You rejected the mandate, so no agent ran.",
+      title: "You rejected the rules, so no agent ran.",
     });
     expect(run.live).toBe(false);
     expect(run.money.state).toBe("none");
     const steps = of(run.items, "step").map((s) => s.title);
-    expect(steps).toContain("Rejected");
-    expect(of(run.items, "step").find((s) => s.title === "Rejected")?.quote).toBe(
+    expect(steps).toContain("Rejected the rules");
+    expect(of(run.items, "step").find((s) => s.title === "Rejected the rules")?.quote).toBe(
       "Not what I meant",
     );
   });
@@ -632,8 +635,8 @@ describe("a run started from the web app", () => {
     const run = build(fixtures.webMandateWaiting);
     expect(run.headline).toMatchObject({
       outcome: "mandate_waiting",
-      badge: "Not confirmed",
-      title: "This mandate is waiting for you.",
+      badge: "Rules not locked",
+      title: "These rules are waiting for you.",
     });
     expect(run.live).toBe(false);
     expect(run.terms).toEqual([]);
@@ -644,5 +647,69 @@ describe("a run started from the web app", () => {
     const run = build(locked, Date.parse(locked.at(-1)?.ts ?? "") + 1000);
     expect(run.live).toBe(true);
     expect(run.headline).toMatchObject({ outcome: "in_progress" });
+  });
+});
+
+describe("the firewall's words, for someone who isn't a developer", () => {
+  it("says a locked run's requirements the way the Start page said them", () => {
+    const must = mandateTerms({
+      constraints: [
+        { attribute: "anc", op: "eq", value: true },
+        { attribute: "form", op: "eq", value: "over_ear" },
+        { attribute: "weight_g", op: "lte", value: 70 },
+        { attribute: "layout", op: "eq", value: "tkl" },
+      ],
+    }).find((term) => term.label === "Must have");
+    expect(must?.value).toBe(
+      "Noise cancelling: yes, Fit: over ear, Weight: at most 70 g, Layout: tenkeyless",
+    );
+  });
+
+  it("takes ids, hashes and the firewall's own names out of a gate's reason", () => {
+    expect(
+      plainWords(
+        "Seller seller_kestrel_row_traders (payee attacker_1) is not on the verified-seller list, and the mandate pays verified sellers only",
+      ),
+    ).toBe(
+      "The seller Kestrel Row Traders is not on the verified-seller list, and your rules pay verified sellers only",
+    );
+    expect(
+      plainWords(
+        "Mandate md_mw6nz5zyb4e016d7 is locked and its hash sha256:86e71e11efb16273 matches its contents",
+      ),
+    ).toBe("Your rules are locked and haven't changed since you confirmed them");
+    expect(
+      plainWords(
+        "Line 1 (Sorrel Full): Gate 1 flagged its page as trying to steer the purchase, so matching the mandate on paper isn't enough",
+      ),
+    ).toBe(
+      "Sorrel Full: the seller pages check flagged its page as trying to steer the purchase, so matching your rules on paper isn't enough",
+    );
+    expect(
+      plainWords("brand_pellucid_gear is on the list of established brands (any_reputable)"),
+    ).toBe("Pellucid Gear is on the list of established brands");
+    expect(
+      plainWords("mandate md_x1 is locked and its hash sha256:ab12 matches its contents"),
+    ).toBe("Your rules are locked and haven't changed since you confirmed them");
+  });
+
+  it("leaves no id, hash or developer's word in any recorded run's reasons", () => {
+    for (const [name, log] of Object.entries(fixtures)) {
+      const run = buildRun(log, payees);
+      const said = [
+        run.headline.title,
+        run.headline.lede ?? "",
+        ...run.heldReasons.map((r) => `${r.label} ${r.reason}`),
+        ...run.items.flatMap((item) =>
+          "title" in item ? [item.title] : "text" in item ? [item.text] : [],
+        ),
+        ...run.items.flatMap((item) =>
+          item.kind === "gate0_card" ? item.checks.map((c) => c.reason) : [],
+        ),
+      ].join("\n");
+      expect(said, name).not.toMatch(
+        /\bmandate\b|sha256:|\b(?:seller|brand|md|lst|sku)_[a-z0-9]|\bextractor\b|\bauditor\b|\bGate \d (?:flagged|blocked)/i,
+      );
+    }
   });
 });

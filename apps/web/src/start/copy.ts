@@ -49,38 +49,5 @@ export function ceilingOf(value: string): { cents: number; rest: string } | null
   return { cents: whole * 100 + Number(found[2]), rest: (found[3] as string).trim() };
 }
 
-// The catalog's attribute names and values that don't read as words on their own.
-const ATTRIBUTE_NAMES: Record<string, string> = {
-  anc: "Noise cancelling",
-  dpi: "Sensor (DPI)",
-  form: "Fit",
-};
-const ATTRIBUTE_VALUES: Record<string, string> = {
-  tkl: "tenkeyless",
-};
-
-// The builder writes requirements the way the command line reads them ("switch_feel = tactile;
-// weight_g <= 70 g; form = over_ear"). A person reads them as "Switch feel: tactile", "Weight: at
-// most 70 g" and "Fit: over ear". Anything that isn't in that shape is passed through as it was
-// written.
-export function requirementsOf(value: string): string[] {
-  return value
-    .split(";")
-    .map((part) => part.trim())
-    .filter((part) => part.length > 0)
-    .map((part) => {
-      const found = /^([a-z0-9_]+) (=|<=|>=) (.+)$/i.exec(part);
-      if (!found) return part;
-      const [, attribute, op, written] = found as unknown as [string, string, string, string];
-      const rest = ATTRIBUTE_VALUES[written] ?? written.replace(/_/g, " ");
-      const unit = /\s(\S+)$/.exec(rest)?.[1];
-      const plain = (unit ? attribute.replace(new RegExp(`_${unit}$`), "") : attribute).replace(
-        /_/g,
-        " ",
-      );
-      const name =
-        ATTRIBUTE_NAMES[attribute] ?? `${plain.charAt(0).toUpperCase()}${plain.slice(1)}`;
-      const said = op === "<=" ? `at most ${rest}` : op === ">=" ? `at least ${rest}` : rest;
-      return `${name}: ${said}`;
-    });
-}
+// The rules about what the item must be, in a person's words. The run page says them the same way.
+export { requirementsOf } from "../words/requirements";

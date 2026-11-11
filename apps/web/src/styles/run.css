@@ -11,9 +11,20 @@
   white-space: nowrap;
 }
 
-.run-crumbs > span:last-child {
+.run-crumbs > .run-crumb-here {
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.run-crumb-meta::before {
+  content: "\00b7";
+  margin-inline-end: 8px;
+}
+
+.run-loading {
+  margin: var(--space-7) var(--space-4);
 }
 
 .run-crumbs a {
@@ -304,22 +315,52 @@
   background: var(--hold-tint);
 }
 
+.decision {
+  align-items: flex-start;
+  gap: var(--space-4) var(--space-7);
+}
+
 .decision > .station-ring {
-  top: 50%;
-  margin-top: -9px;
+  top: 26px;
+}
+
+/* Why it is waiting, then what can be done about it: the reasons come before the buttons. */
+.decision-why {
+  display: flex;
+  flex: 1 1 380px;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .decision-heading {
-  flex: 1 1 200px;
-  margin: 0;
+  margin: 0 0 var(--space-3);
+}
+
+.decision-act {
+  display: flex;
+  flex: 1 1 420px;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
 }
 
 .decision-cart {
   display: flex;
-  flex: 1 1 260px;
   flex-direction: column;
   justify-content: center;
   gap: var(--space-3);
+}
+
+/* What each choice does to the money, said before the buttons. */
+.decision-what {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.vault .decision-what {
+  color: var(--vault-muted);
 }
 
 .decision-lines {
@@ -540,7 +581,7 @@
 .tl-passage-label {
   display: block;
   font-family: var(--font-ui);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--z-seller-ink);
 }
@@ -739,4 +780,199 @@
 /* What the replay scrolls into view keeps clear of the bar. */
 .run .tl-rows > li {
   scroll-margin-bottom: 140px;
+}
+
+/* How to read the timeline, in a sentence, before it. */
+.run-how {
+  max-width: 76ch;
+  margin: 0;
+  color: var(--ink-2);
+}
+
+/* What a check is for, and what it reads, under its name on the money's route. */
+.tl-does {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--vault-muted);
+}
+
+.tl-reads {
+  align-items: center;
+}
+
+.tl-cell-route .tl-tag {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--vault-muted);
+}
+
+.tl-reads-label {
+  margin-inline-end: 2px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--vault-muted);
+}
+
+/* The identifiers a developer wants, out of the way at the foot of the route. */
+.run-details {
+  margin-top: var(--space-6);
+}
+
+.run-details-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+
+.run-details-list dt {
+  font-size: var(--text-meta);
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.run-details-list dd {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.run-details-hash {
+  word-break: break-all;
+}
+
+/* A finger needs more room than a pointer. */
+@media (pointer: coarse), (max-width: 760px) {
+  .icon-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .run .disclosure > summary,
+  .tl-event .disclosure > summary,
+  .tl-station .disclosure > summary {
+    min-height: 44px;
+  }
+
+  .replay-play,
+  .replay-speed {
+    min-height: 44px;
+  }
+
+  .replay-speed {
+    min-width: 44px;
+  }
+}
+
+/* A phone: one column. The headline, then the money under it in a smaller clasp; the rules as a
+   list; the decision's two buttons one over the other; the replay bar across the foot. */
+@media (max-width: 760px) {
+  /* The breadcrumb stays one line (the route's spine is measured from it): the date gives way. */
+  .run-crumb-meta {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .run-money {
+    padding: 16px 4px 16px 36px;
+  }
+
+  .run-arm {
+    width: 28px;
+    border-width: 6px;
+  }
+
+  .run-arm-left {
+    border-radius: 16px 0 0 16px;
+  }
+
+  .run-arm-right {
+    border-radius: 0 16px 16px 0;
+  }
+
+  .run-money-voided {
+    padding-inline-end: 36px;
+  }
+
+  .run-money .amt-hero {
+    font-size: 56px;
+  }
+
+  .run-money-captured .run-money-text,
+  .run-money-attacker .run-money-text {
+    padding-inline-start: 36px;
+  }
+
+  .run-money-captured .run-money-text::before,
+  .run-money-attacker .run-money-text::before {
+    bottom: 22px;
+    width: 32px;
+  }
+
+  .run-request {
+    font-size: 20px;
+  }
+
+  .run-terms {
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  .run-terms > div {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 0 var(--space-3);
+    margin-right: 0;
+    padding: 8px 0;
+    border-right: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .run-terms .run-term-hint {
+    grid-column: 2;
+  }
+
+  .decision {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+
+  .decision-why,
+  .decision-act {
+    flex: none;
+  }
+
+  .decision-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .run-replay-entry {
+    flex-wrap: wrap;
+  }
+
+  .replay {
+    bottom: 0;
+    margin-inline: calc(var(--space-4) * -1);
+    padding: var(--space-3);
+  }
+
+  .replay-scrubber {
+    flex: 1 1 100%;
+    order: -1;
+    min-height: 32px;
+  }
+
+  .replay-readout {
+    flex: 1 1 100%;
+    min-width: 0;
+    text-align: start;
+  }
+
+  .run .tl-rows > li {
+    scroll-margin-bottom: 260px;
+  }
 }

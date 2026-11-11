@@ -1,9 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { Amount, Button, buttonClass, EmptyState, PageRoute, Pill, Seal, Station } from "../design";
+import {
+  Amount,
+  Button,
+  buttonClass,
+  Disclosure,
+  EmptyState,
+  PageRoute,
+  Pill,
+  Seal,
+  Station,
+} from "../design";
 import { formatCost, formatTime } from "../format";
 import { useRuns } from "../runs/RunsProvider";
 import { paymentsLabel } from "../runs/state";
+import { firewallLabel, isFirewallSetting } from "../start/copy";
 import { DecisionPanel } from "./DecisionPanel";
 import { ReplayBar } from "./ReplayBar";
 import { RunTimeline } from "./RunTimeline";
@@ -11,12 +22,33 @@ import { buildRun, type RunModel } from "./timeline";
 import { prefersReducedMotion, useReplay } from "./useReplay";
 import { useRun } from "./useRun";
 
-const MONEY_LABELS = {
-  none: "No money has moved",
-  held: "Held, not charged",
-  captured: "Captured and paid out",
-  voided: "Voided, nobody paid",
-} as const;
+// Where the money is, in the words a bank statement would use. Said once, beside the headline.
+function moneyLabel(model: RunModel): string {
+  const { money } = model;
+  if (money.paidToAttackerCents > 0) return "Paid to an attacker's store";
+  if (money.state === "held") return "On hold, not charged";
+  if (money.state === "voided") return "Hold released, nobody was paid";
+  if (money.state === "captured") {
+    const sellers = [...new Set(money.payouts.map((payout) => payout.sellerName))];
+    return sellers.length === 1 ? `Paid to ${sellers[0]}` : "Paid to the sellers";
+  }
+  return "No money has moved";
+}
+
+// Why Chaperone stopped a purchase: the first check that blocked it, in that check's own words. The
+// headline says it was stopped; this is the one line under it that says why.
+function blockedBecause(model: RunModel): string | null {
+  if (model.headline.outcome !== "blocked") return null;
+  for (const item of model.items) {
+    if (
+      (item.kind === "gate0_card" || item.kind === "gate2_card" || item.kind === "gate1_card") &&
+      item.verdict === "block"
+    ) {
+      return `${item.title}.`;
+    }
+  }
+  return null;
+}
 
 function CopyId({ id }: { id: string }) {
   const [copied, setCopied] = useState(false);
@@ -73,7 +105,7 @@ function MoneyBlock({ model }: { model: RunModel }) {
       <span className="run-arm run-arm-left" aria-hidden="true" />
       {money.state === "voided" && <span className="run-arm run-arm-right" aria-hidden="true" />}
       <div className="run-money-text">
-        <span className="run-money-label">{MONEY_LABELS[money.state]}</span>
+        <span className="run-money-label">{moneyLabel(model)}</span>
         <span className="run-money-figure">
           <Amount cents={money.amountCents} size="hero" tone={attacker ? "attacker" : "plain"} />
           {money.state === "voided" && <span className="run-strike" aria-hidden="true" />}
@@ -116,7 +148,7 @@ function RunPage({ runId }: { runId: string }) {
 
   if (status === "loading") {
     return (
-      <p className="t-meta" role="status">
+      <p className="t-meta run-loading" role="status">
         Loading the run…
       </p>
     );
@@ -132,7 +164,7 @@ function RunPage({ runId }: { runId: string }) {
             </Button>
           }
         >
-          The server didn't answer. Check that it's running, then try again.
+          Chaperone's server didn't answer. Check your connection, then try again.
         </EmptyState>
       </PageRoute>
     );
@@ -141,15 +173,15 @@ function RunPage({ runId }: { runId: string }) {
     return (
       <PageRoute title="Run">
         <EmptyState
-          title="There's no run with this ID."
+          title="We can't find this run."
           action={
             <Link to="/runs" className={buttonClass("secondary", true)}>
               Back to runs
             </Link>
           }
         >
-          <span className="t-data">{runId}</span> isn't in this server's log. It may have been run
-          somewhere else.
+          The link may be mistyped, or the run was made on another copy of Chaperone. Its ID is{" "}
+          <span className="t-data">{runId}</span>.
         </EmptyState>
       </PageRoute>
     );
@@ -157,13 +189,15 @@ function RunPage({ runId }: { runId: string }) {
 
   const { headline } = model;
   const scenarioTitle = model.scenarioId ? runs.scenarioTitles[model.scenarioId] : undefined;
-  const meta = [
-    scenarioTitle ?? model.scenarioId,
-    model.seed ? `Seed ${model.seed}` : null,
-    model.startedAt ? formatTime(model.startedAt) : null,
-    paymentsLabel(model.payments),
-    model.costUsd > 0 ? `${formatCost(model.costUsd)} in model calls` : null,
-  ].filter(Boolean);
+  // What a person wants to know about the run at a glance: which task, when, and whether the money
+  // was real. The identifiers a developer wants are in "Run details" at the foot.
+  const meta = [model.startedAt ? formatTime(model.startedAt) : null, paymentsLabel(model.payments)]
+    .filter(Boolean)
+    .join(" · ");
+  const settings = [...model.earlierReviews, "full"].map((config) =>
+    isFirewallSetting(config) ? firewallLabel(config) : config,
+  );
+  const why = blockedBecause(model);
 
   return (
     <PageRoute
@@ -174,17 +208,13 @@ function RunPage({ runId }: { runId: string }) {
         <nav className="run-crumbs t-meta" aria-label="Breadcrumb">
           <Link to="/runs">Runs</Link>
           <span aria-hidden="true">/</span>
-          <span className="t-data">{runId}</span>
-          <CopyId id={runId} />
-          {meta.length > 0 && (
-            <>
-              <span aria-hidden="true">·</span>
-              <span>{meta.join(" · ")}</span>
-            </>
-          )}
+          <span className="run-crumb-here" aria-current="page">
+            {scenarioTitle ?? "A run"}
+          </span>
+          {meta && <span className="run-crumb-meta">{meta}</span>}
           {replaying && (
             <span className="badge run-replaying">
-              Replay, event {replay.position} of {events.length}
+              Replay, step {replay.position} of {events.length}
             </span>
           )}
         </nav>
@@ -197,16 +227,19 @@ function RunPage({ runId }: { runId: string }) {
         )
       }
       title={headline.title}
-      lede={headline.lede}
+      lede={headline.lede ?? why}
       aside={<MoneyBlock model={model} />}
     >
       {model.request && (
-        <Station heading="What you asked, and what you locked" className="run-brief-station">
+        <Station
+          heading="What you asked for, and the rules you locked"
+          className="run-brief-station"
+        >
           <div className="run-brief">
             <div className="run-brief-words">
               <q className="run-request t-voice">{model.request}</q>
               {model.terms.length > 0 && (
-                <dl className="run-terms" aria-label="The locked mandate">
+                <dl className="run-terms" aria-label="The locked rules">
                   {model.terms.map((term) => (
                     <div key={term.label}>
                       <dt>{term.label}</dt>
@@ -231,6 +264,8 @@ function RunPage({ runId }: { runId: string }) {
         <DecisionPanel
           runId={runId}
           cart={model.cart}
+          reasons={model.heldReasons}
+          amountCents={model.money.amountCents}
           unfinished={model.unfinished}
           onDecided={() => {
             reload();
@@ -239,12 +274,16 @@ function RunPage({ runId }: { runId: string }) {
         />
       )}
 
-      <Station heading="How the review went" className="run-timeline-station">
+      <Station heading="What happened, step by step" className="run-timeline-station">
+        <p className="run-how">
+          Read down. On the left is what you and the agent did and what each check found. In the
+          middle is the money, and the checks it had to pass. On the right is text sellers wrote,
+          which Chaperone never trusts.
+        </p>
         {model.earlierReviews.length > 0 && (
           <p className="t-meta run-earlier">
-            This checkout was reviewed {model.earlierReviews.length + 1} times, under different
-            firewall settings ({[...model.earlierReviews, "the last one below"].join(", ")}). The
-            timeline shows the last.
+            This is a benchmark run: the same checkout was checked {settings.length} times, with
+            Chaperone set to {settings.join(", then ")}. This page shows the last.
           </p>
         )}
 
@@ -253,7 +292,7 @@ function RunPage({ runId }: { runId: string }) {
             <Button variant="secondary" small onClick={replay.start}>
               Replay this run
             </Button>
-            <span className="t-meta">Watch it build up, one event at a time.</span>
+            <span className="t-meta">Watch it happen again, one step at a time.</span>
           </div>
         )}
 
@@ -265,6 +304,49 @@ function RunPage({ runId }: { runId: string }) {
           </p>
         )}
       </Station>
+
+      <div className="run-details">
+        <Disclosure title="Run details" summary="for developers">
+          <dl className="run-details-list">
+            <div>
+              <dt>Run ID</dt>
+              <dd>
+                <span className="t-data">{runId}</span>
+                <CopyId id={runId} />
+              </dd>
+            </div>
+            {model.scenarioId && (
+              <div>
+                <dt>Task</dt>
+                <dd className="t-data">
+                  {model.scenarioId}
+                  {model.seed ? `, seed ${model.seed}` : ""}
+                </dd>
+              </div>
+            )}
+            {model.agentModel && (
+              <div>
+                <dt>Agent's AI model</dt>
+                <dd className="t-data">{model.agentModel}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Cost of the AI calls</dt>
+              <dd className="t-data">{model.costUsd > 0 ? formatCost(model.costUsd) : "None"}</dd>
+            </div>
+            {model.mandateHash && (
+              <div>
+                <dt>Fingerprint of the locked rules (the mandate's hash)</dt>
+                <dd className="t-data run-details-hash">{model.mandateHash}</dd>
+              </div>
+            )}
+            <div>
+              <dt>Steps recorded</dt>
+              <dd className="t-data">{events.length}</dd>
+            </div>
+          </dl>
+        </Disclosure>
+      </div>
 
       {replay.open && <ReplayBar events={events} replay={replay} />}
     </PageRoute>

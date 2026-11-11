@@ -12,9 +12,16 @@ import {
 } from "../inbox/inbox";
 import { useFreshness } from "../inbox/useFreshness";
 import { type Detail, useHeldDetails } from "../inbox/useHeldDetails";
-import { DecisionButtons, HeldCart, useDecision } from "../run/DecisionPanel";
+import {
+  DecisionButtons,
+  HeldCart,
+  HeldReasons,
+  useDecision,
+  whatHappens,
+} from "../run/DecisionPanel";
 import type { RunModel } from "../run/timeline";
 import { useRuns } from "../runs/RunsProvider";
+import { MONEY_NOTES } from "../start/copy";
 
 interface Confirmation {
   runId: string;
@@ -37,12 +44,13 @@ interface HeldProps {
 // How long a hold has waited, as the board sets it: a number in Besley and its unit at half size.
 // Assistive technology gets the words, "7 hours".
 function HeldFor({ span, since }: { span: string; since: string }) {
-  const [value, ...unit] = span.split(" ");
+  // "7 hours" is a number and its unit; "less than a minute" has no number, and is "<1 minute".
+  const [value, ...unit] = /^\d/.test(span) ? span.split(" ") : ["<1", "minute"];
   return (
     <span className="held-for" title={since}>
-      <span className="visually-hidden">{`Held for ${span}`}</span>
+      <span className="visually-hidden">{`On hold for ${span}`}</span>
       <span className="t-meta held-for-label" aria-hidden="true">
-        Held for
+        On hold for
       </span>
       <span className="amt held-for-span" aria-hidden="true">
         {value} <span className="held-for-unit">{unit.join(" ")}</span>
@@ -94,7 +102,6 @@ function HeldDecision({
               since={formatTime(model.escalatedAt as string)}
             />
           )}
-          <span className="t-data">{run.runId}</span>
         </div>
         <div className="held-right">
           {model.request && (
@@ -103,29 +110,19 @@ function HeldDecision({
               <q className="t-voice held-ask">{model.request}</q>
             </section>
           )}
-          <section aria-label="Why it was held">
-            <h3 className="t-meta held-label">Why it was held</h3>
-            <ul className="held-reasons">
-              {model.heldReasons.length === 0 && (
-                <li>The review couldn't be sure the cart matches your request.</li>
-              )}
-              {model.heldReasons.map((reason) => (
-                <li key={reason.gate}>
-                  <span className="held-gate">{reason.label}</span>
-                  <span>{reason.reason}</span>
-                </li>
-              ))}
-            </ul>
+          <section aria-label="Why Chaperone paused it">
+            <h3 className="t-meta held-label">Why Chaperone paused it</h3>
+            <HeldReasons reasons={model.heldReasons} />
           </section>
           <Link to={`/runs/${run.runId}`} className="held-run-link">
-            View the full run
+            See everything the agent did
           </Link>
         </div>
       </div>
       <CartSurface vaulted={vaulted}>
         <div className="held-cart-lines">
           <p className="t-meta held-cart-label">
-            <span>Held, not charged</span>
+            <span>On hold, not charged</span>
             {model.holdExpiresAt && (
               <span title={formatTime(model.holdExpiresAt)}>
                 {formatHoldEnds(model.holdExpiresAt, now)}
@@ -141,6 +138,14 @@ function HeldDecision({
           )}
         </div>
         <div className="held-decide">
+          {!model.unfinished && (
+            <p className="decision-what">
+              {whatHappens(model.cart, total)}
+              {run.payments === "fake"
+                ? ` ${MONEY_NOTES.fake.label}: no real payment is made.`
+                : ""}
+            </p>
+          )}
           <DecisionButtons {...decision} unfinished={model.unfinished} sellers={sellers} />
         </div>
       </CartSurface>
@@ -158,16 +163,15 @@ function HeldItem(props: HeldProps & { detail: Detail; vaulted: boolean }) {
         <div className="held-top">
           <div className="held-left">
             <h2 className="t-section">{title}</h2>
-            <span className="t-data">{run.runId}</span>
           </div>
           <div className="held-right">
             <p className="t-meta held-note" role={detail.status === "error" ? "alert" : "status"}>
               {detail.status === "error"
-                ? "This run couldn't be read, so it can't be decided here yet. It will be tried again."
-                : "Reading the run…"}
+                ? "This purchase didn't load, so it can't be decided here yet. We'll keep trying."
+                : "Loading this purchase…"}
             </p>
             <Link to={`/runs/${run.runId}`} className="held-run-link">
-              View the full run
+              See everything the agent did
             </Link>
           </div>
         </div>
@@ -242,12 +246,13 @@ export function Escalations() {
 
   return (
     <Page
+      className="inbox"
       title="Escalations"
-      lede="Purchases Chaperone paused because the decision is yours. Oldest first."
+      lede="Purchases Chaperone put on hold because it wasn't sure they are what you asked for. Nothing is charged until you approve. Oldest first."
     >
       {status === "error" && runs.length === 0 && (
         <EmptyState title="Escalations didn't load." action={reloadButton}>
-          The server didn't answer. Check that it's running, then try again.
+          Chaperone's server didn't answer. Check your connection, then try again.
         </EmptyState>
       )}
 
@@ -308,10 +313,15 @@ export function Escalations() {
         <EmptyState
           title="Nothing is waiting on you."
           label="Held for you right now"
-          action={<Link to="/runs">See every run</Link>}
+          action={
+            <span className="empty-actions">
+              <Link to="/start">Start a run</Link>
+              <Link to="/runs">See every run</Link>
+            </span>
+          }
         >
-          When Chaperone pauses a purchase for your decision, it waits here, oldest first, with how
-          long it has been held and when the hold ends.
+          When Chaperone isn't sure a purchase is what you asked for, it puts the money on hold and
+          the purchase waits here for you to approve or reject.
         </EmptyState>
       )}
 
@@ -326,7 +336,6 @@ export function Escalations() {
                   <Link to={`/runs/${run.runId}`} className="run-link t-item">
                     {titleOf(run)}
                   </Link>
-                  <span className="t-data">{run.runId}</span>
                   <span className="t-meta decided-when" title={formatTime(run.lastEventAt)}>
                     {formatAgo(run.lastEventAt, now)}
                   </span>

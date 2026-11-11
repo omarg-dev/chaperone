@@ -61,7 +61,7 @@ describe("navigation", () => {
 
   it("has a page for a run, and one for an address that isn't a page", async () => {
     renderApp("/runs/run_abc");
-    expect(await screen.findByText("There's no run with this ID.")).toBeInTheDocument();
+    expect(await screen.findByText("We can't find this run.")).toBeInTheDocument();
     renderApp("/nowhere");
     expect(await screen.findByText("There's nothing at this address.")).toBeInTheDocument();
   });

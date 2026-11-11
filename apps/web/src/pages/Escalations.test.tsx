@@ -73,10 +73,11 @@ describe("the escalation inbox", () => {
     renderApp("/escalations");
 
     const items = await screen.findAllByRole("listitem", { name: "Mechanical keyboard, tactile" });
-    expect(items.map((item) => within(item).getByText(/^run_/).textContent)).toEqual([
-      idOf(POISONED),
-      idOf(EXTRA),
-    ]);
+    // The run's ID is a developer's word, so it isn't on the page: each purchase links to its run.
+    const linked = (item: HTMLElement) =>
+      within(item).getByRole("link", { name: "See everything the agent did" }).getAttribute("href");
+    expect(items.map(linked)).toEqual([`/runs/${idOf(POISONED)}`, `/runs/${idOf(EXTRA)}`]);
+    expect(items[0]).not.toHaveTextContent(/run_/);
     expect(screen.getByRole("status", { name: "2 waiting for you" })).toBeInTheDocument();
   });
 
@@ -92,35 +93,36 @@ describe("the escalation inbox", () => {
     expect(within(cart).getByText("Larkspur Goods")).toBeInTheDocument();
     expect(within(cart).getByText("$109.99")).toBeInTheDocument();
 
-    const why = within(item).getByRole("region", { name: "Why it was held" });
+    const why = within(item).getByRole("region", { name: "Why Chaperone paused it" });
     const lines = within(why).getAllByRole("listitem");
-    expect(lines.map((li) => within(li).getByText(/^Gate \d$/).textContent)).toEqual([
-      "Gate 1",
-      "Gate 2",
-      "Gate 3",
+    // Each check by what it does, never "Gate 1".
+    expect(lines.map((li) => li.querySelector(".held-gate")?.textContent)).toEqual([
+      "Seller pages",
+      "Cart review",
+      "Agent's path",
     ]);
+    expect(why).not.toHaveTextContent(/Gate \d|mandate|auditor/);
     expect(lines[0]).toHaveTextContent("the page claims another item has to be bought too");
 
-    expect(within(item).getByText("Held for 2 days")).toBeInTheDocument();
+    expect(within(item).getByText("On hold for 2 days")).toBeInTheDocument();
     expect(within(item).getByText("Hold ends in 36 days")).toBeInTheDocument();
-    expect(within(item).getByRole("link", { name: "View the full run" })).toHaveAttribute(
-      "href",
-      `/runs/${idOf(POISONED)}`,
-    );
+    expect(
+      within(item).getByRole("link", { name: "See everything the agent did" }),
+    ).toHaveAttribute("href", `/runs/${idOf(POISONED)}`);
     // A held purchase is amber, never red.
     expect(document.querySelector(".pill-attacker")).toBeNull();
     expect(item).toHaveAttribute("data-state", "escalate");
-    expect(within(item).getByText("Held for")).toHaveClass("held-for-label");
+    expect(within(item).getByText("On hold for")).toHaveClass("held-for-label");
   });
 
   it("says the same as the run page about why a cart was held", async () => {
     SET_NOW();
     mockServer({ scenarios, events: logs, runs: [held(EXTRA, "2026-10-24T11:03:00Z")] });
     renderApp("/escalations");
-    const why = await screen.findByRole("region", { name: "Why it was held" });
-    expect(within(why).getByText("Gate 0")).toBeInTheDocument();
+    const why = await screen.findByRole("region", { name: "Why Chaperone paused it" });
+    expect(within(why).getByText("Fixed rules")).toBeInTheDocument();
     expect(
-      within(why).getByText("A mouse: the mandate asks for a keyboard and allows no extras"),
+      within(why).getByText("A mouse: your rules ask for a keyboard and allow no extras"),
     ).toBeInTheDocument();
     expect(within(why).getAllByRole("listitem")).toHaveLength(3);
   });
@@ -132,6 +134,28 @@ describe("the escalation inbox", () => {
     await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
     expect(document.body.textContent).not.toContain("Halvard Link");
     expect(document.querySelector('[data-zone="seller"]')).toBeNull();
+  });
+
+  it("says what approving and rejecting will do, before the buttons", async () => {
+    SET_NOW();
+    mockServer({ scenarios, events: logs, runs: [held(POISONED, "2026-10-24T11:03:00Z")] });
+    renderApp("/escalations");
+    const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
+    const what = within(item).getByText(
+      /Approve, and \$109\.99 is charged and paid to Larkspur Goods\. Reject, and the hold is released/,
+    );
+    const approve = within(item).getByRole("button", { name: /Approve and pay/ });
+    expect(what.compareDocumentPosition(approve) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("says a hold that has just begun without a broken number", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.parse(POISONED.at(-1)?.ts as string) + 20_000);
+    mockServer({ scenarios, events: logs, runs: [held(POISONED, "2026-10-24T11:03:00Z")] });
+    renderApp("/escalations");
+    const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
+    expect(within(item).getByText("On hold for less than a minute")).toBeInTheDocument();
+    expect(item.querySelector(".held-for-span")).toHaveTextContent("<1 minute");
   });
 
   it("doesn't say when the hold ends if the log doesn't", async () => {
@@ -149,7 +173,7 @@ describe("the escalation inbox", () => {
     });
     renderApp("/escalations");
     const item = await screen.findByRole("listitem", { name: "Mechanical keyboard, tactile" });
-    expect(within(item).getByText(/^Held for \d/)).toBeInTheDocument();
+    expect(within(item).getByText(/^On hold for \d/)).toBeInTheDocument();
     expect(item.textContent).not.toMatch(/Hold ends|hold has ended/);
   });
 
@@ -261,7 +285,7 @@ describe("deciding from the inbox", () => {
         screen.getAllByRole("listitem", { name: "Mechanical keyboard, tactile" }),
       ).toHaveLength(1),
     );
-    const note = screen.getByText(/Approved\. \$109\.99 was captured and the seller paid\./);
+    const note = screen.getByText(/Approved\. \$109\.99 was charged and the seller was paid\./);
     const confirmation = note.closest("p") as HTMLElement;
     expect(within(confirmation).getByRole("link", { name: "View the run" })).toHaveAttribute(
       "href",
@@ -273,7 +297,7 @@ describe("deciding from the inbox", () => {
     expect(screen.queryByRole("region", { name: "Recently decided" })).toBeNull();
 
     await user.click(within(confirmation).getByRole("button", { name: /Dismiss/ }));
-    expect(screen.queryByText(/was captured and the seller paid/)).toBeNull();
+    expect(screen.queryByText(/was charged and the seller was paid/)).toBeNull();
     expect(screen.getByRole("region", { name: "Recently decided" })).toBeInTheDocument();
   });
 
@@ -375,7 +399,7 @@ describe("deciding from the inbox", () => {
     await user.click(within(item).getByRole("button", { name: /Finish and pay/ }));
     expect(decide).toHaveBeenCalledWith(idOf(UNFINISHED), { decision: "approve" });
     expect(
-      await screen.findByText(/Approved\. \$109\.99 was captured and the seller paid\./),
+      await screen.findByText(/Approved\. \$109\.99 was charged and the seller was paid\./),
     ).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Finish and pay/ })).toBeNull();
   });
@@ -481,13 +505,9 @@ describe("the empty inbox and the runs decided lately", () => {
     renderApp("/escalations");
     const section = await screen.findByRole("region", { name: "Recently decided" });
     const rows = within(section).getAllByRole("listitem");
-    expect(rows.map((row) => within(row).getByText(/^run_/).textContent)).toEqual([
-      "run_d7",
-      "run_d6",
-      "run_d5",
-      "run_d4",
-      "run_d3",
-    ]);
+    expect(
+      rows.map((row) => within(row).getByRole("link").getAttribute("href")?.replace("/runs/", "")),
+    ).toEqual(["run_d7", "run_d6", "run_d5", "run_d4", "run_d3"]);
     expect(
       within(rows[0] as HTMLElement).getByRole("img", { name: "Verdict: Approved" }),
     ).toBeInTheDocument();

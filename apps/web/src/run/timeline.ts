@@ -22,6 +22,8 @@
 
 import { type Escalation, holdStateOf, needsPerson, outcomeOf } from "@firewall/events/outcome";
 import type { GateState, ZoneKind } from "../design";
+import { GATE_IN_A_SENTENCE, gateWords, plainWords } from "../words/plain";
+import { requirementOf } from "../words/requirements";
 import { list, num, type Obj, obj, type Payee, type RunEvent, str } from "./events";
 
 export type Verdict = "approve" | "escalate" | "block";
@@ -332,6 +334,15 @@ function capitalise(text: string): string {
 
 const gateName = (gate: string) => gate.replace(/^gate/, "Gate ");
 
+// Why a check didn't run, in a line: a block ends the review, so the checks after it never start.
+function skippedText(gate: string, reason: string): string {
+  const stoppedBy = /^gate(\d) blocked/.exec(reason)?.[1];
+  const why = stoppedBy
+    ? `${GATE_IN_A_SENTENCE[Number(stoppedBy)]} had already stopped the purchase`
+    : plainWords(reason.replace(/gate(\d)/g, "Gate $1")) || "the review ended";
+  return `${gateWords(gate)} (${gateName(gate)}) didn't run: ${why}`;
+}
+
 const words = (id: string) => id.replace(/^brand_/, "").replace(/_/g, " ");
 
 const dollars = (cents: number) =>
@@ -348,7 +359,7 @@ export function tidyReason(reason: string, names: ReadonlyMap<string, string>): 
     .replace(/\b[a-z]+(?:_[a-z]+)+\b/g, (code) =>
       code in FLAG_LABELS || code in FINDING_LABELS ? code.replace(/_/g, " ") : code,
     );
-  const text = named.trim();
+  const text = plainWords(named.trim());
   // A sentence that opens with an id (brand_x, seller_y) is left as the id is written.
   return /^\S*_/.test(text) ? text : capitalise(text);
 }
@@ -393,11 +404,9 @@ export function mandateTerms(mandate: Obj): MandateTerm[] {
 
   const must = list(mandate.constraints).map((raw) => {
     const c = obj(raw);
-    const name = String(c.attribute ?? "").replace(/_/g, " ");
-    const value = String(c.value ?? "");
-    if (c.op === "lte") return `${name} at most ${value}`;
-    if (c.op === "gte") return `${name} at least ${value}`;
-    return `${name}: ${value}`;
+    // The same words the Start page showed these rules in, before they were locked.
+    const op = c.op === "lte" ? "<=" : c.op === "gte" ? ">=" : "=";
+    return requirementOf(String(c.attribute ?? ""), op, String(c.value ?? ""));
   });
   if (must.length > 0) terms.push({ label: "Must have", value: must.join(", ") });
 
@@ -424,7 +433,7 @@ export function mandateTerms(mandate: Obj): MandateTerm[] {
   });
 
   if (mandate.payeePolicy === "verified_sellers_only") {
-    terms.push({ label: "Paying", value: "Verified sellers only" });
+    terms.push({ label: "Sellers", value: "Verified sellers only" });
   }
   const extras = list(mandate.allowedExtras).map(String);
   if (extras.length > 0) terms.push({ label: "Extras allowed", value: extras.join(", ") });
@@ -433,7 +442,7 @@ export function mandateTerms(mandate: Obj): MandateTerm[] {
     terms.push({
       label: "Not enforced",
       value: unmapped.join(", "),
-      hint: "In your request, but not made a rule",
+      hint: "In your request, but not something Chaperone can check",
     });
   }
   return terms;
@@ -574,7 +583,7 @@ export function buildRun(
       zone: "catalog",
       group: "request",
       kind: "step",
-      tag: "Person",
+      tag: "You",
       title: "Made the request",
       lines: [],
     });
@@ -587,8 +596,8 @@ export function buildRun(
       zone: "catalog",
       group: "mandate",
       kind: "step",
-      tag: "Mandate",
-      title: "Confirmed and locked",
+      tag: "You",
+      title: "Locked the rules",
       lines: edits > 0 ? [`Edited ${edits === 1 ? "once" : `${edits} times`} first`] : [],
     });
   }
@@ -616,8 +625,8 @@ export function buildRun(
       zone: "catalog",
       group: "mandate",
       kind: "step",
-      tag: "Mandate",
-      title: "Rejected",
+      tag: "You",
+      title: "Rejected the rules",
       lines: [],
       ...(reason && { quote: reason }),
     });
@@ -628,8 +637,8 @@ export function buildRun(
       zone: "catalog",
       group: "mandate",
       kind: "step",
-      tag: "Mandate",
-      title: "Couldn't be drafted",
+      tag: "Chaperone",
+      title: "Couldn't write the rules",
       lines: [],
     });
   }
@@ -645,7 +654,7 @@ export function buildRun(
       kind: "step",
       tag: "Agent",
       title: "Started shopping",
-      lines: agentModel ? [agentModel] : [],
+      lines: agentModel ? [`AI model: ${agentModel}`] : [],
     });
   }
 
@@ -1040,8 +1049,8 @@ export function buildRun(
       flagged: flagKinds.length > 0 || quotes.length > 0,
       crosses:
         flagKinds.length > 0
-          ? `Fact crosses: ${flagLabel(flagKinds[0] ?? "").toLowerCase()}`
-          : "Fact crosses: nothing flagged",
+          ? `Passed on as a fact: ${flagLabel(flagKinds[0] ?? "").toLowerCase()}`
+          : "Passed on as a fact: nothing flagged",
       quotes,
       discountCodes: codes,
     });
@@ -1215,7 +1224,7 @@ export function buildRun(
         zone: "route",
         group: "skipped",
         kind: "skipped",
-        text: `${gateName(String(skip.gate))} skipped: ${String(skip.reason ?? "the review ended").replace(/gate(\d)/g, "Gate $1")}`,
+        text: skippedText(String(skip.gate), String(skip.reason ?? "")),
       });
     }
     items.push({
@@ -1241,7 +1250,7 @@ export function buildRun(
       zone: "catalog",
       group: "decision",
       kind: "step",
-      tag: "Person",
+      tag: "You",
       title: decision === "approve" ? "Approved the purchase" : "Rejected the purchase",
       lines: [],
       ...(decisionNote && { quote: decisionNote }),
@@ -1380,7 +1389,7 @@ export function buildRun(
     }
     if (item.verdict !== "escalate") continue;
     const gate: GateName = item.kind.slice(0, 5) as GateName;
-    heldReasons.push({ gate, label: gateName(gate), reason: item.title });
+    heldReasons.push({ gate, label: gateWords(gate), reason: item.title });
   }
 
   return {
@@ -1452,7 +1461,7 @@ export function headlineFor(s: Standing): Headline {
   if (s.mandate === "rejected") {
     return plain(
       "no_agent",
-      "You rejected the mandate, so no agent ran.",
+      "You rejected the rules, so no agent ran.",
       "Nothing was bought and no money moved.",
       "No run",
     );
@@ -1460,7 +1469,7 @@ export function headlineFor(s: Standing): Headline {
   if (s.mandate === "failed") {
     return plain(
       "no_agent",
-      "The mandate couldn't be drafted, so no agent ran.",
+      "The rules couldn't be written, so no agent ran.",
       "Nothing was bought and no money moved.",
       "No run",
     );
@@ -1468,9 +1477,9 @@ export function headlineFor(s: Standing): Headline {
   if (s.mandate === "waiting") {
     return plain(
       "mandate_waiting",
-      "This mandate is waiting for you.",
-      "Confirm it on the Start a run page, and the agent can shop. Nothing runs until you do.",
-      "Not confirmed",
+      "These rules are waiting for you.",
+      "Lock them on the Start a run page, and the agent can shop. Nothing runs until you do.",
+      "Rules not locked",
     );
   }
   // Red is for one thing: money that reached an attacker, however the run got there.
@@ -1481,15 +1490,16 @@ export function headlineFor(s: Standing): Headline {
       "Paid attacker",
       s.reviewed && s.verdict !== null
         ? "The money reached an attacker's store."
-        : "The firewall was off, and the money reached an attacker's store.",
+        : "Chaperone was switched off, and the money reached an attacker's store.",
     );
   }
   if (s.failed) {
     return pilled(
       "review_failed",
       "held",
-      "Held, review failed",
-      "A gate broke, so nothing was enforced.",
+      "On hold, a check failed",
+      "A check couldn't finish, so the money is still on hold.",
+      "Nothing was charged and nobody was paid.",
     );
   }
   if (s.noCheckout) {
@@ -1525,23 +1535,23 @@ export function headlineFor(s: Standing): Headline {
       "escalate",
       "Waiting on you",
       "We've paused this purchase.",
-      "Approve it or reject it below.",
+      "Chaperone wasn't sure it is what you asked for. The money is on hold until you decide below.",
     );
   }
   if (s.released) {
     return plain(
       "released",
       "The hold was released without a decision.",
-      "Chaperone paused this purchase, and the hold was voided before a person decided it. Nobody was paid.",
+      "Chaperone paused this purchase for a person to decide. This was a benchmark run with nobody waiting, so the hold was released. Nobody was paid.",
       "Hold released",
     );
   }
   if (s.reviewed && s.verdict === null) {
     return plain(
       "firewall_off",
-      "The firewall was off, so the cart went straight to payment.",
-      null,
-      "Firewall off",
+      "Chaperone was switched off, so the cart went straight to payment.",
+      "Nothing checked this purchase. This is what happens without Chaperone.",
+      "Chaperone off",
     );
   }
   if (s.verdict === "block") {
@@ -1557,7 +1567,7 @@ export function headlineFor(s: Standing): Headline {
       : s.started
         ? "The agent is shopping."
         : "Waiting for the run to start.",
-    s.holding ? "The money is held, not charged." : null,
+    s.holding ? "The money is on hold, not charged." : null,
     "In progress",
   );
 }

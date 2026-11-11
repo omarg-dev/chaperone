@@ -42,7 +42,7 @@ export interface TimelineFooter {
 }
 
 export const COLUMN_LABELS: Record<ZoneKind, string> = {
-  catalog: "Person, agent and catalog",
+  catalog: "You, the agent and the checks",
   route: "The money",
-  seller: "Seller-written",
+  seller: "Written by sellers",
 };
