@@ -53,7 +53,7 @@ A shopping agent's checkout is held as a sandbox payment authorization instead o
 
 ## Progress
 
-**Now (Nov 9): v1.2 is merged, and its headline numbers are in (the README's Results: Claude Haiku 5.5 and OpenAI GPT-6 Luna on the real sandbox, and the held-out set). In progress: an AG Studio dashboard and a landing page redesign, then refunds after capture, built last if time allows. Then release 0.3.0, the video and the submission on Nov 11.**
+**Now (Nov 11): 0.3.0 is released (v1.2, the AG Studio dashboard and the landing page; refunds after capture were cut on Nov 10). In review: the usability pass and the README rewritten for the public, with the Nov 7 sandbox results committed. Then the repo goes public, the video and the submission (deadline Nov 12, 12:00 PM PST).**
 
 Each step is one PR into `main`, in the order below. A step's status changes in the PR that finishes it, so this table is always current on `main`.
 
@@ -136,8 +136,8 @@ Done when: the dashboard shows real-sandbox numbers for the two agent columns (t
 
 | # | Step | Status |
 |---|---|---|
-| 1 | Rename the repo and product, make the repo public, check the MIT license shows in About | ⬜ |
-| 2 | README with one-command setup and the five-minute SDK quickstart; Postman collection | ⬜ |
+| 1 | Rename the repo and product, make the repo public, check the MIT license shows in About | 🔨 renamed to Chaperone (`omarg-dev/chaperone`); making it public and the About text are Omar's |
+| 2 | README with one-command setup and the five-minute SDK quickstart; Postman collection | 🔨 the README rewritten for the public (developer detail moved to docs/architecture.md and docs/deploying.md), in review; the Postman collection is merged |
 | 3 | Devpost write-up and the video (under 3 minutes, numbers from real sandbox runs only) | ⬜ |
 | 4 | Submit on Nov 11 | ⬜ |
 

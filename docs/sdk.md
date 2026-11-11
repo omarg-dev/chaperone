@@ -15,7 +15,7 @@ pnpm install
 pnpm --filter @firewall/sdk example   # verdict: block, money: voided
 ```
 
-The example runs offline in about a minute. An in-memory fake stands in for the payment platform, and a scripted model for yours. It is `packages/sdk/examples/protect-your-agent.ts`, a test runs it, and it makes the three calls below in order.
+The example runs offline in about a minute. An in-memory fake stands in for PayPal, and a scripted model for yours. It is `packages/sdk/examples/protect-your-agent.ts`, a test runs it, and it makes the three calls below in order.
 
 ## The calls
 
@@ -54,7 +54,7 @@ The person's decision on an escalated cart: `firewall.decide("approve")` or `fir
 
 ## Payment tools
 
-By default these tools count as payment tools: `checkout`, `create_order` and `pay_order`. The first is ours. The other two are the payment platform's agent toolkit, whose order tools capture at once and can't hold money.
+By default these tools count as payment tools: `checkout`, `create_order` and `pay_order`. The first is ours. The other two are PayPal's agent toolkit, whose order tools capture at once and can't hold money. The toolkit isn't installed in this repo, so those two are tested with stand-in tools of the same names and input shapes.
 
 Name your own with `paymentTools: ["buy_now"]`. An explicit list replaces the defaults. A payment tool that isn't in the list is not guarded, and it pays at once, so check the names before you rely on it.
 

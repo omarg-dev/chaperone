@@ -81,7 +81,7 @@ jobs:
             || { docker logs app; echo "::error::GET / did not return the web app."; exit 1; }
 
   # What only runs on the server: the compose file, the example .env it reads, the backup script and
-  # the commands the README tells Omar to run there. The example env is a working file, so the checks
+  # the commands docs/deploying.md tells Omar to run there. The example env is a working file, so the checks
   # use it as the server's .env.
   deploy-config:
     name: Deployment config
@@ -110,7 +110,7 @@ jobs:
           tags: chaperone-ci:ci
           cache-from: type=gha
       # Run it the way the server does: this compose file, the example env, a data folder owned by
-      # uid 1000, a gateway network of the same name. Then do what the README has Omar do there.
+      # uid 1000, a gateway network of the same name. Then do what docs/deploying.md has Omar do there.
       - name: Container starts healthy under compose
         working-directory: deploy
         env:
@@ -140,7 +140,7 @@ jobs:
           IMAGE_REPO: chaperone-ci
           IMAGE_TAG: ci
         run: |
-          # The same command the server's nightly cron runs (README, "The nightly backup").
+          # The same command the server's nightly cron runs (docs/deploying.md, "The nightly backup").
           docker compose exec -T app node dist/cli.js backup --keep 14
           # The backups folder belongs to the container's user and is private to it, so it is
           # listed from inside the container rather than by the runner.
