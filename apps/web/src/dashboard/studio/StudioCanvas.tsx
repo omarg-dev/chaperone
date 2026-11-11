@@ -28,12 +28,12 @@ const PROMPT_STARTERS: AgAiPromptStarter[] = [
   {
     label: "Which model is fooled more?",
     prompt:
-      "Compare how often each model's agent was fooled before any firewall, on our scenarios and on the held-out set.",
+      "Compare how often each model's agent was fooled with Chaperone off, on our scenarios and on the held-out set.",
   },
   {
     label: "The held-out result",
     prompt:
-      "On the held-out set, how many attacks got through with the firewall off and with the full check, for each model?",
+      "On the held-out set, how many attacks got through with Chaperone off and with the full check, for each model?",
   },
   {
     label: "False escalations",
