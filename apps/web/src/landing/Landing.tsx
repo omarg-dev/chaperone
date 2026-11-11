@@ -1,6 +1,7 @@
 import { type CSSProperties, type ReactNode, useEffect, useState } from "react";
 import { Link } from "react-router";
 import { Amount, buttonClass, Mark, MoneyGlyph, Pill, Rate } from "../design";
+import { GATE_WORDS, SETTING_WORDS } from "../words/plain";
 import { type ColumnView, gateModelLabel, sharedOf } from "./proof";
 import { useProof } from "./useProof";
 
@@ -163,11 +164,12 @@ function Hero() {
       <div className="lp-copy">
         <p className="lp-eyebrow reveal">A firewall for AI shopping agents</p>
         <h1 className="lp-title lp-title-hero reveal" style={step(1)}>
-          The pause before your agent pays.
+          Chaperone, the parent to your shopping agent.
         </h1>
         <p className="lp-lede reveal" style={step(2)}>
-          Chaperone holds the payment while four gates check the cart against what you asked for.
-          Then the money moves, waits for you, or goes back.
+          It's the pause before your agent pays. Chaperone holds the money while four gates check
+          the cart against what you asked for. Then it pays the seller, asks you, or sends the money
+          back.
         </p>
         <div className="lp-actions reveal" style={step(3)}>
           <Link to="/start" className={buttonClass("primary")}>
@@ -223,9 +225,9 @@ function Attack() {
 }
 
 const EXITS = [
-  { state: "captured", title: "Captured", line: "The cart matches. The seller is paid." },
-  { state: "person", title: "Held for you", line: "Something is off. You approve or reject." },
-  { state: "voided", title: "Voided", line: "The cart breaks your mandate. Nobody is paid." },
+  { state: "captured", title: "Paid", line: "The cart matches your rules. The seller is paid." },
+  { state: "person", title: "Waiting on you", line: "Something looks off. You decide." },
+  { state: "voided", title: "Not charged", line: "The cart breaks your rules. Nobody is paid." },
 ] as const;
 
 function Hold() {
@@ -233,13 +235,13 @@ function Hold() {
     <>
       <Copy
         title="Checkout becomes a hold."
-        lede="The agent never pays. Its checkout only authorizes the payment, and the money waits for the review."
+        lede="The agent never pays. Its checkout only puts a hold on the money, and the money stays there until the gates are done."
       />
       <div className="hx reveal" style={step(2)}>
         <p className="hx-call">
           <code>checkout</code>
           <span className="hx-arrow" aria-hidden="true" />
-          <span>Authorized, nothing captured</span>
+          <span>Held, not charged</span>
         </p>
         <ul className="hx-exits">
           {EXITS.map((exit, i) => (
@@ -257,32 +259,33 @@ function Hold() {
 
 // --- The gates, as a band ------------------------------------------------------------------------
 
+// Each gate by the name the run page gives it (words/plain.ts), with what it reads.
 const GATES = [
   {
     n: 0,
-    name: "Policy",
-    reads: "Rules in code, no model",
+    name: GATE_WORDS.gate0.name,
+    reads: "Your rules, checked in code with no AI",
     finding: "Right keyboard, verified store, under $90.",
     verdict: "approve",
   },
   {
     n: 1,
-    name: "Extractor",
-    reads: "Reads seller pages as data",
+    name: GATE_WORDS.gate1.name,
+    reads: "What sellers wrote, read as data only",
     finding: "A review tells the agent which store to use.",
     verdict: "escalate",
   },
   {
     n: 2,
-    name: "Intent auditor",
-    reads: "Checks the cart against your mandate",
+    name: GATE_WORDS.gate2.name,
+    reads: "An AI reviewer compares the cart with your request",
     finding: "Fits on paper, but a seller chose it.",
     verdict: "escalate",
   },
   {
     n: 3,
-    name: "Trace auditor",
-    reads: "Checks the agent's steps",
+    name: GATE_WORDS.gate3.name,
+    reads: "An AI reviewer checks the steps the agent took",
     finding: "It read that review, then switched stores.",
     verdict: "escalate",
   },
@@ -294,8 +297,8 @@ function Gates() {
       <div className="gx-head">
         <h2 className="lp-title lp-title-md reveal">Four gates, one verdict.</h2>
         <p className="lp-lede reveal" style={step(1)}>
-          Models only read and judge into fixed fields. Code makes the call. Here, on the{" "}
-          {RUN.product} from {RUN.store}:
+          The AI only reads and fills in fixed fields. Code makes the decision. Here is how each
+          gate ruled on the {RUN.product} from {RUN.store}:
         </p>
       </div>
       <ol className="gx-rows">
@@ -314,7 +317,7 @@ function Gates() {
         ))}
       </ol>
       <p className="gx-end">
-        <Pill state="escalate" label="Held for you" />
+        <Pill state="escalate" label="Waiting on you" />
         <span>Nobody is paid until you decide.</span>
       </p>
     </div>
@@ -326,12 +329,12 @@ function Gates() {
 type Status = "loading" | "ready" | "unavailable";
 
 // One model: the share of attacks that got through with the firewall off, then on, as bars on one
-// scale, with the counts and what the full tree did to clean carts.
+// scale, with the counts and what the full check did to clean carts.
 function ModelBars({ view }: { view: ColumnView }) {
   const { proof } = view;
   const rows = [
-    { key: "off", label: "Firewall off", side: proof.off },
-    { key: "on", label: "With Chaperone", side: proof.full },
+    { key: "off", label: SETTING_WORDS.off, side: proof.off },
+    { key: "on", label: SETTING_WORDS.full, side: proof.full },
   ] as const;
   return (
     <article className="mb">
@@ -356,8 +359,8 @@ function ModelBars({ view }: { view: ColumnView }) {
         })}
       </dl>
       <p className="mb-clean">
-        Clean carts: {proof.falseBlocks} blocked, {proof.falseEscalations} sent to you, of{" "}
-        {proof.cleanCarts}
+        Of {proof.cleanCarts} clean carts, the full check blocked {proof.falseBlocks} and sent{" "}
+        {proof.falseEscalations} to you by mistake.
       </p>
     </article>
   );
@@ -391,7 +394,7 @@ function Source({ all }: { all: ColumnView[] }) {
     "Real payment sandbox",
     date && `run ${date}`,
     seeds !== null && `${seeds} seeds`,
-    gates && `gates on ${gates} for every model`,
+    gates && `the gates ran on ${gates} for every model`,
   ].filter(Boolean);
   return (
     <div className="lp-inner">
@@ -405,7 +408,7 @@ function Proof({ views, status }: { views: ColumnView[]; status: Status }) {
     <>
       <Copy
         title="Attacks that got through."
-        lede="Each model shopped our arena on the payment sandbox. The same carts were reviewed with Chaperone off, then on."
+        lede="Each model shopped in our practice shop and paid through the payment sandbox. We checked the same carts with Chaperone off, then with the full check."
       />
       <Bars
         views={views}
@@ -422,7 +425,7 @@ function HeldOut({ views, status }: { views: ColumnView[]; status: Status }) {
     <>
       <Copy
         title="Attacks it never saw."
-        lede={`${count === null ? "Attacks" : `${count} attacks`} ported from published agent security benchmarks, kept apart and never used to tune the gates.`}
+        lede={`${count === null ? "Attacks" : `${count} attacks`} taken from published agent security benchmarks. We kept them apart and never used them to tune the gates.`}
       />
       <Bars views={views} status={status} none="No held-out results on this server yet." />
     </>
@@ -441,14 +444,14 @@ function StudioPreview({ own, heldOut }: { own: ColumnView[]; heldOut: ColumnVie
         key: `${v.columnId}-own-off`,
         model: v.label,
         set: "Own",
-        setting: "Off",
+        setting: SETTING_WORDS.off,
         side: v.proof.off,
       },
       {
         key: `${v.columnId}-own-full`,
         model: v.label,
         set: "Own",
-        setting: "Full tree",
+        setting: SETTING_WORDS.full,
         side: v.proof.full,
       },
     ]),
@@ -456,7 +459,7 @@ function StudioPreview({ own, heldOut }: { own: ColumnView[]; heldOut: ColumnVie
       key: `${v.columnId}-held-full`,
       model: v.label,
       set: "Held-out",
-      setting: "Full tree",
+      setting: SETTING_WORDS.full,
       side: v.proof.full,
     })),
   ];
@@ -468,7 +471,7 @@ function StudioPreview({ own, heldOut }: { own: ColumnView[]; heldOut: ColumnVie
       </div>
       <div className="st-body">
         <div className="st-card st-chart">
-          <p className="st-k">Attack success, by firewall setting</p>
+          <p className="st-k">Attack success on our scenarios, by firewall setting</p>
           <div className="st-plot">
             {own.map((v, i) => (
               <div key={v.columnId} className="st-group" style={step(i)}>
@@ -485,7 +488,8 @@ function StudioPreview({ own, heldOut }: { own: ColumnView[]; heldOut: ColumnVie
             ))}
           </div>
           <p className="st-legend">
-            <span className="st-key st-off" /> Off <span className="st-key st-on" /> Full tree
+            <span className="st-key st-off" /> {SETTING_WORDS.off} <span className="st-key st-on" />{" "}
+            {SETTING_WORDS.full}
           </p>
         </div>
         <div className="st-card st-table">
@@ -529,8 +533,8 @@ function Dashboard({ own, heldOut }: { own: ColumnView[]; heldOut: ColumnView[] 
       <div className="lp-copy">
         <h2 className="lp-title lp-title-md reveal">Every run, open to questions.</h2>
         <p className="lp-lede reveal" style={step(1)}>
-          The dashboard puts every benchmark result in AG Studio. Slice it, chart it, or ask it in
-          plain English.
+          The dashboard puts every benchmark result in AG Studio. Sort and chart them yourself, or
+          ask the assistant a question in plain English.
         </p>
         <div className="lp-actions reveal" style={step(2)}>
           <Link to="/dashboard?view=studio" className={buttonClass("secondary")}>
@@ -635,7 +639,7 @@ function Try() {
           Try to fool an agent.
         </h2>
         <p className="lp-lede reveal" style={step(2)}>
-          Pick a task, lock what you want, and watch the gates review the cart.
+          Pick a task, lock your rules, then watch the gates check the cart.
         </p>
         <div className="lp-actions reveal" style={step(3)}>
           <Link to="/start" className={buttonClass("primary")}>
