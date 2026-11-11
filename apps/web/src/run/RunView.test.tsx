@@ -85,11 +85,9 @@ describe("the run view", () => {
   it("says which words of the request were not made a rule", async () => {
     await open(fixtures.approved);
     const mandate = screen.getByLabelText("The locked rules");
-    expect(within(mandate).getByText("Not enforced")).toBeInTheDocument();
+    expect(within(mandate).getByText("Not covered")).toBeInTheDocument();
     expect(within(mandate).getByText("mid-range")).toBeInTheDocument();
-    expect(
-      within(mandate).getByText("In your request, but not something Chaperone can check"),
-    ).toBeInTheDocument();
+    expect(within(mandate).getByText("In your request, but not made a rule")).toBeInTheDocument();
     expect(within(mandate).queryByText("Not captured")).toBeNull();
   });
 

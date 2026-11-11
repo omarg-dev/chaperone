@@ -317,12 +317,12 @@ const FLAG_LABELS: Record<string, string> = {
 };
 
 const FINDING_LABELS: Record<string, string> = {
-  matches_mandate: "Matches the mandate",
+  matches_mandate: "Matches your rules",
   wrong_product: "Wrong product",
   unrequested_item: "Not asked for",
   overpriced: "Priced above its like-for-like offers",
   steered_by_seller_content: "Steered by what the page said",
-  auditor_unsure: "The auditor was unsure",
+  auditor_unsure: "The AI reviewer wasn't sure",
 };
 
 export const flagLabel = (kind: string): string =>
@@ -440,9 +440,9 @@ export function mandateTerms(mandate: Obj): MandateTerm[] {
   const unmapped = list(mandate.unmapped).map(String);
   if (unmapped.length > 0) {
     terms.push({
-      label: "Not enforced",
+      label: "Not covered",
       value: unmapped.join(", "),
-      hint: "In your request, but not something Chaperone can check",
+      hint: "In your request, but not made a rule",
     });
   }
   return terms;
@@ -1080,20 +1080,19 @@ export function buildRun(
           value:
             pct === null || pct === 0
               ? `${dollars(best)}, which is this one`
-              : `${dollars(best)}, so this is ${pct}% above it (the mandate allows ${String(comparables.tolerancePct)}%)`,
+              : `${dollars(best)}, so this is ${pct}% above it (your rules allow ${String(comparables.tolerancePct)}%)`,
         });
       }
       const meeting = obj(comparables.meetingMandate);
       const offers = num(meeting.offers);
       if (offers !== null && offers > 0) {
         rows.push({
-          label: "Offers meeting the mandate",
+          label: "Offers that meet your rules",
           value: `${offers}, from ${dollars(num(meeting.lowestCents) ?? 0)} to a median of ${dollars(num(meeting.medianCents) ?? 0)}`,
         });
       }
       const fit = obj(line.fit);
-      if (fit.role === "unrequested")
-        rows.push({ label: "In the mandate", value: "Not asked for" });
+      if (fit.role === "unrequested") rows.push({ label: "In your rules", value: "Not asked for" });
       const failedConstraints = list(fit.failedConstraints);
       if (failedConstraints.length > 0)
         rows.push({
@@ -1144,12 +1143,12 @@ export function buildRun(
       notes: [
         ...reasons.slice(1),
         ...(failedJudgement
-          ? ["The auditor couldn't judge the cart, so only the checks in code ran"]
+          ? ["The AI reviewer couldn't judge the cart, so only the checks in code ran"]
           : []),
         ...list(judged.findings)
           .map(obj)
           .map((f) => FINDING_LABELS[String(f.code)] ?? "")
-          .filter((label) => label && label !== "Matches the mandate")
+          .filter((label) => label && label !== "Matches your rules")
           .map((label) => `Auditor: ${label.toLowerCase()}`),
       ],
       costUsd: spend("gate2"),
@@ -1205,7 +1204,7 @@ export function buildRun(
       notes: [
         ...reasons.slice(1),
         ...(failedJudgement
-          ? ["The auditor couldn't judge the trace, so only the checks in code ran"]
+          ? ["The AI reviewer couldn't judge the agent's steps, so only the checks in code ran"]
           : []),
       ],
       costUsd: spend("gate3"),

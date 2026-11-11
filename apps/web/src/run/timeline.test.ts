@@ -28,9 +28,9 @@ describe("an approved run", () => {
       { label: "Brands", value: "Reputable brands" },
       { label: "Sellers", value: "Verified sellers only" },
       {
-        label: "Not enforced",
+        label: "Not covered",
         value: "mid-range",
-        hint: "In your request, but not something Chaperone can check",
+        hint: "In your request, but not made a rule",
       },
     ]);
     expect(run.mandateHash).toMatch(/^sha256:/);

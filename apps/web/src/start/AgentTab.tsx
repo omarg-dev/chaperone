@@ -18,7 +18,8 @@ export function AgentTab() {
         <p className="agent-lede">
           Chaperone's SDK wraps your agent's payment tool, so a checkout holds the cart instead of
           paying for it. Your agent keeps its own tools and loop. After it stops, Chaperone reviews
-          the held cart and captures it, voids it, or leaves it for a person.
+          the held cart, then pays the seller, cancels the hold, or leaves it for a person to
+          decide.
         </p>
         <ol className="agent-steps">
           <li>
@@ -30,8 +31,8 @@ export function AgentTab() {
             passed through as it was.
           </li>
           <li>
-            <strong>Run your agent as before,</strong> then call <code>settle()</code> to review and
-            act on the verdict.
+            <strong>Run your agent as before,</strong> then call <code>settle()</code> to review the
+            cart and act on the result.
           </li>
         </ol>
       </Vault>

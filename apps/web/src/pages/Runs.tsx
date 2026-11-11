@@ -461,7 +461,7 @@ export function Runs() {
 
       {status === "error" && (
         <EmptyState title="Runs didn't load." action={refresh}>
-          The server didn't answer. Check that it's running, then try again.
+          Chaperone's server didn't answer. Check your connection, then try again.
         </EmptyState>
       )}
 

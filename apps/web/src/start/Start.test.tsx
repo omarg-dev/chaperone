@@ -196,14 +196,14 @@ describe("choosing a task", () => {
           ? { status: 200, body: status() }
           : {
               status: 502,
-              body: { error: "draft_failed", message: "The mandate couldn't be drafted just now." },
+              body: { error: "draft_failed", message: "The rules couldn't be written just now." },
             },
     });
     renderApp("/start");
     await userEvent.click(await screen.findByRole("radio", { name: /Tactile keyboard/ }));
     await userEvent.click(screen.getByRole("button", { name: "Write the rules" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(
-      "The mandate couldn't be drafted just now.",
+      "The rules couldn't be written just now.",
     );
   });
 });

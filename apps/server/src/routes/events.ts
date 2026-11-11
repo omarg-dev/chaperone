@@ -102,7 +102,10 @@ export function eventRoutes(log: EventLog, options: EventRoutesOptions = {}) {
       const runId = c.req.param("runId");
       const { decision: answer, note } = c.req.valid("json");
       if (log.listRun(runId).length === 0) {
-        return c.json({ error: "not_found", message: `No run "${runId}"` }, 404);
+        return c.json(
+          { error: "not_found", message: `There is no run "${runId}" on this server.` },
+          404,
+        );
       }
       if (!options.payments) {
         return c.json(
