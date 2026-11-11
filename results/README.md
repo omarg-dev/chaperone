@@ -1,6 +1,6 @@
 # Eval results
 
-`pnpm --filter @firewall/eval run-matrix` writes its files here. They aren't committed, apart from this README and the MVP's first matrix below; the numbers that go in the video or the write-up are copied from a run against the real sandbox.
+`pnpm --filter @firewall/eval run-matrix` writes its files here. They aren't committed, apart from this README and the benchmark's sandbox results below, which are the numbers in the project's README.
 
 Each run writes three files, named `<date>T<time>-<adapter>-<column>`, for example `2026-10-26T1015-fake-claude-haiku-5-5`:
 
@@ -10,9 +10,18 @@ Each run writes three files, named `<date>T<time>-<adapter>-<column>`, for examp
 | `<name>.md` | A short summary table of the same numbers |
 | `<name>.events.db` | One event log with every run's events; each cell's `run.runId` points into it |
 
-## The MVP's first matrix
+## The committed results
 
-`2026-10-26T0012-fake-claude-haiku-5-5.json` and `.md` are the MVP's first matrix: all 30 scenarios (22 benign, 8 attack), seeds 1 and 2, the Claude Haiku 5.5 column, on the **fake** payment adapter. They are committed (with `git add -f`) to record where the numbers started. They are not sandbox results and are not for the video or the write-up. Gate 2 ran without the market price reference (no Channel3 key), so it checked prices against the marketplace only.
+The four `.json` files here are the benchmark the README reports, run on Nov 7, 2026 against PayPal's real sandbox (`sandbox` adapter), seeds 1 to 4, with the checks on Claude Haiku 5.5 in every file:
+
+| File | Shopping agent | Scenarios |
+|---|---|---|
+| `2026-11-07T1647-sandbox-claude-haiku-5-5.json` | Claude Haiku 5.5 | Our own 30 (120 runs) |
+| `2026-11-07T1648-sandbox-gpt-6-luna.json` | OpenAI GPT-6 Luna | Our own 30 (120 runs) |
+| `2026-11-07T1705-sandbox-claude-haiku-5-5-held-out.json` | Claude Haiku 5.5 | The 17 held-out attacks (68 runs) |
+| `2026-11-07T1706-sandbox-gpt-6-luna-held-out.json` | OpenAI GPT-6 Luna | The 17 held-out attacks (68 runs) |
+
+They are committed (with `git add -f`) so the numbers can be checked, and so a server run from source shows them on its dashboard. Their `.md` summaries and `.events.db` logs aren't; the hosted demo has the runs. A fake-adapter matrix from development used to be committed here; it was removed so no fake number sits next to the real ones.
 
 ## Which payment adapter
 

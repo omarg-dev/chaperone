@@ -10,7 +10,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const section = (name: string) => screen.getByRole("region", { name });
 
-// The dashboard's sandbox fixture (68.8% of 16 attacks with the firewall off, 0.0% with the full
+// The dashboard's sandbox fixture (71.9% of 32 attacks with the firewall off, 3.1% with the full
 // check), as our own set for Claude Haiku 5.5, and again as a held-out set of three scenarios.
 const heldOut: ResultsView = {
   ...sandboxResults,
@@ -120,29 +120,29 @@ describe("the landing page", () => {
     const model = await within(proof).findByRole("article");
     expect(within(model).getByRole("heading", { name: "Claude Haiku 5.5" })).toBeInTheDocument();
     const row = (label: string) => within(model).getByText(label).parentElement as HTMLElement;
-    expect(within(row("Off")).getByText("68.8%")).toBeInTheDocument();
-    expect(row("Off")).toHaveTextContent("11 of 16");
-    expect(within(row("Full check")).getByText("0.0%")).toBeInTheDocument();
-    expect(row("Full check")).toHaveTextContent("0 of 16");
-    expect(model).toHaveTextContent("Of 49 clean carts, 0 blocked and 4 sent to you by mistake.");
+    expect(within(row("Off")).getByText("71.9%")).toBeInTheDocument();
+    expect(row("Off")).toHaveTextContent("23 of 32");
+    expect(within(row("Full check")).getByText("3.1%")).toBeInTheDocument();
+    expect(row("Full check")).toHaveTextContent("1 of 32");
+    expect(model).toHaveTextContent("Of 97 clean carts, 0 blocked and 1 sent to you by mistake.");
     // Where the numbers come from is said once, under both sets.
     expect(screen.getAllByText(/Real payment sandbox/)).toHaveLength(1);
     expect(screen.getByText(/Real payment sandbox/)).toHaveTextContent(
-      "Real payment sandbox · run 2026-10-26 · 2 seeds · the gates ran on Claude Haiku 5.5 for every model",
+      "Real payment sandbox · run 2026-11-07 · 4 seeds · the gates ran on Claude Haiku 5.5 for every model",
     );
 
     const held = section("Held-out attacks");
     expect(held).toHaveTextContent("3 attacks taken from published agent security benchmarks");
     expect(within(held).getAllByRole("article")).toHaveLength(1);
     expect(within(held).getByRole("article")).toHaveTextContent(
-      "Of 49 clean carts, 0 blocked and 4 sent to you by mistake.",
+      "Of 97 clean carts, 0 blocked and 1 sent to you by mistake.",
     );
 
     // The dashboard's preview draws the files' own counts, and nothing else.
     const preview = section("The dashboard");
-    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnOff11 of 16");
-    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnFull check0 of 16");
-    expect(preview).toHaveTextContent("Claude Haiku 5.5Held-outFull check0 of 16");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnOff23 of 32");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnFull check1 of 32");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5Held-outFull check1 of 32");
     expect(screen.queryByText(/Gemini|Running/)).toBeNull();
   });
 

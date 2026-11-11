@@ -102,7 +102,7 @@ describe("selectBenchmarkFiles", () => {
 
   it("says each file's adapter, model, set, gate model, seeds and date", () => {
     expect(sourceLine(summary("h", { ...heldOut, date: "2026-11-07" }))).toBe(
-      "Claude Haiku 5.5 · held-out set · sandbox adapter · gates on claude-haiku-5-5 · seeds 1, 2 · 7 Nov 2026",
+      "Claude Haiku 5.5 · held-out set · sandbox adapter · gates on claude-haiku-5-5 · seeds 1, 2, 3, 4 · 7 Nov 2026",
     );
   });
 
@@ -110,7 +110,7 @@ describe("selectBenchmarkFiles", () => {
     const own = summary("o", { date: "2026-11-07" });
     const held = summary("h", { ...heldOut, date: "2026-11-07" });
     expect(sourcesSentence([own, held])).toBe(
-      "Run on PayPal's payment sandbox on 7 Nov 2026, seeds 1 and 2: Claude Haiku 5.5 as the shopping agent, on our own tasks and on the held-out attacks. Chaperone's AI checks ran on Claude Haiku 5.5.",
+      "Run on PayPal's payment sandbox on 7 Nov 2026, seeds 1 to 4: Claude Haiku 5.5 as the shopping agent, on our own tasks and on the held-out attacks. Chaperone's AI checks ran on Claude Haiku 5.5.",
     );
     expect(sourcesSentence([])).toBeNull();
   });

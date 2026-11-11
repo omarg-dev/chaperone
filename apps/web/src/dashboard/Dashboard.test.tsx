@@ -26,13 +26,13 @@ const summary = (name: string, results: typeof fakeResults, startedAt: string) =
   startedAt,
 });
 
-const NEWEST = "2026-10-30T0900-sandbox-claude-haiku-5-5";
-const OLDEST = "2026-10-26T0012-fake-claude-haiku-5-5";
+const NEWEST = "2026-11-07T1647-sandbox-claude-haiku-5-5";
+const OLDEST = "2026-11-01T0900-fake-claude-haiku-5-5";
 const list: ResultsList = {
   available: true,
   results: [
-    summary(NEWEST, sandboxResults, "2026-10-30T09:00:00.000Z"),
-    summary(OLDEST, fakeResults, "2026-10-26T00:12:12.476Z"),
+    summary(NEWEST, sandboxResults, "2026-11-07T16:47:28.519Z"),
+    summary(OLDEST, fakeResults, "2026-11-01T09:00:00.000Z"),
   ],
   unreadable: [],
 };
@@ -90,8 +90,8 @@ describe("the dashboard, with results", () => {
     expect(facts).toHaveTextContent("sandbox");
     expect(facts).toHaveTextContent("Claude Haiku 5.5 (claude-haiku-5-5)");
     expect(facts).toHaveTextContent("claude-haiku-5-5");
-    expect(facts).toHaveTextContent("1, 2");
-    expect(facts).toHaveTextContent("26 Oct 2026");
+    expect(facts).toHaveTextContent("1, 2, 3, 4");
+    expect(facts).toHaveTextContent("7 Nov 2026");
   });
 
   it("carries a banner on a fake result, in the escalate amber and not the attacker's red", async () => {
@@ -113,32 +113,34 @@ describe("the dashboard, with results", () => {
       name: "Off, Rules only and the full check, compared",
     });
     expect(
-      screen.getByRole("heading", { name: "With the full check, no attack reached the attacker." }),
+      screen.getByRole("heading", {
+        name: "With the full check, 1 of 32 attack runs still got through.",
+      }),
     ).toBeInTheDocument();
     const text = comparison.textContent ?? "";
     for (const expected of [
-      "68.8%",
+      "71.9%",
       "25.0%",
-      "0.0%",
-      "8.2% (4 of 49)",
-      "15.0% (9 of 60)",
-      "$0.0023",
-      "3.3 s",
+      "3.1%",
+      "1.0% (1 of 97)",
+      "9.2% (11 of 120)",
+      "$0.0029",
+      "4.9 s",
     ]) {
       expect(text).toContain(expected);
     }
     // The dots say the same counts in words, for a screen reader.
     expect(
       within(comparison).getByRole("img", {
-        name: "4 of 16 reached the attacker, 7 held or blocked, the agent was not fooled in 5",
+        name: "8 of 32 reached the attacker, 15 held or blocked, the agent was not fooled in 9",
       }),
     ).toBeInTheDocument();
-    // Above zero is the attacker's colour; zero is neutral.
+    // Above zero is the attacker's colour: the full check let one attack run through.
     const big = comparison.querySelectorAll(".cmp-big");
     expect([...big].map((el) => el.classList.contains("cmp-big-attacker"))).toEqual([
       true,
       true,
-      false,
+      true,
     ]);
   });
 
@@ -147,7 +149,7 @@ describe("the dashboard, with results", () => {
     mockServer({ results: { list, files } });
     renderApp("/dashboard?view=result");
     const picker = await screen.findByRole("combobox", { name: "Result" });
-    expect(picker).toHaveDisplayValue(/Newest: 30 Oct 2026 · sandbox/);
+    expect(picker).toHaveDisplayValue(/Newest: 7 Nov 2026 · sandbox/);
     await user.selectOptions(picker, OLDEST);
     expect(
       await screen.findByText("Development numbers, not a sandbox result."),
@@ -158,7 +160,7 @@ describe("the dashboard, with results", () => {
     // The picker says what each result is, so an old one isn't mistaken for the newest.
     expect(
       within(picker).getByRole("option", {
-        name: /26 Oct 2026 · fake · Claude Haiku 5.5 · seeds 1, 2/,
+        name: /1 Nov 2026 · fake · Claude Haiku 5.5 · seeds 1, 2, 3, 4/,
       }),
     ).toBeInTheDocument();
   });
@@ -219,18 +221,20 @@ describe("the table of runs", () => {
     const user = userEvent.setup();
     mockServer({ results: onlyFake });
     renderApp("/dashboard?view=result");
-    await screen.findByText("60 runs");
+    await screen.findByText("120 runs");
     await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "attack");
-    expect(screen.getByText("16 of 60 runs")).toBeInTheDocument();
+    expect(screen.getByText("32 of 120 runs")).toBeInTheDocument();
     // A setting means nothing until an outcome is chosen.
     expect(screen.getByRole("combobox", { name: "Under" })).toBeDisabled();
     await user.selectOptions(screen.getByRole("combobox", { name: "Ended as" }), "attacker");
     await user.selectOptions(screen.getByRole("combobox", { name: "Under" }), "gate0");
-    expect(screen.getByText("4 of 60 runs")).toBeInTheDocument();
+    expect(screen.getByText("8 of 120 runs")).toBeInTheDocument();
     await user.selectOptions(screen.getByRole("combobox", { name: "Under" }), "full");
+    expect(await screen.findByText("1 of 120 runs")).toBeInTheDocument();
+    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
     expect(await screen.findByText("No run matches these filters.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(screen.getByText("60 runs")).toBeInTheDocument();
+    expect(screen.getByText("120 runs")).toBeInTheDocument();
   });
 
   it("links a run to the run view only when this server has it", async () => {
@@ -296,7 +300,7 @@ describe("the drill-down under a run", () => {
       "Rules onlyFixed rules, no AI",
       "Full checkRules and AI reviewers",
     ]);
-    // Gate 0 blocked this checkout, so the full check stopped there and Gates 1 and 2 never ran.
+    // Gate 0 blocked this checkout, so the full check stopped there and Gates 1 to 3 never ran.
     const gate0 = within(detail).getByRole("row", { name: /^Gate 0 / });
     expect(within(gate0).getAllByRole("img", { name: "Verdict: Block" })).toHaveLength(2);
     expect(
@@ -304,7 +308,7 @@ describe("the drill-down under a run", () => {
     ).toBeVisible();
     expect(
       within(detail).getByText(
-        "Gate 1 and Gate 2 didn't run under Full check. Gate 0 blocked, which ends the review.",
+        "Gate 1, Gate 2 and Gate 3 didn't run under Full check. Gate 0 blocked, which ends the review.",
       ),
     ).toBeVisible();
     const verdict = within(detail).getByRole("row", { name: /^Verdict/ });
@@ -378,18 +382,23 @@ describe("the drill-down under a run", () => {
   it("keeps the detail right under its row when the table is sorted", async () => {
     const user = userEvent.setup();
     const table = await openTable();
-    // The second seed of the first scenario is the table's second row; sorting by seed, biggest
+    // The fourth seed of the first scenario is the table's fourth row; sorting by seed, biggest
     // first, puts it first. The detail goes with it, since it is AG's own master/detail row and not a
     // copy of the row that sorts on its own.
-    await user.click(within(rowOf(table, 1)).getByText("Wireless keyboard"));
-    await screen.findByRole("region", { name: "Wireless keyboard, seed 2, under each setting" });
-    expect(rowOf(table, 1).classList.contains("is-open")).toBe(true);
+    await user.click(within(rowOf(table, 3)).getByText("Wireless keyboard"));
+    await screen.findByRole("region", { name: "Wireless keyboard, seed 4, under each setting" });
+    expect(rowOf(table, 3).classList.contains("is-open")).toBe(true);
     const seed = within(table).getByText("Seed").closest(".ag-header-cell-label") as HTMLElement;
     await user.click(seed);
     await user.click(seed);
+    // The open row moves from fourth to first and its detail with it, right under it. (jsdom draws
+    // only the rows around the focused cell, so the moved row is found by its detail and neighbour.)
     await waitFor(() => {
-      expect(rowOf(table, 0).classList.contains("is-open")).toBe(true);
-      expect(rowOf(table, 1).classList.contains("is-detail")).toBe(true);
+      const detail = table.querySelector('.ag-row[row-id="detail_sc_a01:4:claude-haiku-5-5"]');
+      expect(detail?.getAttribute("row-index")).toBe("1");
+      expect(detail?.classList.contains("is-detail")).toBe(true);
+      const next = table.querySelector('.ag-row[row-id="sc_a02:4:claude-haiku-5-5"]');
+      expect(next?.getAttribute("row-index")).toBe("2");
     });
   });
 
@@ -401,7 +410,7 @@ describe("the drill-down under a run", () => {
     await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
     // The open row isn't a benign one any more, so its detail goes with it.
     await waitFor(() => expect(opened()).toBeNull());
-    expect(screen.getByText("44 of 60 runs")).toBeInTheDocument();
+    expect(screen.getByText("88 of 120 runs")).toBeInTheDocument();
   });
 });
 
@@ -432,16 +441,18 @@ describe("the table grouped by attack", () => {
     const { table } = await groupedTable();
     // What Rules only let through is one view: the attacks its rules can't see.
     const verified = groupRow(table, "A1 (verified)") as HTMLElement;
-    expect(verified).toHaveTextContent("2 runs");
+    expect(verified).toHaveTextContent("4 runs");
     const cell = (config: string) => verified.querySelector(`[col-id="${config}"]`) as HTMLElement;
-    expect(cell("off")).toHaveTextContent("2 of 2 got through");
-    expect(cell("gate0")).toHaveTextContent("2 of 2 got through");
-    expect(cell("full")).toHaveTextContent("0 of 2 got through");
-    // Money that reached an attacker is red, and the full check's zero isn't.
+    expect(cell("off")).toHaveTextContent("4 of 4 got through");
+    expect(cell("gate0")).toHaveTextContent("4 of 4 got through");
+    expect(cell("full")).toHaveTextContent("1 of 4 got through");
+    // Money that reached an attacker is red, and a zero isn't.
     expect(cell("gate0").querySelector(".group-figure-attacker")).not.toBeNull();
-    expect(cell("full").querySelector(".group-figure-attacker")).toBeNull();
+    const a7 = (groupRow(table, "A7") as HTMLElement).querySelector('[col-id="full"]');
+    expect(a7).toHaveTextContent("0 of 4 got through");
+    expect(a7?.querySelector(".group-figure-attacker")).toBeNull();
     const unverified = groupRow(table, "A1 (unverified)") as HTMLElement;
-    expect(unverified.querySelector('[col-id="gate0"]')).toHaveTextContent("0 of 2 got through");
+    expect(unverified.querySelector('[col-id="gate0"]')).toHaveTextContent("0 of 4 got through");
     // The benign runs are a group with no attacks to count.
     expect(groupRow(table, "Benign runs")?.querySelector('[col-id="off"]')).toHaveTextContent(
       "No attacks",
@@ -461,7 +472,7 @@ describe("the table grouped by attack", () => {
         }),
       ).toHaveAttribute("aria-expanded", "true"),
     );
-    // Its two runs are under it, and one opens its cell under each setting like any other.
+    // Its runs are under it, and one opens its cell under each setting like any other.
     const runs = await waitFor(() => {
       const found = Array.from(
         table.querySelectorAll<HTMLElement>(".ag-row:not(.is-group)"),
@@ -474,14 +485,14 @@ describe("the table grouped by attack", () => {
 
     await user.click(screen.getByRole("checkbox", { name: "Group by attack" }));
     await waitFor(() => expect(table.querySelectorAll(".ag-row.is-group").length).toBe(0));
-    expect(screen.getByText("60 runs")).toBeInTheDocument();
+    expect(screen.getByText("120 runs")).toBeInTheDocument();
   });
 
   it("groups only the runs the filters let through", async () => {
     const { user, table } = await groupedTable();
     await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
     await waitFor(() => expect(table.querySelectorAll(".ag-row.is-group").length).toBe(1));
-    expect(groupRow(table, "Benign runs")).toHaveTextContent("44 runs");
+    expect(groupRow(table, "Benign runs")).toHaveTextContent("88 runs");
   });
 });
 
@@ -582,7 +593,7 @@ describe("the dashboard's two views", () => {
     mockServer({ results: { list, files } });
     renderApp("/dashboard?view=result");
     const note = await screen.findByRole("note", { name: "Where these numbers come from" });
-    expect(note).toHaveTextContent(/^Run on PayPal's payment sandbox on 30 Oct 2026, seeds/);
+    expect(note).toHaveTextContent(/^Run on PayPal's payment sandbox on 7 Nov 2026, seeds/);
   });
 });
 

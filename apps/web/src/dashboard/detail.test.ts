@@ -15,10 +15,10 @@ const detailFor = (rowId: string) => {
   return detailOf(cell, row(rowId));
 };
 
-// A cell the full check approved and Gate 0 alone did too: every gate ran under the full check.
+// A cell every gate ran on under the full check.
 const approved = rows.find((r) => {
   const cell = cellOf(fakeResults, r.id);
-  return cell?.outcomes.find((o) => o.config === "full")?.gates.length === 3;
+  return cell?.outcomes.find((o) => o.config === "full")?.gates.length === 4;
 });
 // A cell Gate 0 blocked: the full check stopped there, and skipped the model gates.
 const stopped = rows.find((r) => {
@@ -52,7 +52,7 @@ describe("the drill-down's data", () => {
     expect(approved).toBeDefined();
     const detail = detailFor(approved?.id ?? "");
     const [, gate0, full] = detail.settings;
-    // Rules only runs the rules; the full check runs all three, and the model gates cost money.
+    // Rules only runs the rules; the full check runs all four, and the model gates cost money.
     expect(gate0?.gates.gate0).toMatchObject({ kind: "ran", verdict: "approve", cost: null });
     expect(gate0?.gates.gate1).toEqual({ kind: "absent" });
     const cell = cellOf(fakeResults, approved?.id ?? "");
@@ -63,7 +63,7 @@ describe("the drill-down's data", () => {
       time: expect.stringMatching(/ (ms|s)$/),
       cost: expect.stringMatching(/^\$0\.\d{4}$/),
     });
-    expect(detail.gates).toEqual(["gate0", "gate1", "gate2"]);
+    expect(detail.gates).toEqual(["gate0", "gate1", "gate2", "gate3"]);
   });
 
   it("words why the tree skipped a gate, without a code name", () => {
@@ -76,9 +76,10 @@ describe("the drill-down's data", () => {
       why: "Gate 0 blocked, which ends the review",
     });
     expect(full?.gates.gate2).toMatchObject({ kind: "skipped" });
-    // The reason is said once, for the two gates that share it.
+    expect(full?.gates.gate3).toMatchObject({ kind: "skipped" });
+    // The reason is said once, for the three gates that share it.
     expect(detail.notes).toEqual([
-      "Gate 1 and Gate 2 didn't run under Full check. Gate 0 blocked, which ends the review.",
+      "Gate 1, Gate 2 and Gate 3 didn't run under Full check. Gate 0 blocked, which ends the review.",
     ]);
   });
 

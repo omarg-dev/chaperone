@@ -6,12 +6,12 @@ import { type EventLog, openEventLog } from "@firewall/events";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "./app.js";
 
-// The eval's results over HTTP, from a real folder in a temp directory. The files are copies of the
-// committed first matrix (a real `buildResults` file) with their settings changed.
+// The eval's results over HTTP, from a real folder in a temp directory. The files are copies of a
+// committed sandbox result (a real `buildResults` file) with their settings changed.
 
 const first = JSON.parse(
   readFileSync(
-    new URL("../../../results/2026-10-26T0012-fake-claude-haiku-5-5.json", import.meta.url),
+    new URL("../../../results/2026-11-07T1647-sandbox-claude-haiku-5-5.json", import.meta.url),
     "utf8",
   ),
 );
@@ -67,7 +67,14 @@ const put = (name: string, content: unknown) =>
 
 describe("GET /eval/results", () => {
   it("lists each file's adapter, model column, gate model, seeds and date, newest first", async () => {
-    put("old-fake.json", withMeta({ startedAt: "2026-10-20T09:00:00.000Z", date: "2026-10-20" }));
+    put(
+      "old-fake.json",
+      withMeta({
+        paymentAdapter: "fake",
+        startedAt: "2026-10-20T09:00:00.000Z",
+        date: "2026-10-20",
+      }),
+    );
     put(
       "new-sandbox.json",
       withMeta({
@@ -144,7 +151,7 @@ describe("GET /eval/results/:name", () => {
     expect(res.status).toBe(200);
     const body = await one(res);
     expect(body.name).toBe("one");
-    expect(body.results.meta.paymentAdapter).toBe("fake");
+    expect(body.results.meta.paymentAdapter).toBe("sandbox");
     expect(body.results.metrics.configs).toEqual(first.metrics.configs);
     expect(body.results.cells).toHaveLength(first.cells.length);
     expect(JSON.stringify(body)).not.toContain("is on the verified-seller list");
