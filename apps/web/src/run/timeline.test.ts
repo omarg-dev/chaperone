@@ -3,7 +3,14 @@ import { describe, expect, it } from "vitest";
 import { plainWords } from "../words/plain";
 import type { RunEvent } from "./events";
 import { fixtures, payees, upTo } from "./fixtures";
-import { buildRun, mandateTerms, markQuotes, type RunItem, tidyReason } from "./timeline";
+import {
+  buildRun,
+  mandateTerms,
+  marketWords,
+  markQuotes,
+  type RunItem,
+  tidyReason,
+} from "./timeline";
 
 // The mapping from a run's events to the run view's model, over real logs: each fixture is a run
 // the pipeline made (packages/eval/scripts/record-run-fixtures.ts), not a hand-built list.
@@ -711,5 +718,51 @@ describe("the firewall's words, for someone who isn't a developer", () => {
         /\bmandate\b|sha256:|\b(?:seller|brand|md|lst|sku)_[a-z0-9]|\bextractor\b|\bauditor\b|\bGate \d (?:flagged|blocked)/i,
       );
     }
+  });
+});
+
+describe("Gate 2's real-market price", () => {
+  const marketRow = (log: RunEvent[]) =>
+    of(build(log).items, "gate2_card")[0]?.lines[0]?.rows.find(
+      (r) => r.label === "Real-market price",
+    )?.value;
+
+  it("says why there was none, in plain words, and that it decides nothing", () => {
+    expect(marketRow(fixtures.approved)).toBe(
+      "Not available: this server has no Channel3 key. It's only a note, so the review is the same without it",
+    );
+  });
+
+  it("shows the range Channel3 gave: low to high, the median, and its source", () => {
+    const log = structuredClone(fixtures.approved);
+    const market = log.find((e) => e.type === "gate2_market");
+    const lines = (market?.payload as { lines?: { quote: Record<string, unknown> }[] } | undefined)
+      ?.lines;
+    const line = lines?.[0];
+    if (!line) throw new Error("the fixture has no market line");
+    line.quote = {
+      status: "available",
+      source: "channel3",
+      query: "wireless tenkeyless mechanical keyboard, tactile switches",
+      products: 20,
+      pricedProducts: 14,
+      lowCents: 1299,
+      medianCents: 2100,
+      highCents: 11700,
+      latencyMs: 640,
+    };
+    expect(marketRow(log)).toBe(
+      "$12.99 to $117.00, median $21.00, via Channel3. A note for you: it decides nothing",
+    );
+  });
+
+  it("names each reason Channel3 can give for having no range", () => {
+    expect(marketWords({ status: "unavailable", reason: "too_few_prices" })).toBe(
+      "Not available: Channel3 found too few prices to give a range. It's only a note, so the review is the same without it",
+    );
+    expect(marketWords({ status: "unavailable", reason: "unreachable" })).toMatch(
+      /^Not available: Channel3 couldn't be reached\./,
+    );
+    expect(marketWords({})).toBeNull();
   });
 });

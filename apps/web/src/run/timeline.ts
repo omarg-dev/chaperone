@@ -348,6 +348,34 @@ const words = (id: string) => id.replace(/^brand_/, "").replace(/_/g, " ");
 const dollars = (cents: number) =>
   `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+// Why Gate 2's real-market reference had no range, in plain words.
+const MARKET_UNAVAILABLE_WORDS: Record<string, string> = {
+  not_configured: "this server has no Channel3 key",
+  unreachable: "Channel3 couldn't be reached",
+  http_error: "Channel3 answered with an error",
+  invalid_response: "Channel3's answer couldn't be read",
+  too_few_prices: "Channel3 found too few prices to give a range",
+};
+
+// Gate 2's real-market reference for one cart line (a gate2_market quote), as the run page says
+// it: the low, median and high prices Channel3 found for that kind of product, or why there were
+// none. It is a note for the person and decides nothing, which the words say. Null when the line
+// has no quote.
+export function marketWords(quote: Obj): string | null {
+  if (quote.status === "available") {
+    const low = num(quote.lowCents);
+    const median = num(quote.medianCents);
+    const high = num(quote.highCents);
+    if (low === null || median === null || high === null) return null;
+    return `${dollars(low)} to ${dollars(high)}, median ${dollars(median)}, via Channel3. A note for you: it decides nothing`;
+  }
+  if (quote.status === "unavailable") {
+    const why = MARKET_UNAVAILABLE_WORDS[str(quote.reason) ?? ""] ?? "Channel3 gave no range";
+    return `Not available: ${why}. It's only a note, so the review is the same without it`;
+  }
+  return null;
+}
+
 // A gate's reason as a sentence for the screen: the listing's id becomes its product's name and
 // the trailing [code] a gate adds for its own bookkeeping goes.
 export function tidyReason(reason: string, names: ReadonlyMap<string, string>): string {
@@ -1101,15 +1129,8 @@ export function buildRun(
             .map((c) => String(typeof c === "string" ? c : (obj(c).attribute ?? "")))
             .join(", "),
         });
-      const quote = obj(marketLines.find((m) => m.listingId === listingId)?.quote);
-      if (quote.status === "available") {
-        rows.push({ label: "Real-market price", value: "Checked" });
-      } else if (quote.status === "unavailable") {
-        rows.push({
-          label: "Real-market price",
-          value: "Not checked, so only the marketplace's offers were compared",
-        });
-      }
+      const market = marketWords(obj(marketLines.find((m) => m.listingId === listingId)?.quote));
+      if (market) rows.push({ label: "Real-market price", value: market });
       if (list(line.steering).length > 0)
         rows.push({ label: "Steering", value: "Gate 1 flagged its page" });
       return { productName: productName(listingId), rows };
