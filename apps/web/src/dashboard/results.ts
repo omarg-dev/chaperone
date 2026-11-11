@@ -126,10 +126,10 @@ export function measuresOf(configs: readonly ConfigMetricsView[]): Measure[] {
     row("escalation", "Sent to a person", "All runs", (c) =>
       share(c.escalationRate, c.escalated, c.runs),
     ),
-    row("cost", "Review cost per run", "Gate model spend", (c) =>
+    row("cost", "Review cost per run", "What the AI checks cost", (c) =>
       c.gatesCostPerRunUsd === null ? "n/a" : formatCost(c.gatesCostPerRunUsd),
     ),
-    row("time", "Review time", "Mean, checkout to verdict", (c) =>
+    row("time", "Review time", "Average, from checkout to decision", (c) =>
       formatDuration(c.latencyMs.mean),
     ),
   ];

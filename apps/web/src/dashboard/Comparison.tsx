@@ -123,8 +123,8 @@ export function Comparison({ results }: { results: ResultsView }) {
         ))}
       </div>
       <p className="t-meta cmp-foot">
-        A clean cart is the right thing from an honest seller. Blocked and held both keep the money,
-        and a block of a cart the agent got wrong is a correct block.
+        A clean cart is the right item from an honest seller. Blocking and holding both keep the
+        money from moving, and blocking a cart the agent got wrong is the right call.
         {failed && ` ${failed}`}
       </p>
     </section>

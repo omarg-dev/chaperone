@@ -12,8 +12,7 @@ export function Provenance({ results }: { results: ResultsView }) {
       {p.adapter === "fake" ? (
         <div className="fake-banner" role="note">
           <strong>Development numbers, not a sandbox result.</strong> This run used the fake payment
-          adapter, so no sandbox money moved. Don't quote these numbers in the video or the
-          write-up.
+          adapter, so no sandbox money moved. Don't quote these numbers as results.
         </div>
       ) : (
         <div className="sandbox-note t-meta" role="note">
