@@ -1,5 +1,7 @@
 # Chaperone SDK
 
+**For developers** who want to put Chaperone in front of a shopping agent of their own. To see Chaperone at work without writing any code, [start a run](/start) or open [the runs](/runs) and watch a recorded one.
+
 `@firewall/sdk` puts the firewall in front of your own shopping agent. You give it your agent's tools, and the payment tool holds the cart instead of paying for it. A review then decides whether to capture, void or ask the person.
 
 ## Quick start

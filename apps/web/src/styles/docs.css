@@ -93,6 +93,8 @@
 }
 
 .docs-body code {
+  /* A long name in a sentence breaks rather than widening the page on a phone. */
+  overflow-wrap: anywhere;
   font-family: var(--font-mono);
   font-size: 0.875em;
   background: var(--sunk);
@@ -110,6 +112,7 @@
 }
 
 .docs-body pre code {
+  overflow-wrap: normal;
   background: none;
   padding: 0;
   font-size: var(--text-data);
@@ -127,4 +130,29 @@
   .docs-contents {
     position: static;
   }
+}
+
+/* The contents on a phone: one line that opens, with links tall enough to tap. */
+.docs-contents-fold {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.docs-contents-fold summary {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.docs-contents-fold ul {
+  gap: 0;
+  margin: 0 0 var(--space-2);
+}
+
+.docs-contents-fold a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
 }

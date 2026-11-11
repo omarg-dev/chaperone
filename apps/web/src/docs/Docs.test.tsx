@@ -42,4 +42,25 @@ describe("the docs page", () => {
     expect(README).toContain(EXAMPLE);
     expect(SDK_DOCS).toContain(EXAMPLE);
   });
+
+  it("says who it is for, and points everyone else at a run", () => {
+    mockServer();
+    renderApp("/docs");
+    expect(screen.getByText("For developers")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "start a run" })).toHaveAttribute("href", "/start");
+  });
+
+  it("folds the contents into one line on a phone, and lets a keyboard reach a code block", () => {
+    mockDevice(false, true);
+    mockServer();
+    const { container } = renderApp("/docs");
+    const nav = screen.getByRole("navigation", { name: "On this page" });
+    const fold = nav.querySelector("details");
+    expect(fold).not.toBeNull();
+    expect(fold).not.toHaveAttribute("open");
+    expect(within(nav).getByText("On this page", { selector: "summary" })).toBeInTheDocument();
+    for (const pre of container.querySelectorAll(".docs-body pre")) {
+      expect(pre).toHaveAttribute("tabindex", "0");
+    }
+  });
 });
