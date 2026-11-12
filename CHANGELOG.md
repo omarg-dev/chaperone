@@ -4,6 +4,11 @@ What each release brought, for the people who use it. Adding a version at the to
 into main is the release: it's tagged, published and deployed from there. Each release bumps the
 patch version, except the one minor version per milestone the repo's `CLAUDE.md` allows.
 
+## 0.3.2
+
+- A run you watch live, or replay, now scrolls with it: the newest step stays in view above the replay bar, and each new step eases in instead of appearing at once. Scroll up to read and the page stays where you put it.
+- On the dashboard, the note about the AI assistant spans the panel, with its example questions side by side, so it takes far less room above the charts.
+
 ## 0.3.1
 
 Every page now reads plainly and works on a phone.
