@@ -4,6 +4,18 @@ What each release brought, for the people who use it. Adding a version at the to
 into main is the release: it's tagged, published and deployed from there. Each release bumps the
 patch version, except the one minor version per milestone the repo's `CLAUDE.md` allows.
 
+## 0.3.1
+
+Every page now reads plainly and works on a phone.
+
+- Start a run, a run's page, the inbox, the Runs history, the dashboard and the docs use plain words: "the rules you locked" instead of "mandate", requirements such as "Noise cancelling: yes", and checks set to Off, Rules only or Full check.
+- A run's page tells what happened as a story, says where the money went once, and shows the real-market price range from Channel3 for each item.
+- The inbox says why a purchase is waiting, and what approving or rejecting will do, before you decide.
+- The dashboard opens on AG Studio, explains what the benchmark measures, and makes its assistant easy to find.
+- On a phone, the top bar folds into a menu, every page fits the screen, and tables scroll inside their own frame.
+- One button switches between light and dark, and a footer on every page links to the source, the licence and the contact.
+- The home page says it in one line: Chaperone, the parent to your shopping agent.
+
 ## 0.3.0
 
 v1.2: Chaperone's numbers, measured against the real payment sandbox, and a site that explains itself.
