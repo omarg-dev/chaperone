@@ -138,16 +138,23 @@ function RunPage({ runId }: { runId: string }) {
   );
   const replaying = replay.open && replay.position < events.length;
 
-  // Keeps the newest row in view as the playhead moves, and scrolls without animation when asked to.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: the position is what makes it run.
+  // Keeps the newest row in view as a replay moves or a live run grows, the way a log tails. It only
+  // follows someone who was already at the newest row, so scrolling up to read stays where it is.
+  const following = replay.open || model.live;
+  const rowCount = model.items.length;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the position and row count are what make it run.
   useEffect(() => {
-    if (!replay.open) return;
+    if (!following) return;
     const rows = document.querySelectorAll(".tl-rows > li");
-    rows[rows.length - 1]?.scrollIntoView?.({
-      block: "nearest",
+    const last = rows[rows.length - 1];
+    const before = rows[rows.length - 2];
+    if (!last) return;
+    if (before && before.getBoundingClientRect().top > window.innerHeight) return;
+    last.scrollIntoView?.({
+      block: "end",
       behavior: prefersReducedMotion() ? "auto" : "smooth",
     });
-  }, [replay.open, replay.position]);
+  }, [following, replay.position, rowCount]);
 
   if (status === "loading") {
     return (
