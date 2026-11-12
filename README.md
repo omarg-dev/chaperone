@@ -192,20 +192,6 @@ pnpm lint && pnpm check && pnpm test && pnpm build
 
 The tests never call a model or PayPal: they replay recorded answers and use the fake. The PayPal contract suite runs against the real sandbox with `pnpm --filter @firewall/payments test:sandbox`. The commands that run a scenario, build rules on the command line and run the benchmark are in [docs/architecture.md](docs/architecture.md).
 
-## Deploying (one-time setup)
-
-The demo runs on a VPS with Docker Compose behind Caddy. A merged PR that adds a new version to the top of `CHANGELOG.md` is a release: CI builds the image, pushes it to `ghcr.io/omarg-dev/chaperone`, and deploys it. The one-time steps, the server's `.env`, backups and importing demo runs are in [docs/deploying.md](docs/deploying.md).
-
-```
-feat/<thing> ──PR──▶ main ──release──▶ production
-```
-
-`main` is the only long-lived branch, and there's no staging.
-
-## Built with AI coding tools
-
-Omar Ghazal built Chaperone solo, with Claude Code. Claude wrote much of the code under his direction and review, and most commits in the history are authored by Claude.
-
 ## Licence and contact
 
 [MIT](LICENSE), © 2026 Omar Ghazal. The held-out attacks adapt text from MIT-licensed benchmarks, whose notices are in [packages/arena/THIRD_PARTY_NOTICES.md](packages/arena/THIRD_PARTY_NOTICES.md).
