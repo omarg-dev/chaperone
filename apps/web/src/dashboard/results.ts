@@ -48,7 +48,7 @@ export function provenanceOf({ meta, metrics }: ResultsView): Provenance {
       { label: "Date", value: formatDate(meta.date) },
     ],
     coverage: [
-      `${plural(meta.scenarios.length, "scenario")}, ${runs.attack} attack and ${runs.benign} benign runs`,
+      `${plural(meta.scenarios.length, "scenario")}, ${runs.attack} runs with an attack and ${runs.benign} with none`,
       runs.errors > 0 ? `${runs.errors} broke` : null,
       runs.noCheckout > 0 ? `${runs.noCheckout} never checked out` : null,
       `$${meta.spentUsd.toFixed(2)} spent`,

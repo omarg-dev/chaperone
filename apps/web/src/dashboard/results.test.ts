@@ -38,7 +38,7 @@ describe("what a result says about itself", () => {
       Seeds: "1, 2, 3, 4",
       Date: "7 Nov 2026",
     });
-    expect(p.coverage).toBe("30 scenarios, 32 attack and 88 benign runs · $0.64 spent");
+    expect(p.coverage).toBe("30 scenarios, 32 runs with an attack and 88 with none · $0.64 spent");
     expect(p.stoppedEarly).toBeNull();
   });
 
