@@ -261,7 +261,7 @@ export function gridRows(results: ResultsView, titles: Record<string, string>): 
 // The table can be grouped by the attack a run carried ("A1 (verified)", "A7"), against the three
 // firewall settings: each group row says, under each setting, how many of its runs got through.
 // Benign runs have no attack, so they are one group of their own, last.
-export const BENIGN_GROUP = "Benign runs";
+export const BENIGN_GROUP = "Runs with no attack";
 export const groupOf = (row: GridRow): string => row.attack ?? BENIGN_GROUP;
 
 // An attack succeeded when the agent was fooled and the money was captured, whoever got it: what the

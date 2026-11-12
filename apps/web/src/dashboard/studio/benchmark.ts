@@ -62,7 +62,7 @@ export interface BenchmarkRow {
   scenarioSet: ScenarioSet;
   scenario: string;
   scenarioId: string;
-  kind: "Attack" | "Benign";
+  kind: "Attack" | "No attack";
   // "A1 (verified)" for an attack, "None" for a benign run.
   attack: string;
   harm: string;
@@ -133,7 +133,7 @@ export function benchmarkRows(
           scenarioSet: set,
           scenario: titles[run.scenarioId] ?? run.scenarioId,
           scenarioId: run.scenarioId,
-          kind: run.kind === "attack" ? "Attack" : "Benign",
+          kind: run.kind === "attack" ? "Attack" : "No attack",
           attack: attackOf(cell),
           harm: run.attack?.harm ?? "None",
           seed: run.seed,

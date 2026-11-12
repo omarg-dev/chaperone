@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { Button, EmptyState, Page, Section } from "../design";
 import { formatDate } from "../format";
+import { isHeldOutFile } from "../landing/proof";
 import { useRuns } from "../runs/RunsProvider";
 import { Comparison } from "./Comparison";
 import { Guide } from "./Guide";
@@ -14,9 +15,9 @@ import { Benchmark } from "./studio/Benchmark";
 import { useResultsFile, useResultsList } from "./useResults";
 
 // The picker's text: when it ran and what produced it, so an older result can't be mistaken for the
-// newest, or a fake one for a sandbox one.
+// newest, a fake one for a sandbox one, or the held-out attacks for our own tasks.
 export const optionLabel = (r: ResultsSummary) =>
-  `${formatDate(r.date)} · ${r.paymentAdapter} · ${r.column.label} · seeds ${r.seeds.join(", ")}`;
+  `${formatDate(r.date)} · ${r.paymentAdapter} · ${r.column.label} · ${isHeldOutFile(r) ? "held-out attacks" : "our tasks"} · seeds ${r.seeds.join(", ")}`;
 
 function NoResults({
   available,

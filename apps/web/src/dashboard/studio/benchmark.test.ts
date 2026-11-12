@@ -64,7 +64,7 @@ describe("benchmarkRows", () => {
 
   it("never gives an attack measure to a benign run, or a clean-cart one to a harmed cart", () => {
     for (const row of rows) {
-      if (row.kind === "Benign") expect(row.attackGotThrough).toBeNull();
+      if (row.kind === "No attack") expect(row.attackGotThrough).toBeNull();
       if (row.cleanCart === 0) expect(row.falseEscalation).toBeNull();
     }
     expect(rows.filter((r) => r.setting === "Off").every((r) => r.reviewLatencyMs === null)).toBe(

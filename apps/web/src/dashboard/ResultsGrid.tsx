@@ -119,7 +119,7 @@ function ScenarioCell(props: CellProps<GridRow> & { openId: string | null }) {
 const KindCell = ({ data }: CellProps<GridRow>) =>
   data && (
     <div className="cell-stack">
-      <span>{data.kind === "attack" ? "Attack" : "Benign"}</span>
+      <span>{data.kind === "attack" ? "Attack" : "No attack"}</span>
       {data.attack && <span className="t-meta">{data.attack}</span>}
     </div>
   );
@@ -394,12 +394,12 @@ export function ResultsGrid({
           />
         </label>
         <Select
-          label="Kind"
+          label="Attack"
           value={filters.kind}
           onChange={(kind) => set({ kind })}
           options={[
-            { value: "attack", label: "Attacks" },
-            { value: "benign", label: "Benign" },
+            { value: "attack", label: "With an attack" },
+            { value: "benign", label: "No attack" },
           ]}
           any="All runs"
         />

@@ -160,7 +160,7 @@ describe("the dashboard, with results", () => {
     // The picker says what each result is, so an old one isn't mistaken for the newest.
     expect(
       within(picker).getByRole("option", {
-        name: /1 Nov 2026 · fake · Claude Haiku 5.5 · seeds 1, 2, 3, 4/,
+        name: /1 Nov 2026 · fake · Claude Haiku 5.5 · our tasks · seeds 1, 2, 3, 4/,
       }),
     ).toBeInTheDocument();
   });
@@ -222,7 +222,7 @@ describe("the table of runs", () => {
     mockServer({ results: onlyFake });
     renderApp("/dashboard?view=result");
     await screen.findByText("120 runs");
-    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "attack");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Attack" }), "attack");
     expect(screen.getByText("32 of 120 runs")).toBeInTheDocument();
     // A setting means nothing until an outcome is chosen.
     expect(screen.getByRole("combobox", { name: "Under" })).toBeDisabled();
@@ -231,7 +231,7 @@ describe("the table of runs", () => {
     expect(screen.getByText("8 of 120 runs")).toBeInTheDocument();
     await user.selectOptions(screen.getByRole("combobox", { name: "Under" }), "full");
     expect(await screen.findByText("1 of 120 runs")).toBeInTheDocument();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Attack" }), "benign");
     expect(await screen.findByText("No run matches these filters.")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(screen.getByText("120 runs")).toBeInTheDocument();
@@ -407,7 +407,7 @@ describe("the drill-down under a run", () => {
     const table = await openTable();
     await user.click(within(rowOf(table, 0)).getByText("Wireless keyboard"));
     await screen.findByRole("region", { name: /under each setting/ });
-    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Attack" }), "benign");
     // The open row isn't a benign one any more, so its detail goes with it.
     await waitFor(() => expect(opened()).toBeNull());
     expect(screen.getByText("88 of 120 runs")).toBeInTheDocument();
@@ -454,9 +454,9 @@ describe("the table grouped by attack", () => {
     const unverified = groupRow(table, "A1 (unverified)") as HTMLElement;
     expect(unverified.querySelector('[col-id="gate0"]')).toHaveTextContent("0 of 4 got through");
     // The benign runs are a group with no attacks to count.
-    expect(groupRow(table, "Benign runs")?.querySelector('[col-id="off"]')).toHaveTextContent(
-      "No attacks",
-    );
+    expect(
+      groupRow(table, "Runs with no attack")?.querySelector('[col-id="off"]'),
+    ).toHaveTextContent("No attacks");
   });
 
   it("opens a group to its runs, and a run to its detail, and ungroups", async () => {
@@ -490,9 +490,9 @@ describe("the table grouped by attack", () => {
 
   it("groups only the runs the filters let through", async () => {
     const { user, table } = await groupedTable();
-    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Attack" }), "benign");
     await waitFor(() => expect(table.querySelectorAll(".ag-row.is-group").length).toBe(1));
-    expect(groupRow(table, "Benign runs")).toHaveTextContent("88 runs");
+    expect(groupRow(table, "Runs with no attack")).toHaveTextContent("88 runs");
   });
 });
 
@@ -517,7 +517,7 @@ describe("charting the table", () => {
     mockServer({ results: onlyFake });
     renderApp("/dashboard?view=result");
     await screen.findByRole("region", { name: "Every run in this matrix" });
-    await user.selectOptions(screen.getByRole("combobox", { name: "Kind" }), "benign");
+    await user.selectOptions(screen.getByRole("combobox", { name: "Attack" }), "benign");
     expect(screen.getByRole("button", { name: "Chart attacks" })).toBeDisabled();
   });
 });
