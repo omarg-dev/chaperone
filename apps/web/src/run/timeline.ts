@@ -995,9 +995,10 @@ export function buildRun(
       for (const raw of list(facts.attributes)) {
         const attribute = obj(raw);
         if (attribute.value !== "not_stated" && attribute.value !== null) {
-          summary.push(
-            `${String(attribute.attribute).replace(/_/g, " ")} ${String(attribute.value)}`,
-          );
+          // "wireless: no", not "wireless false": a yes-or-no fact in words.
+          const value =
+            attribute.value === true ? "yes" : attribute.value === false ? "no" : attribute.value;
+          summary.push(`${String(attribute.attribute).replace(/_/g, " ")}: ${String(value)}`);
         }
       }
       factRows.push({
