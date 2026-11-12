@@ -14,6 +14,7 @@ import {
 import { formatCost, formatTime } from "../format";
 import { useRuns } from "../runs/RunsProvider";
 import { paymentsLabel } from "../runs/state";
+import { useNarrow } from "../shell/useNarrow";
 import { firewallLabel, isFirewallSetting } from "../start/copy";
 import { DecisionPanel } from "./DecisionPanel";
 import { ReplayBar } from "./ReplayBar";
@@ -124,6 +125,8 @@ export function RunView() {
 function RunPage({ runId }: { runId: string }) {
   const { status, model: whole, events, payees, reload } = useRun(runId);
   const runs = useRuns();
+  // On a phone the three columns stack, so the page can't point left, middle and right.
+  const narrow = useNarrow();
 
   // Replay is offered once the run is done; a run in progress is followed live.
   const replay = useReplay(events, status === "ready" && !whole.live && events.length > 1);
@@ -276,9 +279,9 @@ function RunPage({ runId }: { runId: string }) {
 
       <Station heading="What happened, step by step" className="run-timeline-station">
         <p className="run-how">
-          Read down. On the left is what you and the agent did and what each check found. In the
-          middle is the money, and the checks it had to pass. On the right is text sellers wrote,
-          which Chaperone never trusts.
+          {narrow
+            ? "Read down. Each step is marked with whose it is, as the key below shows: you, the agent and the checks; the money; or text sellers wrote, which Chaperone never trusts."
+            : "Read down. On the left is what you and the agent did and what each check found. In the middle is the money, and the checks it had to pass. On the right is text sellers wrote, which Chaperone never trusts."}
         </p>
         {model.earlierReviews.length > 0 && (
           <p className="t-meta run-earlier">
