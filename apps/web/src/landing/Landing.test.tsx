@@ -10,8 +10,8 @@ afterEach(() => vi.unstubAllGlobals());
 
 const section = (name: string) => screen.getByRole("region", { name });
 
-// The dashboard's sandbox fixture (68.8% of 16 attacks with the firewall off, 0.0% with the full
-// tree), as our own set for Claude Haiku 5.5, and again as a held-out set of three scenarios.
+// The dashboard's sandbox fixture (71.9% of 32 attacks with the firewall off, 3.1% with the full
+// check), as our own set for Claude Haiku 5.5, and again as a held-out set of three scenarios.
 const heldOut: ResultsView = {
   ...sandboxResults,
   meta: { ...sandboxResults.meta, scenarios: ["sc_h01", "sc_h02", "sc_h03"] },
@@ -37,7 +37,10 @@ describe("the landing page", () => {
     mockServer();
     renderApp("/");
     expect(
-      await screen.findByRole("heading", { level: 1, name: "The pause before your agent pays." }),
+      await screen.findByRole("heading", {
+        level: 1,
+        name: "Chaperone, the parent to your shopping agent.",
+      }),
     ).toBeInTheDocument();
     for (const name of [
       "Chaperone",
@@ -89,10 +92,11 @@ describe("the landing page", () => {
     for (const name of ["Claude", "OpenAI", "AI SDK", "AG Studio", "Postman"]) {
       expect(within(end).getByText(name)).toBeInTheDocument();
     }
-    expect(end).toHaveTextContent("Built on PayPal's sandbox");
     const line = within(end).getByText("Works with").closest("div") as HTMLElement;
-    expect(line).toHaveTextContent("Built on PayPal's sandbox");
     expect(line.querySelector("img, svg, picture")).toBeNull();
+    // The footer says what it is built on, once: the home page doesn't say it a second time.
+    expect(screen.getAllByText(/Built on PayPal's sandbox/)).toHaveLength(1);
+    expect(end).not.toHaveTextContent("Built on PayPal's sandbox");
   });
 
   it("says when there are no results, and draws no figures and no placeholder model", async () => {
@@ -116,29 +120,29 @@ describe("the landing page", () => {
     const model = await within(proof).findByRole("article");
     expect(within(model).getByRole("heading", { name: "Claude Haiku 5.5" })).toBeInTheDocument();
     const row = (label: string) => within(model).getByText(label).parentElement as HTMLElement;
-    expect(within(row("Firewall off")).getByText("68.8%")).toBeInTheDocument();
-    expect(row("Firewall off")).toHaveTextContent("11 of 16");
-    expect(within(row("With Chaperone")).getByText("0.0%")).toBeInTheDocument();
-    expect(row("With Chaperone")).toHaveTextContent("0 of 16");
-    expect(model).toHaveTextContent("Clean carts: 0 blocked, 4 sent to you, of 49");
+    expect(within(row("Off")).getByText("71.9%")).toBeInTheDocument();
+    expect(row("Off")).toHaveTextContent("23 of 32");
+    expect(within(row("Full check")).getByText("3.1%")).toBeInTheDocument();
+    expect(row("Full check")).toHaveTextContent("1 of 32");
+    expect(model).toHaveTextContent("Of 97 clean carts, 0 blocked and 1 sent to you by mistake.");
     // Where the numbers come from is said once, under both sets.
     expect(screen.getAllByText(/Real payment sandbox/)).toHaveLength(1);
     expect(screen.getByText(/Real payment sandbox/)).toHaveTextContent(
-      "Real payment sandbox · run 2026-10-26 · 2 seeds · gates on Claude Haiku 5.5 for every model",
+      "Real payment sandbox · run 2026-11-07 · 4 seeds · the gates ran on Claude Haiku 5.5 for every model",
     );
 
     const held = section("Held-out attacks");
-    expect(held).toHaveTextContent("3 attacks ported from published agent security benchmarks");
+    expect(held).toHaveTextContent("3 attacks taken from published agent security benchmarks");
     expect(within(held).getAllByRole("article")).toHaveLength(1);
     expect(within(held).getByRole("article")).toHaveTextContent(
-      "Clean carts: 0 blocked, 4 sent to you, of 49",
+      "Of 97 clean carts, 0 blocked and 1 sent to you by mistake.",
     );
 
     // The dashboard's preview draws the files' own counts, and nothing else.
     const preview = section("The dashboard");
-    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnOff11 of 16");
-    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnFull tree0 of 16");
-    expect(preview).toHaveTextContent("Claude Haiku 5.5Held-outFull tree0 of 16");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnOff23 of 32");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5OwnFull check1 of 32");
+    expect(preview).toHaveTextContent("Claude Haiku 5.5Held-outFull check1 of 32");
     expect(screen.queryByText(/Gemini|Running/)).toBeNull();
   });
 

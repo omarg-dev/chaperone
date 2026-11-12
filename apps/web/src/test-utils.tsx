@@ -10,7 +10,9 @@ import { ThemeProvider } from "./theme/ThemeProvider";
 
 // A stand-in for the device's colour preference, which jsdom doesn't have. Returns a function that
 // changes it the way switching the operating system's theme would.
-export function mockDevice(dark: boolean) {
+// The device's colour scheme, and whether it is a phone's width (`narrow`, the app's
+// `(max-width: 760px)`).
+export function mockDevice(dark: boolean, narrow = false) {
   let matches = dark;
   const listeners = new Set<(event: MediaQueryListEvent) => void>();
   vi.stubGlobal(
@@ -19,6 +21,7 @@ export function mockDevice(dark: boolean) {
       ({
         media: query,
         get matches() {
+          if (query.includes("max-width")) return narrow;
           return query.includes("dark") ? matches : false;
         },
         addEventListener: (_: string, listener: (event: MediaQueryListEvent) => void) =>

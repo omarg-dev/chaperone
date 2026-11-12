@@ -24,7 +24,7 @@ import {
   type GridSort,
   type HeaderProps,
 } from "../grid";
-import { evidenceFileName, evidenceIntro, exportCell } from "../runs/export";
+import { EXPORT_COLUMNS, evidenceFileName, evidenceIntro, exportCell } from "../runs/export";
 import {
   applyFilters,
   type Filters,
@@ -58,6 +58,8 @@ import {
   paymentsLabel,
 } from "../runs/state";
 import { parseGrouped, withGrouping } from "../runs/view";
+import { useNarrow } from "../shell/useNarrow";
+import { taskWords } from "../words/plain";
 
 // The outcome as a glyph and a word. Money that reached an attacker is the one filled pill.
 function Outcome({ run }: { run: RunSummary }) {
@@ -81,17 +83,14 @@ function Outcome({ run }: { run: RunSummary }) {
   );
 }
 
-// The firewall setting the run's outcome comes from. A run reviewed under several (an eval cell is
-// reviewed under off, gate0 and full) says which came first, small, beside the last.
+// How much Chaperone checked for the outcome shown. A purchase checked several ways (the benchmark
+// checks each one with Chaperone off, with the rules only and in full) says which came before, small,
+// under the last.
 function Firewall({ run }: { run: RunSummary }) {
   const last = configOf(run);
   if (!last) {
-    return (
-      <span className="run-config t-meta">
-        <span aria-hidden="true">None</span>
-        <span className="visually-hidden">Not reviewed</span>
-      </span>
-    );
+    // The outcome beside it already says it wasn't checked yet.
+    return null;
   }
   const earlier = run.reviews.slice(0, -1);
   return (
@@ -100,9 +99,9 @@ function Firewall({ run }: { run: RunSummary }) {
       {earlier.length > 0 && (
         <span
           className="t-meta"
-          title={`Reviewed under ${run.reviews.map(configLabel).join(", ")}`}
+          title={`The benchmark checked this purchase ${run.reviews.length} ways: ${run.reviews.map(configLabel).join(", ")}. The outcome shown is the last one's.`}
         >
-          after {earlier.map(configLabel).join(", ")}
+          also tried: {earlier.map(configLabel).join(", ")}
         </span>
       )}
     </span>
@@ -144,31 +143,30 @@ const RunCell = (props: CellProps<RunSummary> & { titles: Record<string, string>
   const { data, titles } = props;
   if (props.node.group) return <GroupCell {...props} />;
   if (!data) return null;
-  const title = data.scenarioId ? titles[data.scenarioId] : undefined;
+  const title = scenarioName(data, titles) || "No task";
+  // Where the run came from and whose money it moved, said quietly under the task.
+  const facts = [
+    data.origin === "eval" ? "Benchmark" : null,
+    data.payments ? paymentsLabel(data.payments) : null,
+  ].filter(Boolean);
   return (
     <div className="cell-stack">
       <span className="run-title">
-        <Link to={`/runs/${data.runId}`} className="run-link" title={scenarioName(data, titles)}>
-          {title ?? data.scenarioId ?? "No scenario"}
+        <Link to={`/runs/${data.runId}`} className="run-link" title={title}>
+          {title}
         </Link>
       </span>
       <span className="run-title">
-        {title && data.scenarioId && <span className="t-data">{data.scenarioId}</span>}
-        {data.kind === "attack" && <span className="badge">Attack</span>}
-        {data.payments && (
-          <span className="run-money-kind t-meta">{paymentsLabel(data.payments)}</span>
+        {data.kind === "attack" && (
+          <span className="badge" title="A seller in this task's shop tries to trick the agent.">
+            Attack
+          </span>
         )}
+        {facts.length > 0 && <span className="run-money-kind t-meta">{facts.join(" · ")}</span>}
       </span>
     </div>
   );
 };
-
-const RunIdCell = ({ data }: CellProps<RunSummary>) =>
-  data && (
-    <Link to={`/runs/${data.runId}`} className="run-id-link" tabIndex={-1}>
-      {data.runId}
-    </Link>
-  );
 
 const StartedCell = ({ data }: CellProps<RunSummary>) =>
   data && (
@@ -202,8 +200,8 @@ const MoneyCell = ({ data, node, value, place }: CellProps<RunSummary> & { place
 
 const MONEY_HEADS: Record<MoneyPlace, { name: string; glyph: MoneyState }> = {
   held: { name: "Held", glyph: "held" },
-  moved: { name: "Moved", glyph: "captured" },
-  voided: { name: "Voided", glyph: "voided" },
+  moved: { name: "Paid", glyph: "captured" },
+  voided: { name: "Not charged", glyph: "voided" },
 };
 
 const MoneyHead = ({ place }: HeaderProps<{ place: MoneyPlace }>) => (
@@ -221,7 +219,12 @@ const sortBy =
     // A group row has no run of its own, and keeps the order its runs give it.
     a && b ? compareRuns(a, b, column, titles) : 0;
 
-function columnsFor(titles: Record<string, string>, grouped: boolean): GridColumn<RunSummary>[] {
+function columnsFor(
+  titles: Record<string, string>,
+  grouped: boolean,
+  // A phone's width: the task alone is pinned, so the other columns have room to scroll past it.
+  narrow: boolean,
+): GridColumn<RunSummary>[] {
   const column = (column: SortColumn): GridColumn<RunSummary> => ({
     colId: column,
     valueGetter: ({ data }) => data,
@@ -246,69 +249,71 @@ function columnsFor(titles: Record<string, string>, grouped: boolean): GridColum
     cellClass: "col-money",
     headerClass: "col-money",
   });
+  const outcome: GridColumn<RunSummary> = {
+    ...column("verdict"),
+    headerName: "Outcome",
+    ...(narrow ? {} : { pinned: "left", lockPinned: true }),
+    width: 188,
+    minWidth: 180,
+    cellRenderer: OutcomeCell,
+  };
+  const task: GridColumn<RunSummary> = {
+    ...column("scenario"),
+    headerName: "Task",
+    // The group rows are drawn in this column, where the tasks' names are.
+    ...(grouped ? { showRowGroup: "scenarioGroup" } : {}),
+    // The task stays in view when the other columns scroll past it.
+    pinned: "left",
+    lockPinned: true,
+    // On a laptop a task's name fits on one line. A pinned column can't flex, so the check does.
+    width: narrow ? 180 : 340,
+    minWidth: narrow ? 160 : 260,
+    cellRenderer: RunCell,
+    cellRendererParams: { titles },
+  };
   return [
-    // The scenario the history is grouped by, a column of its own and hidden, so a group's key is the
-    // scenario's name and not something a header shows twice.
+    // The task the history is grouped by, a column of its own and hidden, so a group's key is the
+    // task's name and not something a header shows twice.
     ...(grouped
       ? [
           {
             colId: "scenarioGroup",
-            headerName: "Scenario",
+            headerName: "Task",
             rowGroup: true,
             hide: true,
             valueGetter: ({ data }: { data?: RunSummary }) =>
-              data ? scenarioName(data, titles) || "No scenario" : "",
+              data ? scenarioName(data, titles) || "No task" : "",
           } satisfies GridColumn<RunSummary>,
         ]
       : []),
-    {
-      ...column("verdict"),
-      headerName: "Outcome",
-      pinned: "left",
-      lockPinned: true,
-      width: 188,
-      minWidth: 180,
-      cellRenderer: OutcomeCell,
-    },
-    {
-      ...column("scenario"),
-      headerName: "Scenario",
-      // The group rows are drawn in this column, where the scenarios' names are.
-      ...(grouped ? { showRowGroup: "scenarioGroup" } : {}),
-      // The scenario stays in view when the other columns scroll past it.
-      pinned: "left",
-      lockPinned: true,
-      width: 208,
-      minWidth: 190,
-      cellRenderer: RunCell,
-      cellRendererParams: { titles },
-    },
+    // On a phone the pinned task comes first and the outcome is the first thing beside it.
+    ...(narrow ? [task, outcome] : [outcome, task]),
     {
       ...column("firewall"),
-      headerName: "Firewall",
-      flex: 1,
-      minWidth: 112,
+      headerName: "Check",
+      ...(narrow ? { width: 168 } : { flex: 1 }),
+      minWidth: 140,
       cellRenderer: FirewallCell,
     },
     money("held", 120),
     money("moved", 168),
-    money("voided", 108),
+    money("voided", 124),
     {
       ...column("started"),
       headerName: "Started",
-      width: 164,
-      minWidth: 150,
+      width: 180,
+      minWidth: 160,
       // Newest first is where a click on it starts.
       sortingOrder: ["desc", "asc"],
       cellRenderer: StartedCell,
     },
+    // The run's ID is for the spreadsheet, not the screen: the task already links to the run, and
+    // its page shows the ID. The search still finds a run by it.
     {
       colId: "run",
-      headerName: "Run",
+      headerName: "Run ID",
+      hide: true,
       sortable: false,
-      width: 184,
-      minWidth: 184,
-      cellRenderer: RunIdCell,
     },
   ];
 }
@@ -366,8 +371,8 @@ export function Runs() {
     const ids = new Set(runs.flatMap((r) => (r.scenarioId ? [r.scenarioId] : [])));
     if (filters.scenario) ids.add(filters.scenario);
     return [...ids]
-      .map((id) => ({ id, label: scenarioTitles[id] ?? id }))
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .map((id) => ({ id, label: taskWords(id, scenarioTitles) }))
+      .sort((a, b) => a.label.localeCompare(b.label, "en", { numeric: true }));
   }, [runs, scenarioTitles, filters.scenario]);
 
   const matching = useMemo(
@@ -375,7 +380,11 @@ export function Runs() {
     [runs, filters, scenarioTitles],
   );
   const filtered = isFiltered(filters);
-  const columns = useMemo(() => columnsFor(scenarioTitles, grouped), [scenarioTitles, grouped]);
+  const narrow = useNarrow();
+  const columns = useMemo(
+    () => columnsFor(scenarioTitles, grouped, narrow),
+    [scenarioTitles, grouped, narrow],
+  );
 
   // The sort lives in the address like the filters do. The grid shows it and reports a click on a
   // header; the address is what it is kept in.
@@ -427,12 +436,13 @@ export function Runs() {
       fileName: evidenceFileName(now),
       sheetName: "Runs",
       intro: evidenceIntro(filters, matching.length, runs.length, scenarioTitles, now),
+      columns: EXPORT_COLUMNS,
       cell: (run, colId) => exportCell(run, colId, scenarioTitles),
     });
   };
   const countText =
     matching.length === 0
-      ? "No runs match."
+      ? "No runs match these filters"
       : filtered
         ? `Showing ${matching.length} of ${runs.length} runs`
         : `${runs.length} runs`;
@@ -440,7 +450,7 @@ export function Runs() {
   return (
     <Page
       title="Runs"
-      lede="Every purchase an agent has tried, newest first. Each amount sits in the column that says where the money is."
+      lede="Every purchase an AI shopping agent has tried here, newest first: the task it was given, how much Chaperone checked, and where the money went. Open one to see the whole run."
       aside={refresh}
     >
       {status === "loading" && runs.length === 0 && (
@@ -451,12 +461,13 @@ export function Runs() {
 
       {status === "error" && (
         <EmptyState title="Runs didn't load." action={refresh}>
-          The server didn't answer. Check that it's running, then try again.
+          Chaperone's server didn't answer. Check your connection, then try again.
         </EmptyState>
       )}
 
       {status === "ready" && runs.length === 0 && (
         <EmptyState
+          label="Run history"
           title="No runs yet."
           action={
             <Link to="/start" className={buttonClass("primary")}>
@@ -464,8 +475,8 @@ export function Runs() {
             </Link>
           }
         >
-          When a shopping agent tries a purchase, it shows up here with its scenario, when it
-          started and what Chaperone decided. You can start one yourself.
+          When a shopping agent tries a purchase, it shows up here with its task, when it started
+          and what Chaperone did with the money. You can start one yourself.
         </EmptyState>
       )}
 
@@ -497,7 +508,7 @@ export function Runs() {
             </div>
           </Vault>
 
-          <Section heading="Where the money went" className="runs-filters">
+          <Section heading="How the runs ended" className="runs-filters">
             <OutcomeChips
               value={filters.outcome}
               counts={counts}
@@ -510,18 +521,18 @@ export function Runs() {
                   className="filter-control"
                   type="search"
                   value={text}
-                  placeholder="Run ID or scenario"
+                  placeholder="Task or run ID"
                   autoComplete="off"
                   spellCheck={false}
                   onChange={(e) => setText(e.target.value)}
                 />
               </label>
               <Select
-                label="Firewall"
+                label="Check"
                 value={filters.config ?? ""}
                 onChange={(value) => update({ config: value || null })}
               >
-                <option value="">Any setting</option>
+                <option value="">Any</option>
                 {CONFIGS.map((config) => (
                   <option key={config} value={config}>
                     {CONFIG_LABELS[config]}
@@ -529,11 +540,11 @@ export function Runs() {
                 ))}
               </Select>
               <Select
-                label="Scenario"
+                label="Task"
                 value={filters.scenario ?? ""}
                 onChange={(value) => update({ scenario: value || null })}
               >
-                <option value="">Any scenario</option>
+                <option value="">Any task</option>
                 {scenarios.map((scenario) => (
                   <option key={scenario.id} value={scenario.id}>
                     {scenario.label}
@@ -541,22 +552,22 @@ export function Runs() {
                 ))}
               </Select>
               <Select
-                label="Kind"
+                label="Attack"
                 value={filters.kind ?? ""}
                 onChange={(value) => update({ kind: value === "" ? null : (value as Kind) })}
               >
-                <option value="">Attack or benign</option>
-                <option value="attack">Attack</option>
-                <option value="benign">Benign</option>
+                <option value="">Any</option>
+                <option value="attack">With an attack</option>
+                <option value="benign">No attack</option>
               </Select>
               {ENTERPRISE && (
                 <div className="filter-clear">
                   <Toggle
                     checked={grouped}
                     onChange={(on) => setParams(withGrouping(params, on), { replace: true })}
-                    hint="One row for each scenario, with the money of its runs in each place. Open a row for its runs."
+                    hint="One row for each task, with the money of its runs in each place. Open a row for its runs."
                   >
-                    Group by scenario
+                    Group by task
                   </Toggle>
                 </div>
               )}
@@ -575,31 +586,35 @@ export function Runs() {
             note={
               ENTERPRISE && matching.length > 0 ? (
                 <Button variant="secondary" small onClick={download}>
-                  Download the evidence
+                  Download as a spreadsheet
                 </Button>
               ) : undefined
             }
           >
             {matching.length === 0 ? (
               <div className="runs-none">
-                <h3 className="t-item">No runs match these filters.</h3>
-                <p>Loosen a filter, or clear them all to see every run.</p>
+                <p>Try other words in the search, or loosen a filter.</p>
                 <div>{clear}</div>
               </div>
             ) : (
-              <DataGrid
-                layout="scroll"
-                label="Runs"
-                rows={matching}
-                columns={columns}
-                rowId={(run) => run.runId}
-                emptyText="No runs match."
-                sort={sort}
-                onSortChange={sortChanged}
-                onRowActivate={openRun}
-                handle={grid}
-                statusBar={<MoneyStatus totals={totals} />}
-              />
+              <>
+                {narrow && (
+                  <p className="t-meta runs-swipe">Swipe the table sideways for the rest.</p>
+                )}
+                <DataGrid
+                  layout="scroll"
+                  label="Runs"
+                  rows={matching}
+                  columns={columns}
+                  rowId={(run) => run.runId}
+                  emptyText="No runs match."
+                  sort={sort}
+                  onSortChange={sortChanged}
+                  onRowActivate={openRun}
+                  handle={grid}
+                  statusBar={<MoneyStatus totals={totals} />}
+                />
+              </>
             )}
           </Section>
         </>
@@ -614,9 +629,9 @@ export function Runs() {
 function MoneyStatus({ totals }: { totals: ReturnType<typeof moneyTotals> }) {
   const places: { key: keyof typeof totals; label: string; glyph: MoneyState }[] = [
     { key: "held", label: "Held right now", glyph: "held" },
-    { key: "moved", label: "Moved to sellers", glyph: "captured" },
+    { key: "moved", label: "Paid to sellers", glyph: "captured" },
     { key: "attacker", label: "Paid to attackers", glyph: "attacker" },
-    { key: "voided", label: "Voided", glyph: "voided" },
+    { key: "voided", label: "Not charged", glyph: "voided" },
   ];
   return (
     <dl className="money-status" aria-label="Where the money of these runs is">

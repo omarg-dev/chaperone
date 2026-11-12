@@ -11,7 +11,7 @@ export function LiveStrip() {
   return (
     <Section
       heading="This server's runs"
-      note="Counted from the run log here, not from the eval."
+      note="Counted from the runs on this server, not from the benchmark."
       className="live"
     >
       {status === "error" && runs.length === 0 ? (

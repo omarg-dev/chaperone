@@ -93,13 +93,14 @@ describe("the results reader", () => {
     expect(parsed.results.cells).toHaveLength(2);
   });
 
-  it("reads the committed first matrix", () => {
+  it("reads every committed sandbox result", () => {
     const dir = new URL("../../../results/", import.meta.url);
     const files = readdirSync(dir).filter((name) => name.endsWith(".json"));
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
       const parsed = parseResults(readFileSync(new URL(file, dir), "utf8"));
       if (!parsed.ok) throw new Error(`${file}: ${parsed.error}`);
+      expect(parsed.results.meta.paymentAdapter, file).toBe("sandbox");
       expect(parsed.results.cells.length).toBe(parsed.results.metrics.runs.cells);
     }
   });

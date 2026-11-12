@@ -152,9 +152,14 @@ beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "studio-"));
   log = openEventLog({ path: join(dir, "events.db") });
   clock = new Date("2026-11-10T09:00:00.000Z");
+  // The spend table stamps a row with the real clock, and the budget counts the rows of the
+  // service's day: both have to be on the same day, whatever day the tests run on.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(clock);
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllEnvs();
   log.close();
   rmSync(dir, { recursive: true, force: true });

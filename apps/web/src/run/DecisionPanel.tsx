@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ApiError, type DecisionResult, postDecision } from "../api";
-import { Amount, Button } from "../design";
-import type { CartLine } from "./timeline";
+import { Amount, Button, formatMoney } from "../design";
+import type { CartLine, HeldReason } from "./timeline";
 
 // Carrying out a person's decision on a purchase Chaperone paused, shared by the run view and the
 // escalation inbox so the two can't behave differently. The server carries the decision out (capture
@@ -28,7 +28,7 @@ export function useDecision(
       const message =
         error instanceof ApiError
           ? error.message
-          : "The server didn't answer. Nothing was changed; try again.";
+          : "Chaperone's server didn't answer, so nothing was changed. Try again.";
       setProblem(message);
       onFailed?.(message);
       // Someone else may have decided it already: show what the log says now.
@@ -172,29 +172,74 @@ export function HeldCart({
   );
 }
 
-// What a person can do with a purchase Chaperone paused: the held cart, and the two ways out. It is a
-// station on the route in the hold's own tint, not a card: "The decision is yours."
+// Why a purchase is waiting, one line for each check that sent it to the person, under that check's
+// plain name. The run page and the inbox both say it before the buttons.
+export function HeldReasons({ reasons }: { reasons: HeldReason[] }) {
+  return (
+    <ul className="held-reasons">
+      {reasons.length === 0 && (
+        <li>
+          <span>Chaperone couldn't be sure this cart is what you asked for.</span>
+        </li>
+      )}
+      {reasons.map((reason) => (
+        <li key={reason.gate}>
+          <span className="held-gate">{reason.label}</span>
+          <span>{reason.reason}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// What each button will do, said before the buttons: who is paid and how much, or that nobody is.
+export function whatHappens(cart: readonly CartLine[], amountCents: number | null): string {
+  const sellers = [...new Set(cart.map((line) => line.sellerName).filter(Boolean))];
+  const who = sellers.length === 1 ? sellers[0] : sellers.length > 1 ? "the sellers" : "the seller";
+  const amount = amountCents === null ? "the held amount" : formatMoney(amountCents);
+  return `Approve, and ${amount} is charged and paid to ${who}. Reject, and the hold is released: nothing is charged and nobody is paid.`;
+}
+
+// What a person can do with a purchase Chaperone paused: why it is waiting, the held cart, what each
+// choice does, and the two ways out. It is a station on the route in the hold's own tint, not a
+// card: "The decision is yours."
 export function DecisionPanel({
   runId,
   cart,
+  reasons,
+  amountCents,
   unfinished,
   onDecided,
 }: {
   runId: string;
   cart: CartLine[];
+  reasons: HeldReason[];
+  amountCents: number | null;
   unfinished?: Unfinished | null;
   onDecided: () => void;
 }) {
   const decision = useDecision(runId, () => onDecided());
+  const sellers = new Set(cart.map((line) => line.payeeKey)).size;
   return (
     <section className="decision station-section" aria-label="Your decision">
       <span className="station station-ring" aria-hidden="true" />
-      <h2 className="decision-heading t-section">The decision is yours.</h2>
-      <div className="decision-cart">
-        {/* One line is the whole cart, and the header already says its amount. */}
-        <HeldCart cart={cart} amounts={cart.length > 1} />
+      <div className="decision-why">
+        <h2 className="decision-heading t-section">The decision is yours.</h2>
+        {!unfinished && (
+          <>
+            <h3 className="t-meta held-label">Why Chaperone paused it</h3>
+            <HeldReasons reasons={reasons} />
+          </>
+        )}
       </div>
-      <DecisionButtons {...decision} unfinished={unfinished} saidAbove />
+      <div className="decision-act">
+        <div className="decision-cart">
+          {/* One line is the whole cart, and the header already says its amount. */}
+          <HeldCart cart={cart} amounts={cart.length > 1} />
+        </div>
+        {!unfinished && <p className="decision-what">{whatHappens(cart, amountCents)}</p>}
+        <DecisionButtons {...decision} unfinished={unfinished} saidAbove sellers={sellers} />
+      </div>
     </section>
   );
 }

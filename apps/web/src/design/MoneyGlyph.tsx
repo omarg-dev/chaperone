@@ -25,14 +25,14 @@ export const MONEY_STATES = [
 export type MoneyState = (typeof MONEY_STATES)[number];
 
 export const MONEY_STATE_LABELS: Record<MoneyState, string> = {
-  held: "Held, under review",
-  person: "Held for a person",
-  captured: "Captured, seller paid",
-  voided: "Blocked, hold voided",
+  held: "Held, being checked",
+  person: "Waiting on you",
+  captured: "Paid",
+  voided: "Not charged",
   released: "Hold released",
   attacker: "Paid attacker",
-  off: "Firewall off",
-  none: "Not reviewed yet",
+  off: "Chaperone off",
+  none: "Not checked yet",
 };
 
 const OPEN = "M15 4.5H9.5A5 5 0 0 0 4.5 9.5v5A5 5 0 0 0 9.5 19.5H15";

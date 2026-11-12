@@ -9,6 +9,7 @@ import {
 import { AgStudio, AgStudioProvider } from "ag-studio-react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { StudioConfig } from "../../api";
+import { Button } from "../../design";
 import { useTheme } from "../../theme/ThemeProvider";
 import { serverAdapter } from "./adapter";
 import type { BenchmarkRow } from "./benchmark";
@@ -27,17 +28,17 @@ const PROMPT_STARTERS: AgAiPromptStarter[] = [
   {
     label: "Which model is fooled more?",
     prompt:
-      "Compare how often each model's agent was fooled before any firewall, on our scenarios and on the held-out set.",
+      "Compare how often each model's agent was fooled with Chaperone off, on our scenarios and on the held-out set.",
   },
   {
     label: "The held-out result",
     prompt:
-      "On the held-out set, how many attacks got through with the firewall off and with the full tree, for each model?",
+      "On the held-out set, how many attacks got through with Chaperone off and with the full check, for each model?",
   },
   {
     label: "False escalations",
     prompt:
-      "Which clean carts did the full tree send to a person, and in which scenarios? Count them per model.",
+      "Which clean carts did the full check send to a person, and in which scenarios? Count them per model.",
   },
 ];
 
@@ -126,10 +127,38 @@ export default function StudioCanvas({
           </button>
         </fieldset>
       </div>
-      <p className="t-meta benchmark-assistant" role="status">
-        {assistantOff ??
-          `The assistant runs on Claude Haiku 5.5 through this server, up to $${config.ai.budget.capUsd.toFixed(2)} a day. Open "Build your own" to ask it about the benchmark.`}
-      </p>
+      {assistantOff === null ? (
+        <div className="benchmark-assistant" role="status">
+          <p>
+            <strong>Ask the data in plain words.</strong>{" "}
+            {mode === "edit"
+              ? "Type a question in the AI Assistant panel on the left, or pick one of its examples."
+              : "Choose Build your own and the AI Assistant opens on the left."}{" "}
+            For example:
+          </p>
+          <ul className="benchmark-examples">
+            {PROMPT_STARTERS.map((starter) => (
+              <li key={starter.label}>{starter.prompt}</li>
+            ))}
+          </ul>
+          {mode === "view" && (
+            <div>
+              <Button variant="secondary" small onClick={() => setMode("edit")}>
+                Ask the assistant
+              </Button>
+            </div>
+          )}
+          <p className="t-meta">
+            It runs on Claude Haiku 5.5 through this server, up to $
+            {config.ai.budget.capUsd.toFixed(2)} a day for everyone.
+          </p>
+        </div>
+      ) : (
+        <details className="t-meta benchmark-assistant-off">
+          <summary>The AI Assistant is off on this server right now.</summary>
+          {assistantOff}
+        </details>
+      )}
       <div className="ag-theme-mode benchmark-canvas" data-ag-theme-mode={resolved}>
         <AgStudioProvider
           modules={modules}

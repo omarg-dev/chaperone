@@ -1,11 +1,25 @@
 import type { FirewallSetting } from "../api";
+import { SETTING_WORDS } from "../words/plain";
 
 // The three ways to run Chaperone, in the words a person picks between. They never say which tasks
-// are attacks: whether the firewall catches one is what the run is for.
+// are attacks: whether the firewall catches one is what the run is for. The labels are plain, and
+// each detail names the gate where the docs do. The labels are the shared words (words/plain.ts).
 export const FIREWALL_OPTIONS: { value: FirewallSetting; label: string; detail: string }[] = [
-  { value: "full", label: "Full", detail: "Every gate reviews the cart." },
-  { value: "gate0", label: "Gate 0 only", detail: "Plain rules only, no model." },
-  { value: "off", label: "Off", detail: "Nothing reviews the cart. It goes straight to payment." },
+  {
+    value: "full",
+    label: SETTING_WORDS.full,
+    detail: "The rules, then AI reviewers read the cart and how the agent got there. Recommended.",
+  },
+  {
+    value: "gate0",
+    label: SETTING_WORDS.gate0,
+    detail: "Just the fixed rules (Gate 0), with no AI review.",
+  },
+  {
+    value: "off",
+    label: SETTING_WORDS.off,
+    detail: "No check: the payment goes straight through. See what happens without Chaperone.",
+  },
 ];
 
 export const firewallLabel = (value: FirewallSetting) =>
@@ -17,7 +31,7 @@ export const isFirewallSetting = (value: string | null): value is FirewallSettin
 export const MONEY_NOTES = {
   fake: {
     label: "Practice money",
-    detail: "Nothing touches a payment platform. The hold lives in this server.",
+    detail: "No real payment is made. The hold is simulated on this server.",
   },
   sandbox: {
     label: "Sandbox",
@@ -35,3 +49,6 @@ export function ceilingOf(value: string): { cents: number; rest: string } | null
   const whole = Number((found[1] as string).replace(/,/g, ""));
   return { cents: whole * 100 + Number(found[2]), rest: (found[3] as string).trim() };
 }
+
+// The rules about what the item must be, in a person's words. The run page says them the same way.
+export { requirementsOf } from "../words/requirements";

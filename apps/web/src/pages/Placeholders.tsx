@@ -13,7 +13,7 @@ export function NotFound() {
           </Link>
         }
       >
-        The link may be old, or mistyped.
+        The link may be old or mistyped.
       </EmptyState>
     </Page>
   );

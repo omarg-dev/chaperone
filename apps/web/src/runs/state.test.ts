@@ -25,14 +25,14 @@ describe("a run's state", () => {
   });
 
   it("says who decided it, when that is worth saying", () => {
-    expect(outcomeNote(run("r", "s", at, { decidedBy: "no_review" }))).toBe("Nobody reviewed it");
+    expect(outcomeNote(run("r", "s", at, { decidedBy: "no_review" }))).toBe("Paid with no check");
     expect(outcomeNote(run("r", "s", at))).toBeNull();
     expect(outcomeNote(run("r", "s", at, { verdict: "approve", decidedBy: "review" }))).toBeNull();
     expect(outcomeNote(run("r", "s", at, { ...escalated.decided("approve") }))).toBe("You decided");
     expect(outcomeNote(run("r", "s", at, { ...escalated.decided("block") }))).toBe(
       "You rejected it",
     );
-    expect(outcomeNote(run("r", "s", at, { reviewFailed: true }))).toBe("A gate broke");
+    expect(outcomeNote(run("r", "s", at, { reviewFailed: true }))).toBe("A check broke");
   });
 
   it("holds an escalation for the person while its hold is open and nobody has decided", () => {
@@ -117,7 +117,8 @@ describe("how a run ended", () => {
   it("names the firewall setting of the last review, in words", () => {
     expect(configOf(run("r", "s", at, { reviews: ["off", "gate0", "full"] }))).toBe("full");
     expect(configOf(run("r", "s", at))).toBeNull();
-    expect(configLabel("gate0")).toBe("Gate 0 only");
+    expect(configLabel("gate0")).toBe("Rules only");
+    expect(configLabel("full")).toBe("Full check");
     expect(configLabel("something_new")).toBe("something_new");
   });
 

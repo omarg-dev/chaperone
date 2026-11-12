@@ -1,9 +1,10 @@
-/* The Start a run page: the steps are sections (choose, mandate, run), and the run step
-   is the page's vault. Two tabs sit at the title's right, as plain links. */
+/* The Start a run page: the steps are sections (pick a task, check the rules, start the run), and
+   the run step is the page's vault. Two tabs sit at the title's right, as plain links. */
 
 .tabs {
   display: flex;
-  gap: 28px;
+  flex-wrap: wrap;
+  gap: 4px 28px;
 }
 
 .tab {
@@ -56,6 +57,29 @@
   font-size: 17px;
 }
 
+.start-done {
+  color: var(--hold);
+  font-weight: 800;
+}
+
+/* What a step is for, in a sentence, before what it holds. */
+.start-intro,
+.start-later {
+  max-width: 64ch;
+  font-size: 16px;
+  color: var(--ink-2);
+}
+
+.start-later {
+  color: var(--muted);
+}
+
+/* A step's heading is given focus when the step opens: no ring for that, since it isn't a control. */
+.page-heading:focus,
+.page-head h2:focus {
+  outline: none;
+}
+
 .choice-group {
   margin: 0;
   padding: 0;
@@ -63,26 +87,37 @@
   min-width: 0;
 }
 
-.choice-group legend {
+.choice-legend {
   padding: 0;
   margin-bottom: var(--space-1);
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .choice-help {
+  max-width: 64ch;
   margin-bottom: var(--space-3);
-  font-size: var(--text-meta);
-  font-weight: 700;
-  color: var(--muted);
+  color: var(--ink-2);
 }
 
-/* The arena has about thirty tasks: the list scrolls in a box of its own, so the firewall setting
-   and the button stay in view. */
+/* The arena has about thirty tasks. The list is as long as it is (no box of its own that scrolls,
+   which on a phone is a scroll inside a scroll), and the button rides along under it. */
 .choices {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   column-gap: 24px;
-  max-height: 420px;
-  overflow-y: auto;
+}
+
+.choices-more {
+  margin-top: var(--space-3);
+}
+
+.start-summary .btn {
+  margin-inline-start: var(--space-3);
+}
+
+.agent-for a {
+  color: var(--vault-ink);
 }
 
 .firewall-options {
@@ -148,8 +183,8 @@
   font-weight: 700;
 }
 
-.choice-compact .t-meta {
-  font-weight: 400;
+.choice-detail {
+  font-size: 13.5px;
   color: var(--ink-2);
 }
 
@@ -174,6 +209,29 @@
 
 .start-actions .t-meta {
   font-weight: 400;
+  max-width: 60ch;
+}
+
+/* Step one's button stays at the foot of the screen while the task list scrolls past. */
+.start-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.start-dock-says {
+  font-size: 14px;
+}
+
+.start-progress {
+  color: var(--ink-2);
+  font-weight: 600;
 }
 
 .start-problem {
@@ -274,18 +332,43 @@
 .term-form {
   grid-column: 2 / -1;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: var(--space-2);
+  min-width: 0;
+}
+
+.term-field {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  max-width: 520px;
 }
 
 .term-input {
-  flex: 1 1 260px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .term-hint {
-  flex: 1 1 100%;
   font-weight: 400;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+
+.term-problem {
+  display: block;
+}
+
+.term-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.term-lines {
+  display: flex;
+  flex-direction: column;
 }
 
 /* The price ceiling is the one amount: it goes last, across both columns, ruled in the route's colour. */
@@ -307,10 +390,10 @@
   font-weight: 600;
 }
 
-/* Editing it: a tinted band with the amount as a big field. */
+/* Editing a term: a tinted band across both columns, where the term was (the price ceiling is
+   already last), with the box, what to type, the server's answer and the buttons, in that order. */
 .term-editing {
   grid-column: 1 / -1;
-  order: 99;
   align-items: start;
   padding: 16px;
   background: var(--hold-tint);
@@ -320,10 +403,6 @@
 .term-editing .term-label {
   padding-top: 14px;
   color: var(--hold);
-}
-
-.term-editing .term-form {
-  align-items: flex-start;
 }
 
 .term-dollar {
@@ -341,7 +420,15 @@
 
 .start-seal {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.start-seal-says {
+  max-width: 48ch;
+  font-weight: 400;
 }
 
 /* The run step is the vault. Until the mandate is locked it is drawn held back. */
@@ -356,26 +443,64 @@
   gap: 18px;
 }
 
-.launch-held-back {
-  opacity: 0.62;
+/* What happens once it starts, as three short steps in the vault's own ink. */
+.launch-next {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+  max-width: 70ch;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.launch-next li::marker {
+  color: var(--vault-muted);
+  font-weight: 700;
+}
+
+.launch .choice-legend {
+  color: var(--vault-ink);
+}
+
+/* The setting's options on the vault: the vault's lines and inks, the chosen one ruled in ink. */
+.launch .choice-compact {
+  border-color: var(--vault-line);
+}
+
+.launch .choice:hover {
+  background: var(--vault-2);
+}
+
+.launch .choice-compact.choice-on {
+  border-color: var(--vault-ink);
+  background: var(--vault-2);
+}
+
+.launch .choice input {
+  accent-color: var(--vault-ink);
+}
+
+.launch .choice-detail {
+  color: var(--vault-muted);
+}
+
+/* The focus ring's ink is the route's aubergine, which the vault is: on the vault it takes the
+   vault's own ink so it can be seen. */
+[role="tabpanel"] .vault :focus-visible,
+.launch .choice:has(:focus-visible) {
+  outline-color: var(--vault-ink);
 }
 
 .launch-says {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.launch-says .t-headline {
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1.2;
-  text-wrap: pretty;
+  font-size: 14px;
+  color: var(--vault-muted);
 }
 
 .launch-facts {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px 32px;
   margin: 0;
 }
@@ -399,10 +524,6 @@
   color: var(--vault-muted);
 }
 
-.launch .start-actions .t-meta {
-  color: var(--vault-muted);
-}
-
 .launch .start-problem {
   background: var(--vault-2);
   box-shadow: inset 0 0 0 1.5px var(--vault-line);
@@ -412,6 +533,23 @@
 .launch .start-note {
   background: var(--vault-2);
   color: var(--v-escalate);
+}
+
+/* When a live run can't start: what to do instead, and the server's own reason behind a disclosure. */
+.start-elsewhere {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.start-why .disclosure > summary {
+  color: var(--vault-muted);
+  font-size: 14px;
+}
+
+.start-why .disclosure-body {
+  color: var(--vault-muted);
+  overflow-wrap: anywhere;
 }
 
 /* Connect your own agent. */
@@ -430,6 +568,11 @@
 
 .agent-tab > .page-section {
   margin-top: 56px;
+}
+
+.agent-for {
+  color: var(--vault-muted);
+  font-size: 14px;
 }
 
 .agent-lede {
@@ -484,12 +627,65 @@ code {
 }
 
 @media (max-width: 760px) {
+  /* A finger needs 44px, which the small buttons and the disclosure fall just short of. */
+  [role="tabpanel"] .btn-small,
+  [role="tabpanel"] .disclosure > summary {
+    min-height: 44px;
+  }
+
+  .start > .page-section {
+    margin-top: 40px;
+  }
+
   .term {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .term-label {
     grid-column: 1 / -1;
+  }
+
+  .term-form {
+    grid-column: 1 / -1;
+  }
+
+  .term-editing {
+    padding: 12px;
+  }
+
+  .term-editing .term-label {
+    padding-top: 0;
+  }
+
+  .term-dollar {
+    font-size: 32px;
+  }
+
+  .term-input-money {
+    font-size: 32px;
+  }
+
+  .start-request {
+    font-size: 24px;
+  }
+
+  .start-actions .btn {
+    flex: 1 1 100%;
+  }
+
+  .launch-vault {
+    margin-top: 40px;
+  }
+
+  .launch-next {
+    font-size: 16px;
+  }
+
+  /* Code is read on a phone without scrolling sideways: long lines wrap. */
+  .snippet-code {
+    padding: var(--space-3);
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .terms,

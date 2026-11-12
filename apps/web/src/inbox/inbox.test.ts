@@ -78,7 +78,7 @@ describe("the confirmation", () => {
 
   it("says what happened to the money, with the amount", () => {
     expect(confirmationText(result("captured"), 10999)).toBe(
-      "Approved. $109.99 was captured and the seller paid.",
+      "Approved. $109.99 was charged and the seller was paid.",
     );
     expect(confirmationText(result("voided"), 10999)).toBe(
       "Rejected. The hold on $109.99 was released and nobody was paid.",

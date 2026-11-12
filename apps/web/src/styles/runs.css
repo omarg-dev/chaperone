@@ -309,3 +309,34 @@
 .data-grid .ag-status-bar {
   padding-inline: var(--space-3);
 }
+
+/* On a laptop a task's name fits on one line beside the outcome, with the run's facts under it. */
+@media (min-width: 761px) {
+  .runs-grid .cell-stack .run-title:first-child .run-link {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* On a phone the table scrolls sideways inside its own frame, with the task pinned, and says so. */
+.runs-swipe {
+  margin: 0 0 var(--space-2);
+}
+
+@media (max-width: 760px) {
+  /* Six outcomes in two even columns read as a list, not a ragged row. */
+  .outcome-chips {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filter-search {
+    flex-basis: 100%;
+  }
+
+  .filter select.filter-control {
+    max-width: 100%;
+  }
+}

@@ -40,7 +40,7 @@ export function placeOf(run: RunSummary): PlacedMoney | null {
     );
   }
   // A gate broke: nothing was enforced and the order stays held.
-  if (run.reviewFailed) return held("review failed");
+  if (run.reviewFailed) return held("check failed");
 
   if (run.attackerPaid) {
     return {
@@ -60,7 +60,7 @@ export function placeOf(run: RunSummary): PlacedMoney | null {
       noteTone: "plain",
     };
   }
-  if (run.holdOpen) return held(run.verdict === null ? "not reviewed yet" : "not settled yet");
+  if (run.holdOpen) return held(run.verdict === null ? "not checked yet" : "not settled yet");
 
   // The hold is closed and nobody was paid: it was voided or released, unless it was captured and
   // the payouts aren't in the log yet.
@@ -69,11 +69,13 @@ export function placeOf(run: RunSummary): PlacedMoney | null {
       place: "voided",
       cents,
       tone: "voided",
-      note: run.escalation === "released" ? "released" : "voided",
+      // The outcome beside it already says why (blocked, or nobody decided): this says what happened
+      // to the money.
+      note: "hold cancelled",
       noteTone: "plain",
     };
   }
-  return { place: "moved", cents, tone: "plain", note: "captured", noteTone: "plain" };
+  return { place: "moved", cents, tone: "plain", note: "charged", noteTone: "plain" };
 }
 
 // What is held right now across the runs: the sum of every hold still open, and how many runs a

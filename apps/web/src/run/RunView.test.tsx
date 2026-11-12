@@ -31,13 +31,13 @@ describe("the run view", () => {
       "The cart matches what you asked for.",
     );
     expect(screen.getAllByRole("img", { name: "Verdict: Approved" })).toHaveLength(1);
-    expect(screen.getByText("Captured and paid out")).toBeInTheDocument();
+    expect(screen.getByText("Paid to Larkspur Goods")).toBeInTheDocument();
     expect(screen.getByText(/Buy me a mid-range mechanical keyboard/)).toBeInTheDocument();
-    const mandate = screen.getByLabelText("The locked mandate");
+    const mandate = screen.getByLabelText("The locked rules");
     expect(within(mandate).getByText("Up to $120.00 each")).toBeInTheDocument();
 
     const timeline = screen.getByRole("region", { name: "Timeline of the run" });
-    for (const gate of ["Gate 0", "Gate 1", "Gate 2", "Review"]) {
+    for (const gate of ["Fixed rules", "Seller pages", "Cart review", "Overall result"]) {
       expect(within(timeline).getByText(gate)).toBeInTheDocument();
     }
     expect(within(timeline).getByText("$105.66 to Larkspur Goods")).toBeInTheDocument();
@@ -84,8 +84,8 @@ describe("the run view", () => {
 
   it("says which words of the request were not made a rule", async () => {
     await open(fixtures.approved);
-    const mandate = screen.getByLabelText("The locked mandate");
-    expect(within(mandate).getByText("Not enforced")).toBeInTheDocument();
+    const mandate = screen.getByLabelText("The locked rules");
+    expect(within(mandate).getByText("Not covered")).toBeInTheDocument();
     expect(within(mandate).getByText("mid-range")).toBeInTheDocument();
     expect(within(mandate).getByText("In your request, but not made a rule")).toBeInTheDocument();
     expect(within(mandate).queryByText("Not captured")).toBeNull();
@@ -94,8 +94,14 @@ describe("the run view", () => {
   it("keeps a block neutral", async () => {
     await open(fixtures.blocked);
     expect(screen.getByRole("img", { name: "Verdict: Blocked" })).toHaveClass("pill-block");
-    expect(screen.getByText("Voided, nobody paid")).toBeInTheDocument();
-    expect(screen.getByText(/Gate 1 skipped: Gate 0 blocked/)).toBeInTheDocument();
+    expect(screen.getByText("Hold released, nobody was paid")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Seller pages \(Gate 1\) didn't run: the fixed rules had already stopped/),
+    ).toBeInTheDocument();
+    // Why it was stopped is said under the headline, in plain words, not only down in the timeline.
+    expect(document.querySelector(".route-lede")).toHaveTextContent(
+      "Tern 60 is missing something you required: switch feel = tactile (the catalog has linear).",
+    );
     expect(document.querySelector(".pill-attacker")).toBeNull();
     expect(document.querySelector(".run-money-attacker")).toBeNull();
   });
@@ -125,7 +131,7 @@ describe("the run view", () => {
     for (const outside of [
       screen.getByRole("heading", { level: 1 }),
       screen.getByRole("region", { name: "Your decision" }),
-      screen.getByLabelText("The locked mandate"),
+      screen.getByLabelText("The locked rules"),
     ]) {
       expect(outside.textContent).not.toContain("Halvard Link");
     }
@@ -151,7 +157,17 @@ describe("the run view", () => {
     );
     expect(within(panel).getByText("Halvard TKL")).toBeInTheDocument();
     expect(within(panel).getByText("Larkspur Goods")).toBeInTheDocument();
-    await user.click(within(panel).getByRole("button", { name: /Approve and pay/ }));
+    // Why it is waiting and what each choice does are said before the buttons, in plain words.
+    const approve = within(panel).getByRole("button", { name: /Approve and pay/ });
+    const why = within(panel).getByText("Why Chaperone paused it");
+    const what = within(panel).getByText(
+      "Approve, and $109.99 is charged and paid to Larkspur Goods. Reject, and the hold is released: nothing is charged and nobody is paid.",
+    );
+    for (const said of [why, what]) {
+      expect(said.compareDocumentPosition(approve) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    expect(panel).not.toHaveTextContent(/Gate \d|mandate|auditor/);
+    await user.click(approve);
 
     expect(decide).toHaveBeenCalledWith(idOf(fixtures.escalated), { decision: "approve" });
     await waitFor(() => expect(screen.queryByRole("region", { name: "Your decision" })).toBeNull());
@@ -218,18 +234,19 @@ describe("the run view", () => {
       "The hold was released without a decision.",
     );
     expect(screen.getByText("Hold released")).toBeInTheDocument();
-    expect(screen.getByText("Voided, nobody paid")).toBeInTheDocument();
+    expect(screen.getByText("Hold released, nobody was paid")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Your decision" })).toBeNull();
     expect(screen.queryByRole("button", { name: /Approve and pay|Reject and release/ })).toBeNull();
     // Not waiting on anyone, and not following the run as if more were coming.
-    expect(screen.queryByText("Waiting on you")).toBeNull();
+    // (The top bar's link to the inbox is called that, so the page itself is what is asked.)
+    expect(within(screen.getByRole("main")).queryByText("Waiting on you")).toBeNull();
     expect(screen.queryByText("Following this run as it happens.")).toBeNull();
   });
 
   it("says when there is no such run, and when the server is down", async () => {
     mockServer({ events: {} });
     renderApp("/runs/run_nope");
-    expect(await screen.findByText("There's no run with this ID.")).toBeInTheDocument();
+    expect(await screen.findByText("We can't find this run.")).toBeInTheDocument();
     vi.unstubAllGlobals();
     mockServer({ down: true });
     renderApp("/runs/run_x");
@@ -265,7 +282,7 @@ describe("following a run as it happens", () => {
     await act(() => vi.advanceTimersByTimeAsync(POLL_MS));
     await act(() => vi.advanceTimersByTimeAsync(POLL_MS));
     await waitFor(() => expect(screen.queryByText("Following this run as it happens.")).toBeNull());
-    expect(screen.getByText("Captured and paid out")).toBeInTheDocument();
+    expect(screen.getByText(/^Paid to /)).toBeInTheDocument();
 
     const settled = eventCalls(fetchMock, idOf(log));
     expect(settled).toBe(4);
@@ -309,6 +326,16 @@ describe("a run started from the web app", () => {
     expect(within(crumbs).getByText(/Practice money/)).toBeInTheDocument();
   });
 
+  it("keeps the run's ID and the rules' hash for developers, behind Run details", async () => {
+    await open(fixtures.approved);
+    const id = idOf(fixtures.approved);
+    expect(screen.getByRole("navigation", { name: "Breadcrumb" })).not.toHaveTextContent(id);
+    const details = screen.getByText("Run details").closest("details") as HTMLElement;
+    expect(details).not.toHaveAttribute("open");
+    expect(details).toHaveTextContent(id);
+    expect(within(details).getByRole("button", { name: "Copy run ID" })).toBeInTheDocument();
+  });
+
   it("says nothing about money for a run that never recorded its adapter", async () => {
     await open(fixtures.approved);
     const crumbs = screen.getByRole("navigation", { name: "Breadcrumb" });
@@ -318,7 +345,7 @@ describe("a run started from the web app", () => {
   it("says a rejected mandate stopped the run, with no replay and no polling", async () => {
     const fetchMock = await open(fixtures.webMandateRejected);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "You rejected the mandate, so no agent ran.",
+      "You rejected the rules, so no agent ran.",
     );
     expect(screen.getByText("No run")).toBeInTheDocument();
     expect(screen.queryByText("Following this run as it happens.")).toBeNull();

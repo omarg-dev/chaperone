@@ -162,20 +162,22 @@ describe("what an event was", () => {
 
   it("says when Gate 1 flagged a passage, the moment the run view outlines it", () => {
     const facts = fixtures.escalated.filter((e) => e.type === "gate1_facts");
-    expect(facts.map(describeEvent)).toEqual(["Gate 1 flagged a passage as steering"]);
+    expect(facts.map(describeEvent)).toEqual([
+      "Seller pages (Gate 1): flagged a passage that tries to steer the purchase",
+    ]);
     const clean = fixtures.approved.filter((e) => e.type === "gate1_facts");
     expect(clean.map(describeEvent)).toEqual([
-      "Gate 1 read a page and found nothing steering",
-      "Gate 1 read a page and found nothing steering",
+      "Seller pages (Gate 1): read a page and found nothing wrong",
+      "Seller pages (Gate 1): read a page and found nothing wrong",
     ]);
   });
 
   it("reads the money's steps", () => {
     const words = fixtures.attackerPaid.map(describeEvent);
-    expect(words).toContain("The platform held the money");
-    expect(words).toContain("The review started (firewall off)");
-    expect(words).toContain("The money was captured and paid out");
-    expect(fixtures.blocked.map(describeEvent)).toContain("Gate 0 ruled: block");
+    expect(words).toContain("The payment platform put the money on hold");
+    expect(words).toContain("Chaperone started checking (switched off)");
+    expect(words).toContain("The money was charged and paid to the seller");
+    expect(fixtures.blocked.map(describeEvent)).toContain("Fixed rules (Gate 0): stopped");
   });
 });
 
