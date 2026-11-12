@@ -348,7 +348,10 @@ describe("deciding from the inbox", () => {
       events: logs,
       decide: () => ({
         status: 409,
-        body: { error: "cannot_decide", message: "This run was already decided: reject (ev_1)" },
+        body: {
+          error: "cannot_decide",
+          message: "This run was already decided: it was rejected and the hold released",
+        },
       }),
       runs: [held(POISONED, "2026-10-24T10:00:00Z")],
     });

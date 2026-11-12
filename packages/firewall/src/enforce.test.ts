@@ -179,7 +179,7 @@ describe("escalate", () => {
     const approved = await setup("honest", "full");
     await enforceReview(approved.runId, approved.options);
     await expect(decideEscalation(approved.runId, "reject", approved.options)).rejects.toThrow(
-      /not escalate/,
+      /nothing for you to decide/,
     );
     run?.close();
 
@@ -371,6 +371,6 @@ describe("a run with nothing to enforce", () => {
     run = await runGate2Case(findGate2Case("honest"));
     await expect(
       enforceReview(run.runId, { log: run.log, payments: createFakePaymentAdapter() }),
-    ).rejects.toThrow(/no finished review/);
+    ).rejects.toThrow(/hasn.t finished checking/);
   });
 });
