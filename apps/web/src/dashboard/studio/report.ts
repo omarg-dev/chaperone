@@ -49,7 +49,12 @@ export const FIELDS: AgFieldDefinition[] = [
   ),
   field("scenario", "Scenario", "textFormat", "The scenario's title."),
   field("scenarioId", "Scenario ID", "textFormat", "The scenario's ID; sc_h are held-out."),
-  field("kind", "Kind", "textFormat", "Attack or benign scenario."),
+  field(
+    "kind",
+    "Kind",
+    "textFormat",
+    "Attack, or No attack for a scenario with no attacker in it.",
+  ),
   field("attack", "Attack", "textFormat", "The attack the scenario carries, or None."),
   field("harm", "Harm", "textFormat", "What the attack is after, or None."),
   field("seed", "Seed", "textFormat", "The arena's seed for the cell."),
@@ -172,9 +177,12 @@ const tile = (text: string, under: string) => ({
   subtitle: { enabled: true, text: under },
   style: { typography: { fontFamily: "var(--font-display)", fontWeight: "bold" as const } },
 });
+// Each chart draws one series per model, so it says which colour is which: Studio hides the legend
+// unless a chart asks for it.
+const LEGEND = { theme: { common: { legend: { enabled: true } } } };
 // A chart's value axis can't be given the field's format, so it says what its numbers are.
 const axis = (text: string) => ({
-  style: { custom: { valueAxis: { title: { enabled: true, text } } } },
+  style: { ...LEGEND, custom: { valueAxis: { title: { enabled: true, text } } } },
 });
 // Off, Rules only, Full check, in the order a person reads them. Their names don't sort into it and
 // Studio sorts a chart by what it draws, so a chart is sorted by its value: each setting adds checks
@@ -297,7 +305,7 @@ export const INITIAL_REPORT: AgReportState = {
             legendKey: [ref("model")],
           },
           sort: [{ field: total("gotThrough"), direction: "desc" }],
-          format: title("Attacks that got through the full check, by attack"),
+          format: { ...title("Attacks that got through the full check, by attack"), style: LEGEND },
         },
         "attack-grid": {
           type: "grid",
