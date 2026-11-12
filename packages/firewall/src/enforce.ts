@@ -208,8 +208,8 @@ export function decideEscalation(
     if (earlier && record(earlier.payload).decision !== decision) {
       throw new EnforcementError(
         record(earlier.payload).decision === "approve"
-          ? "This run was already decided: it was approved and the seller paid"
-          : "This run was already decided: it was rejected and the hold released",
+          ? "This run was already decided: it was approved, so it can't be rejected now"
+          : "This run was already decided: it was rejected, so it can't be approved now",
       );
     }
     // A hold that was closed with nobody deciding (the eval voids the hold of every escalated cell)
@@ -321,7 +321,7 @@ async function carryOut(
       let hold = await payments.getAuthorization(authorizationId);
       if (hold.status !== "CREATED") {
         throw new EnforcementError(
-          `${HOLD_ENDED[hold.status] ?? "The hold on this order is no longer open"}, so it can't be captured`,
+          `${HOLD_ENDED[hold.status] ?? "The hold on this order is no longer open"}, so it can't be charged`,
         );
       }
       // A person who took longer than the honour period: a fresh hold for the same amount first.

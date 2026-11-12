@@ -273,7 +273,7 @@ describe("escalate", () => {
     await enforceReview(s.runId, s.options);
     s.wait(40);
     await expect(decideEscalation(s.runId, "approve", s.options)).rejects.toThrow(
-      /can't be captured/,
+      /can't be charged/,
     );
     expect(s.calls("capture")).toEqual([]);
   });
