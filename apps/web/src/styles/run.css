@@ -451,6 +451,10 @@
   color: var(--ink-2);
 }
 
+.vault .decision-unfinished {
+  color: var(--vault-muted);
+}
+
 .decision-problem {
   grid-column: 1 / -1;
   padding: var(--space-3) var(--space-4);
@@ -512,6 +516,24 @@
 
 .tl-spend {
   margin: 0;
+}
+
+/* In the money's column the page's inks would be dark on the vault in light mode, so the facts and
+   the cost a check spent there wear the vault's. */
+.tl-cell-route .tl-facts dt,
+.tl-cell-route .tl-spend {
+  color: var(--vault-muted);
+}
+
+.tl-cell-route .tl-facts dd {
+  color: var(--vault-ink);
+}
+
+/* What a check never reads, struck through: on the vault it keeps the vault's quieter ink, which
+   still reads, where the page's muted ink would not. */
+.tl-cell-route .read-never {
+  color: var(--vault-muted);
+  box-shadow: inset 0 0 0 1px var(--vault-line);
 }
 
 .tl-checks {
