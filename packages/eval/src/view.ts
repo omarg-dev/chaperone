@@ -8,7 +8,7 @@ import { z } from "zod";
 // bought line, which a headline page doesn't draw, and zod drops keys the schema doesn't name, so a
 // file of 400 KB reaches the browser as a fraction of that. What it does name, it checks, so a file
 // from another version, or one edited by hand, is refused with a reason instead of drawn wrong.
-// `view.test.ts` parses what `buildResults` writes and the committed first matrix, so a field the
+// `view.test.ts` parses what `buildResults` writes and the committed sandbox results, so a field the
 // writer renames fails there.
 //
 // The web app draws these types, so this file imports nothing but zod: not the firewall (its index

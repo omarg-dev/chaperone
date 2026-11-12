@@ -152,7 +152,9 @@ describe("POST /events/runs/:runId/decision", () => {
     const { runId } = await heldRun("approve");
     const res = await decide(appWith(fake), runId, { decision: "approve" });
     expect(res.status).toBe(409);
-    expect(((await res.json()) as { message: string }).message).toMatch(/not escalate/);
+    expect(((await res.json()) as { message: string }).message).toMatch(
+      /nothing for you to decide/,
+    );
     expect(log.listRun(runId).some((e) => e.type === "human_decision")).toBe(false);
   });
 

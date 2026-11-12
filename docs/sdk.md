@@ -1,6 +1,8 @@
 # Chaperone SDK
 
-`@firewall/sdk` puts the firewall in front of your own shopping agent. You give it your agent's tools, and the payment tool holds the cart instead of paying for it. A review then decides whether to capture, void or ask the person.
+**For developers** who want to put Chaperone in front of a shopping agent of their own. To see Chaperone at work without writing any code, [start a run](/start) or open [the runs](/runs) and watch a recorded one.
+
+`@firewall/sdk` puts Chaperone in front of your own shopping agent. You give it your agent's tools, and the payment tool holds the cart instead of paying for it. A review then decides whether to capture the payment, void it or ask the person.
 
 ## Quick start
 
@@ -13,7 +15,7 @@ pnpm install
 pnpm --filter @firewall/sdk example   # verdict: block, money: voided
 ```
 
-The example runs offline in about a minute, with the in-memory payment fake and a scripted model standing in for yours. It is `packages/sdk/examples/protect-your-agent.ts`, which a test runs. It shows the three calls below in order.
+The example runs offline in about a minute. An in-memory fake stands in for PayPal, and a scripted model for yours. It is `packages/sdk/examples/protect-your-agent.ts`, a test runs it, and it makes the three calls below in order.
 
 ## The calls
 
@@ -46,19 +48,19 @@ The person's decision on an escalated cart: `firewall.decide("approve")` or `fir
 
 `config` is one of three:
 
-- `off`: nobody reviews the cart. It is captured and paid out, which is the baseline to measure against.
-- `gate0`: the deterministic policy rules only. No model is called.
-- `full`: Gate 0, then the model gates. This is the default, and it needs the `gates` option. Without it, `createFirewall` throws a `FirewallConfigError`.
+- `off` ("Off" on the site): nobody reviews the cart. It is captured and paid out, which is the baseline to measure against.
+- `gate0` ("Rules only"): Gate 0's fixed rules, in code. No model is called.
+- `full` ("Full check"): Gate 0, then the model gates. This is the default, and it needs the `gates` option. Without it, `createFirewall` throws a `FirewallConfigError`.
 
 ## Payment tools
 
-By default these tools count as payment tools: `checkout`, `create_order` and `pay_order`. The first is ours. The other two are the payment platform's agent toolkit, whose order tools capture at once and can't hold money.
+By default these tools count as payment tools: `checkout`, `create_order` and `pay_order`. The first is ours. The other two are PayPal's agent toolkit, whose order tools capture at once and can't hold money. The toolkit isn't installed in this repo, so those two are tested with stand-in tools of the same names and input shapes.
 
 Name your own with `paymentTools: ["buy_now"]`. An explicit list replaces the defaults. A payment tool that isn't in the list is not guarded, and it pays at once, so check the names before you rely on it.
 
 ## When the review runs
 
-After the agent has finished, never inside the tool call. Gate 3 audits the agent's whole trajectory, which isn't there to read until the agent stops. The tool also answers the same whatever the cart is, so an agent steered by an attacker learns nothing about the gates by probing the checkout. And the model gates take seconds. The hold lasts days, so nothing is lost by waiting.
+After the agent has finished, never inside the tool call. Gate 3 checks every step the agent took, and those steps aren't all there until the agent stops. The tool also gives the same answer whatever the cart is, so an agent steered by an attacker can't learn anything about the gates by probing the checkout. The model gates take seconds and the hold lasts days, so waiting costs nothing.
 
 Stop your agent loop at the checkout, as the example does, or let it run on. The review reads the event log either way.
 
@@ -76,7 +78,7 @@ Both come through the `CatalogSource` interface (`packages/sdk/src/source.ts`). 
 
 ## Try the API in Postman {#postman}
 
-You can try the whole flow without code. The collection `docs/postman/chaperone.postman_collection.json` has every public call of the server, in the order you would use them: check the server, start a live run, confirm the mandate, let the agent shop, read its events, decide a held cart, read the benchmark results, and the arena calls an agent's tools make. It sits beside the SDK: the SDK puts the firewall in front of your own agent, and the collection lets you watch and drive the firewall's own.
+You can try the whole flow without code. The collection `docs/postman/chaperone.postman_collection.json` has every public call of the server, in the order you would use them: check the server, start a live run, confirm the mandate, let the agent shop, read its events, decide a held cart and read the benchmark results. It also has the arena calls an agent's tools make. The SDK puts Chaperone in front of your own agent; the collection lets you drive Chaperone's own agent and watch what happens.
 
 To use it:
 

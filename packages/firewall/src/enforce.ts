@@ -105,13 +105,22 @@ function holdOf(calls: readonly Call[]): Hold {
     (c) => c.operation === "authorize_order" || c.operation === "reauthorize",
   );
   const latest = holds.at(-1)?.result as Authorization | undefined;
-  if (!items || !latest) throw new EnforcementError("The run has no held order to act on");
+  if (!items || !latest)
+    throw new EnforcementError("This run has no money on hold, so there is nothing to act on");
   return { authorizationId: latest.authorizationId, honorUntil: latest.honorUntil, items };
 }
 
+// Why a hold can't be charged, for the person deciding: the platform's status in plain words.
+const HOLD_ENDED: Partial<Record<string, string>> = {
+  CAPTURED: "The money for this order was already charged",
+  VOIDED: "The hold on this order was already released",
+  EXPIRED: "The hold on this order has expired",
+  DENIED: "The payment platform declined the hold on this order",
+};
+
 const reviewOf = (events: readonly Event[]): Event => {
   const finished = events.findLast((e) => e.lane === "review" && e.type === "review_finished");
-  if (!finished) throw new EnforcementError("The run has no finished review to enforce");
+  if (!finished) throw new EnforcementError("Chaperone hasn't finished checking this run yet");
   return finished;
 };
 
@@ -192,13 +201,15 @@ export function decideEscalation(
     const verdict = record(review.payload).verdict;
     if (verdict !== "escalate") {
       throw new EnforcementError(
-        `The review's verdict was ${verdict ?? "none"}, not escalate: there is nothing for a person to decide`,
+        "Chaperone didn't send this run to you, so there is nothing for you to decide",
       );
     }
     const earlier = decisionOf(events, review.eventId);
     if (earlier && record(earlier.payload).decision !== decision) {
       throw new EnforcementError(
-        `This run was already decided: ${String(record(earlier.payload).decision)} (${earlier.eventId})`,
+        record(earlier.payload).decision === "approve"
+          ? "This run was already decided: it was approved, so it can't be rejected now"
+          : "This run was already decided: it was rejected, so it can't be approved now",
       );
     }
     // A hold that was closed with nobody deciding (the eval voids the hold of every escalated cell)
@@ -207,7 +218,7 @@ export function decideEscalation(
     if (!earlier && !isHoldOpen(holdStateOf(events))) {
       throw new EnforcementError(
         holdStateOf(events).authorizationId === null
-          ? "The run has no held order to act on"
+          ? "This run has no money on hold, so there is nothing to decide"
           : "The hold on this order was already released without a decision, so there is nothing to decide",
       );
     }
@@ -295,7 +306,9 @@ async function carryOut(
   if (action === "void") {
     const hold = await payments.getAuthorization(authorizationId);
     if (hold.status === "CAPTURED") {
-      throw new EnforcementError(`Authorization ${authorizationId} was already captured`);
+      throw new EnforcementError(
+        "The money for this order was already charged, so the hold can't be released",
+      );
     }
     if (hold.status === "CREATED") await payments.voidAuthorization(authorizationId);
   } else {
@@ -308,7 +321,7 @@ async function carryOut(
       let hold = await payments.getAuthorization(authorizationId);
       if (hold.status !== "CREATED") {
         throw new EnforcementError(
-          `Authorization ${authorizationId} is ${hold.status}, so it can't be captured`,
+          `${HOLD_ENDED[hold.status] ?? "The hold on this order is no longer open"}, so it can't be charged`,
         );
       }
       // A person who took longer than the honour period: a fresh hold for the same amount first.
@@ -320,7 +333,7 @@ async function carryOut(
     }
     if (capture.status !== "COMPLETED" || capture.netAmountCents === null) {
       throw new EnforcementError(
-        `Capture ${capture.captureId} is ${capture.status}, so the sellers can't be paid its net amount yet`,
+        "The payment platform hasn't finished the charge yet, so the seller can't be paid. Try again in a minute",
       );
     }
     // A seller already paid from this capture (a run that stopped halfway) isn't paid again.

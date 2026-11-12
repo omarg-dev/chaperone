@@ -3,8 +3,10 @@ import { useMemo } from "react";
 import { useSearchParams } from "react-router";
 import { Button, EmptyState, Page, Section } from "../design";
 import { formatDate } from "../format";
+import { isHeldOutFile } from "../landing/proof";
 import { useRuns } from "../runs/RunsProvider";
 import { Comparison } from "./Comparison";
+import { Guide } from "./Guide";
 import { LiveStrip } from "./LiveStrip";
 import { Provenance } from "./Provenance";
 import { ResultsGrid } from "./ResultsGrid";
@@ -13,9 +15,9 @@ import { Benchmark } from "./studio/Benchmark";
 import { useResultsFile, useResultsList } from "./useResults";
 
 // The picker's text: when it ran and what produced it, so an older result can't be mistaken for the
-// newest, or a fake one for a sandbox one.
+// newest, a fake one for a sandbox one, or the held-out attacks for our own tasks.
 export const optionLabel = (r: ResultsSummary) =>
-  `${formatDate(r.date)} · ${r.paymentAdapter} · ${r.column.label} · seeds ${r.seeds.join(", ")}`;
+  `${formatDate(r.date)} · ${r.paymentAdapter} · ${r.column.label} · ${isHeldOutFile(r) ? "held-out attacks" : "our tasks"} · seeds ${r.seeds.join(", ")}`;
 
 function NoResults({
   available,
@@ -87,6 +89,15 @@ function Results({ name, knownRunIds }: { name: string; knownRunIds: ReadonlySet
   );
 }
 
+// Which view of the eval the address asks for: Studio unless it says `view=result` (or `view=file`),
+// or names a result without saying, as links from before Studio was the default did.
+export function viewOf(params: URLSearchParams): "studio" | "file" {
+  const view = params.get("view");
+  if (view === "studio") return "studio";
+  if (view === "result" || view === "file") return "file";
+  return params.has("result") ? "file" : "studio";
+}
+
 // /dashboard: how Chaperone is doing. The eval's newest results (or an older one, picked), then this
 // server's own runs.
 export function Dashboard() {
@@ -96,13 +107,18 @@ export function Dashboard() {
   const knownRunIds = useMemo(() => new Set(runs.map((r) => r.runId)), [runs]);
 
   const list = state.status === "ready" ? state.value : null;
-  // Two views of the eval: one results file as the harness counted it, or every sandbox file at
-  // once in AG Studio (`?view=studio`), each kept in the address so a view can be shared.
-  const view = params.get("view") === "studio" ? "studio" : "file";
+  // Two views of the eval: every sandbox file at once in AG Studio, the default (Omar, Nov 11: the
+  // AG Grid team weighs Studio entries), or one results file as the harness counted it
+  // (`?view=result`), each kept in the address so a view can be shared. An older link that names a
+  // result, or says `view=studio`, opens what it named.
+  const view = viewOf(params);
   const setView = (next: "studio" | "file") => {
     const copy = new URLSearchParams(params);
-    if (next === "studio") copy.set("view", "studio");
-    else copy.delete("view");
+    if (next === "file") copy.set("view", "result");
+    else {
+      copy.delete("view");
+      copy.delete("result");
+    }
     setParams(copy, { replace: true });
   };
   const asked = params.get("result");
@@ -118,9 +134,12 @@ export function Dashboard() {
           className="filter-control"
           value={selected?.name ?? ""}
           onChange={(e) =>
-            setParams(e.target.value === list.results[0]?.name ? {} : { result: e.target.value }, {
-              replace: true,
-            })
+            setParams(
+              e.target.value === list.results[0]?.name
+                ? { view: "result" }
+                : { view: "result", result: e.target.value },
+              { replace: true },
+            )
           }
         >
           {list.results.map((r, i) => (
@@ -136,28 +155,16 @@ export function Dashboard() {
   return (
     <Page
       title="How it's doing"
-      lede="How often agents are fooled with Chaperone off and on, from the eval, and what this server has seen."
+      lede="How often an AI shopping agent is tricked into paying an attacker, with Chaperone off and with it checking. Measured on a benchmark run on PayPal's payment sandbox."
       aside={
         <Button variant="secondary" small onClick={reload} disabled={state.status === "loading"}>
           Refresh
         </Button>
       }
     >
-      <LiveStrip />
-
-      <Section heading="The eval" className="eval">
-        <div className="tabs eval-views" role="tablist" aria-label="How to read the eval">
-          <button
-            type="button"
-            role="tab"
-            id="tab-file"
-            aria-selected={view === "file"}
-            aria-controls="panel-eval"
-            className="tab"
-            onClick={() => setView("file")}
-          >
-            One result
-          </button>
+      <Section heading="The benchmark" className="eval">
+        <Guide list={list?.results ?? []} />
+        <div className="tabs eval-views" role="tablist" aria-label="How to read the benchmark">
           <button
             type="button"
             role="tab"
@@ -169,6 +176,17 @@ export function Dashboard() {
           >
             Every result in AG Studio
           </button>
+          <button
+            type="button"
+            role="tab"
+            id="tab-file"
+            aria-selected={view === "file"}
+            aria-controls="panel-eval"
+            className="tab"
+            onClick={() => setView("file")}
+          >
+            One result, run by run
+          </button>
         </div>
         {view === "file" && picker}
         {state.status === "loading" && (
@@ -178,7 +196,7 @@ export function Dashboard() {
         )}
         {state.status === "error" && (
           <EmptyState
-            title="The eval results couldn't be read."
+            title="The benchmark results couldn't be read."
             action={
               <Button variant="secondary" small onClick={reload}>
                 Try again
@@ -202,6 +220,8 @@ export function Dashboard() {
           </div>
         )}
       </Section>
+
+      <LiveStrip />
     </Page>
   );
 }

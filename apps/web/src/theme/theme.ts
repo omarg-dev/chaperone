@@ -1,4 +1,5 @@
 // The theme follows the device until the person picks one, and the pick is remembered per browser.
+// The switch is one button between light and dark (ThemeSwitch.tsx).
 // An explicit pick is written to <html data-theme> (tokens.css reads it); "system" removes the
 // attribute, so the device's own preference decides. index.html applies a stored pick before the
 // first paint with a copy of readPreference's logic, so the page doesn't flash the wrong theme.
@@ -8,13 +9,18 @@ export const THEME_KEY = "chaperone-theme";
 export type ThemePreference = "system" | "light" | "dark";
 export type ResolvedTheme = "light" | "dark";
 
-export const THEME_PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
-
 const DARK_QUERY = "(prefers-color-scheme: dark)";
 
 export function resolveTheme(preference: ThemePreference, deviceIsDark: boolean): ResolvedTheme {
   if (preference === "system") return deviceIsDark ? "dark" : "light";
   return preference;
+}
+
+// What a click on the switch picks: the other theme. When that is what the device shows anyway,
+// the pick is dropped and the page follows the device again, so the one button also undoes itself.
+export function toggled(resolved: ResolvedTheme, deviceIsDark: boolean): ThemePreference {
+  const next: ResolvedTheme = resolved === "dark" ? "light" : "dark";
+  return next === (deviceIsDark ? "dark" : "light") ? "system" : next;
 }
 
 // Storage can be missing or throw (private windows, blocked site data), and the app works without it.

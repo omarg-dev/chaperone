@@ -102,6 +102,18 @@
   line-height: 1;
 }
 
+/* The tagline sits under the name, a size down, so the name is read first and the line with it. */
+.lp-name,
+.lp-tagline {
+  display: block;
+}
+
+.lp-tagline {
+  margin-top: var(--space-3);
+  font-size: calc(var(--text-hero) * 0.6);
+  line-height: 1.1;
+}
+
 .lp-title-lg {
   max-width: 14ch;
   font-size: var(--text-landing);

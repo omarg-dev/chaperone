@@ -1,15 +1,15 @@
-// The MVP's first matrix (results/2026-10-26T0012-fake-claude-haiku-5-5.json), as the server serves it:
-// read through `parseResults` in @firewall/eval/view, so only the fields the dashboard draws are
-// here. It is a fake-adapter result, which is what the page's banner is tested on. The numbers are
-// the harness's own: 68.8% attack success with the firewall off, 25.0% with Gate 0 only, 0.0% with
-// the full tree, over 16 attack runs.
+// A real sandbox result (results/2026-11-07T1647-sandbox-claude-haiku-5-5.json, our own 30
+// scenarios, seeds 1 to 4, the Claude Haiku 5.5 column), as the server serves it: read through
+// `parseResults` in @firewall/eval/view, so only the fields the dashboard draws are here. The
+// numbers are the harness's own: 71.9% attack success with the firewall off, 25.0% with Rules
+// only, 3.1% with the full check, over 32 attack runs.
 import type { ResultsView } from "@firewall/eval/view";
-import firstMatrix from "./first-matrix.json";
+import sandboxHaiku from "./sandbox-haiku.json";
 
-export const fakeResults = firstMatrix as unknown as ResultsView;
+export const sandboxResults = sandboxHaiku as unknown as ResultsView;
 
-// The same file as a sandbox result, to tell the two apart.
-export const sandboxResults: ResultsView = {
-  ...fakeResults,
-  meta: { ...fakeResults.meta, paymentAdapter: "sandbox" },
+// The same file labelled as a fake-adapter result, which is what the page's banner is tested on.
+export const fakeResults: ResultsView = {
+  ...sandboxResults,
+  meta: { ...sandboxResults.meta, paymentAdapter: "fake" },
 };

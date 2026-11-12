@@ -476,3 +476,100 @@
   }
 }
 .tl-station .disclosure-summary { color: var(--vault-muted); }
+
+/* A phone: the three columns become one. Each moment is its time, then what happened on each
+   ground in turn (the plain column, the vault with the money's route, seller text behind the
+   hatch), so nothing sits off-screen. The head is a key to the three grounds, and the foot says
+   only the exit the money took. */
+@media (max-width: 760px) {
+  .tl-scroll {
+    overflow-x: visible;
+  }
+
+  .tl-grid {
+    min-width: 0;
+  }
+
+  .tl-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    height: auto;
+    margin-bottom: var(--space-2);
+    font-size: 12px;
+  }
+
+  .tl-head > * {
+    padding: 6px 10px;
+  }
+
+  .tl-head-time,
+  .tl-foot > .tl-time {
+    display: none;
+  }
+
+  .tl-row,
+  .tl-foot {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .tl-time {
+    padding: 14px 0 4px;
+    border-right: 0;
+    text-align: start;
+  }
+
+  .tl-cell {
+    min-height: 0;
+    padding: 12px 14px;
+  }
+
+  .tl-cell:empty {
+    display: none;
+  }
+
+  .tl-cell-route {
+    padding-block: 16px;
+    padding-inline-start: 56px;
+  }
+
+  .tl-cell-route::before {
+    left: 21px;
+  }
+
+  .tl-row[data-spine="money"] .tl-cell-route::before {
+    left: 19px;
+  }
+
+  .tl-row[data-first-money] .tl-cell-route::before {
+    top: 40px;
+  }
+
+  .tl-row[data-first-money] .tl-cell-route::after {
+    top: 16px;
+    left: 19px;
+    width: 28px;
+  }
+
+  .tl-node {
+    left: -45px;
+  }
+
+  .tl-foot {
+    min-height: 0;
+  }
+
+  .tl-exit:not(.tl-exit-taken) {
+    display: none;
+  }
+
+  .tl-exit-route {
+    padding-inline-start: 56px;
+  }
+
+  .tl-foot[data-spine="money"] .tl-exit-route::before {
+    left: 19px;
+    width: 28px;
+  }
+}

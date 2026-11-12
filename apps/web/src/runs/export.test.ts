@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { run } from "../test-utils";
-import { evidenceFileName, evidenceIntro, exportCell } from "./export";
+import { EXPORT_COLUMNS, evidenceFileName, evidenceIntro, exportCell } from "./export";
 import { NO_FILTERS } from "./filters";
 
 const at = "2026-11-03T10:00:00Z";
@@ -26,10 +26,10 @@ describe("what each column of the evidence holds", () => {
     expect(exportCell(paid, "verdict", titles)).toBe("Paid attacker");
     expect(exportCell(voided, "verdict", titles)).toBe("Blocked");
     expect(exportCell(paid, "scenario", titles)).toBe("Wireless tactile keyboard under $90");
-    expect(exportCell(run("r", null, at), "scenario", titles)).toBe("No scenario");
+    expect(exportCell(run("r", null, at), "scenario", titles)).toBe("No task");
     expect(exportCell(paid, "firewall", titles)).toBe("Off");
-    expect(exportCell(voided, "firewall", titles)).toBe("Full");
-    expect(exportCell(run("r", "s", at), "firewall", titles)).toBe("None");
+    expect(exportCell(voided, "firewall", titles)).toBe("Full check");
+    expect(exportCell(run("r", "s", at), "firewall", titles)).toBe("Not checked");
   });
 
   it("writes an amount in dollars as a number, in the one money column the run's money is in", () => {
@@ -43,6 +43,9 @@ describe("what each column of the evidence holds", () => {
   it("writes the time as it was recorded and the run's ID, so the run can be found again", () => {
     expect(exportCell(paid, "started", titles)).toBe(at);
     expect(exportCell(paid, "run", titles)).toBe("run_a");
+    // The page doesn't show the ID, so the file names the column itself rather than following the
+    // columns on screen.
+    expect(EXPORT_COLUMNS).toContain("run");
     expect(exportCell(paid, "unknown", titles)).toBeNull();
   });
 });
@@ -68,7 +71,7 @@ describe("what the file says about itself", () => {
     ).toEqual([
       "Chaperone runs",
       "Exported 3 Nov 2026",
-      "Filters: Outcome: Paid attacker; Firewall: Off; Scenario: Wireless tactile keyboard under $90; Search: kb",
+      "Filters: Outcome: Paid attacker; Check: Off; Task: Wireless tactile keyboard under $90; Search: kb",
       "3 of 66 runs",
     ]);
   });

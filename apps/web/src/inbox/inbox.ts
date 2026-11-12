@@ -47,8 +47,9 @@ export function confirmationText(
   amountCents: number | null,
 ): string {
   const amount = amountCents === null ? "the purchase" : formatMoney(amountCents);
-  if (!result) return "This purchase was already decided. The run shows how it ended.";
-  if (result.money === "captured") return `Approved. ${amount} was captured and the seller paid.`;
+  if (!result) return "This purchase was already decided. Its page shows how it ended.";
+  if (result.money === "captured")
+    return `Approved. ${amount} was charged and the seller was paid.`;
   if (result.money === "voided")
     return `Rejected. The hold on ${amount} was released and nobody was paid.`;
   return "Your decision is recorded. The money hasn't moved yet.";

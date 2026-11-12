@@ -21,6 +21,7 @@ coverage/
 .vscode/
 .idea/
 
-# Eval results: the README stays, the runs' files don't (step 18 makes the first real ones).
+# Eval results: the README stays, the runs' files don't. The benchmark's four sandbox results
+# files are committed with `git add -f` (see results/README.md).
 results/*
 !results/README.md

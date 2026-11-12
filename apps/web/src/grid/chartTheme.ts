@@ -13,7 +13,7 @@ export interface ChartTokens {
   muted: string;
   line: string;
   fontUi: string;
-  // The colour of each series in turn: Off, Gate 0 only, the full tree.
+  // The colour of each series in turn: Off, Rules only, the full check.
   series: [string, string, string];
 }
 

@@ -45,14 +45,14 @@ function Dots({ tally }: { tally: AttackTally }) {
   );
 }
 
-// Off, Gate 0 only and the full tree, side by side: the attack success the eval is for, then the
+// Off, Rules only and the full check, side by side: the attack success the eval is for, then the
 // cost of getting it. Every number is the one the harness computed and wrote into the file.
 export function Comparison({ results }: { results: ResultsView }) {
   const configs = configsOf(results);
   const measures = measuresOf(configs);
   const failed = failedReviewsNote(configs);
   return (
-    <section className="cmp-wrap" aria-label="Off, Gate 0 only and the full tree, compared">
+    <section className="cmp-wrap" aria-label="Off, Rules only and the full check, compared">
       <div className="cmp">
         <span className="cmp-corner" />
         {configs.map((c) => (
@@ -123,8 +123,8 @@ export function Comparison({ results }: { results: ResultsView }) {
         ))}
       </div>
       <p className="t-meta cmp-foot">
-        A clean cart is the right thing from an honest seller. Blocked and held both keep the money,
-        and a block of a cart the agent got wrong is a correct block.
+        A clean cart is the right item from an honest seller. Blocking and holding both keep the
+        money from moving, and blocking a cart the agent got wrong is the right call.
         {failed && ` ${failed}`}
       </p>
     </section>

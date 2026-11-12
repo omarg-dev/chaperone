@@ -1,196 +1,117 @@
-# Agent checkout firewall (working title)
+# Chaperone
 
-An intent firewall and adversarial test arena for AI shopping agents. Every purchase an agent makes is held as a payment authorization while a tree of reviewers checks that the cart still matches what the person asked for; only then is the money captured. The arena attacks shopping agents with poisoned listings, so you can measure how often they get tricked with and without the firewall.
+Chaperone, the parent to your shopping agent.
 
-Built solo for the hackathon. Sandbox payments only; no live credentials ever touch this project.
+Chaperone is a firewall for AI shopping agents that pay with PayPal. When an agent checks out, Chaperone doesn't let it pay. It turns the checkout into a PayPal authorization, a hold on the buyer's money in PayPal's sandbox. Then four checks compare the cart with the rules the person confirmed before the agent started. Three of them call Claude Haiku 5.5. If the cart passes, Chaperone captures the payment and pays each seller with PayPal Payouts. If something looks off, the hold waits for the person to decide. If the cart breaks the rules, Chaperone voids the hold and nobody is charged.
 
-The product name isn't final, and the repository will be renamed before submission.
+It comes with a test marketplace. Honest sellers and attackers sell fictional products there, and the attackers hide instructions in their pages and reviews. A benchmark runs real shopping agents through it and measures how often they get tricked into paying an attacker, with Chaperone off and on.
 
-## Status
+Sandbox money only. No live PayPal credentials are used anywhere in this project.
 
-v1.2 is merged: Gate 3 (the trace auditor), the eval on two agent columns (Claude Haiku 5.5 and OpenAI GPT-6 Luna), the held-out set of 17 attacks, the gate freeze, a landing page at `/`, the SDK docs at `/docs`, and the route line on the run page only. The headline numbers are in [Results](#results). An AG Studio dashboard and a landing page redesign are in progress, and refunds after capture come last, if there is time. The decisions, milestones and the steps still open are in [docs/PLAN.md](docs/PLAN.md).
+- Live demo, no sign-in: https://chaperone.omarg.dev
+- Docs (the SDK guide, also at [docs/sdk.md](docs/sdk.md)): https://chaperone.omarg.dev/docs
+- Benchmark dashboard: https://chaperone.omarg.dev/dashboard
+- Postman collection: [docs/postman/chaperone.postman_collection.json](docs/postman/chaperone.postman_collection.json)
 
-## Running it locally
+## Results
 
-Needs Node 22 and pnpm (`corepack enable` installs the version the repo pins).
+Every number here comes from PayPal's real sandbox. Each checkout was held as a PayPal authorization, then captured and paid out, or voided. The runs used the `sandbox` payment adapter on Nov 7, 2026, with seeds 1 to 4. The shopping agent was Claude Haiku 5.5 in one column and OpenAI GPT-6 Luna in the other, one model per column with no fallback. The checks ran on Claude Haiku 5.5 for both.
 
-```sh
-pnpm install
-cp .env.example .env
-pnpm dev            # the server, restarting on changes, at http://localhost:3000
-```
+Each run was reviewed three ways, on the same checkout: Off (nobody checks), Rules only (fixed rules, no AI) and Full check (the rules and the AI reviewers). An attack succeeds only when the agent was fooled and the money was captured. A clean cart is one with no harm: the right thing, from an honest seller. A false block stops a clean cart. A false escalation sends a clean cart to the person.
 
-`curl localhost:3000/health` answers `{"status":"ok","version":"0.2.0"}`, the version in `package.json`.
+Our own set has 30 scenarios, 22 benign and 8 attacks. Each model ran 120 times, 32 of them attacks.
 
-### The web app
+| Shopping agent | Attack success, Off | Rules only | Full check | False blocks | False escalations |
+|---|---|---|---|---|---|
+| Claude Haiku 5.5 | 71.9% (23 of 32) | 25.0% (8 of 32) | 3.1% (1 of 32) | 0 of 97 | 1.0% (1 of 97) |
+| OpenAI GPT-6 Luna | 84.4% (27 of 32) | 40.6% (13 of 32) | 0.0% (0 of 32) | 0 of 93 | 2.2% (2 of 93) |
 
-The web app is in `apps/web`: React and Vite, with plain CSS on design tokens (see [docs/design.md](docs/design.md)). In development, run the server and the web app side by side:
+The held-out set has 17 attacks ported, with attribution, from four published benchmarks: StakeBench, Magentic Marketplace, AgentDojo and InjecAgent. Each model ran 68 times. The attacks were written without reading the checks, and the checks were frozen before they ran ([docs/held-out.md](docs/held-out.md)).
 
-```sh
-pnpm dev                                 # the server, at http://localhost:3000
-pnpm --filter @firewall/web dev          # the web app, at http://localhost:5173
-```
+| Shopping agent | Attack success, Off | Rules only | Full check | False blocks | False escalations |
+|---|---|---|---|---|---|
+| Claude Haiku 5.5 | 14.7% (10 of 68) | 8.8% (6 of 68) | 1.5% (1 of 68) | 0 of 58 | 55.2% (32 of 58) |
+| OpenAI GPT-6 Luna | 25.0% (17 of 68) | 16.2% (11 of 68) | 4.4% (3 of 68) | 0 of 51 | 47.1% (24 of 51) |
 
-Open http://localhost:5173. Vite proxies `/health`, `/events`, `/arena`, `/eval` and `/live` to the server (`PORT` sets which), so the app calls the API with relative URLs, exactly as it does in production. `/arena` is the API's prefix only: the arena has no page in the app.
+A Full check review cost $0.0021 to $0.0032 in model calls on average, depending on the set and the agent. It took 4.8 to 7.6 seconds at the median, and 9.3 to 12.8 seconds at the 95th percentile. Rules only costs nothing and takes a few milliseconds. The four runs cost $1.67 in model calls in all.
 
-In production there is one process. `pnpm build` builds the web app into `apps/web/dist`, and the server's build copies it next to the bundle (`dist/web`, and into the Docker image). The Hono server serves those files at `/` and answers the app's pages (`/runs`, `/arena` and the rest) with `index.html` when a browser asks for them; the API routes and `/health` are where they were. Run from source, the server serves `apps/web/dist` too when it exists, so `pnpm --filter @firewall/web build && pnpm dev` shows the whole thing on port 3000.
+Where it falls short:
 
-Before pushing, run everything CI runs:
+- One attack still got through the Full check on our own set. With Claude Haiku 5.5 as the agent, one run of the verified-seller variant of attack A1 was approved and paid.
+- The held-out set found a gap. Many of its attacks plant instructions in a review of the honest product the person asked for. The agent often ignores them and buys the right thing, but the seller-pages check flags that page anyway. So about half of the held-out clean carts (55% with Claude, 47% with OpenAI) were sent to the person instead of being paid. None was blocked. The checks were not changed because of a held-out result. A narrower rule is work for after the hackathon.
 
-```sh
-pnpm lint && pnpm check && pnpm test && pnpm build
-```
+The four results files are in [results/](results/), and [results/README.md](results/README.md) says how each rate is counted. The dashboard draws them.
 
-The Docker image builds with `docker build -t firewall-server .` and runs on port 3000, serving the web app at `/`.
+## How it works
 
-The Runs history and the dashboard's table use AG Grid **Enterprise** (master/detail, row grouping, integrated charts, a status bar and Excel export), unlicensed: the AG Grid team said on the hackathon Discord that entrants may use it without a key, so it runs with AG's watermark and a license notice in the browser console, and no key is set anywhere. It is behind one flag (`ENTERPRISE` in `apps/web/src/grid/flag.ts`); with it off the build leaves the Enterprise packages out and the tables are plain community tables.
+1. You set the rules. You say what you want, for example "a mechanical keyboard with tactile switches, under $120". Claude Haiku 5.5 turns it into rules: what to buy, the must-haves, the budget, the quantity, the brands and the sellers. You check them and confirm. Chaperone locks them with a hash, so a later change shows.
+2. The agent shops. It searches, reads listings and reviews, and fills a cart, as any shopping agent would.
+3. The checkout is held. The agent's checkout tool creates a PayPal order and authorizes it against the buyer's saved PayPal wallet. That is a hold, not a payment. The agent is told the order is placed and pending review.
+4. Four checks run, after the agent is done:
+   - **Fixed rules** (Gate 0): the cart against your rules and the catalog, in code, with no AI.
+   - **Seller pages** (Gate 1): Claude Haiku 5.5 reads what sellers wrote, one page at a time, in isolation, and passes on only plain facts and flags. No other check ever sees seller text.
+   - **Cart review** (Gate 2): an AI reviewer checks the cart is what you asked for, against like-for-like offers. It also notes what that kind of product sells for in the real market, from Channel3, as information only.
+   - **Agent's path** (Gate 3): an AI reviewer checks how the agent came to choose each item, and whether a flagged page steered it.
 
-### Live runs from the web
+   The AI reviewers answer in fixed codes. Code decides the verdict.
+5. The money moves once. Approved: Chaperone captures the hold and pays each seller its share with PayPal Payouts. Sent to you: the hold stays, and you approve or reject it on "Waiting on you". Blocked: Chaperone voids the hold and nobody is paid.
 
-The Start a run page (`/start`) lets a person pick a scenario, confirm a mandate and start a real run in the browser, and follow it in the run view. It needs the app's own model key; without `FIREWALL_ANTHROPIC_API_KEY` the page says live runs are off and replay still works. What a day of live runs may spend is capped: `FIREWALL_LIVE_DAILY_USD` (default `0.25`, a UTC day, counted from the event log), and only one live run goes at a time. The money is the sandbox's when the `SANDBOX_*` variables and `SANDBOX_BUYER_VAULT_ID` are set, otherwise one in-memory fake the server owns ("Practice money"), which is not a sandbox result. The same page has a "Connect your own agent" tab with the SDK example below.
+You choose how much runs: Off, Rules only or Full check. Every step, from your request to the last payout, is written to an append-only event log, and each run can be replayed on the site.
 
-### The benchmark in AG Studio
+[docs/architecture.md](docs/architecture.md) has the details: each check's rules, the event log, the arena API and the benchmark harness.
 
-The dashboard's "Every result in AG Studio" tab (`/dashboard?view=studio`) puts every sandbox results file the server has (the newest of each model on each scenario set) into [AG Studio](https://www.ag-grid.com/studio/), one row per cell and firewall setting, and opens on a report of attack success off and on, the held-out set, false escalations and cost. "Build your own" lets anyone rearrange it in their own tab, and has Studio's AI assistant, which runs on Claude Haiku 5.5 through the server (`POST /studio/ai`) so the browser holds no key, capped by `FIREWALL_STUDIO_DAILY_USD`. Studio's licence key, `AG_STUDIO_LICENSE_KEY`, is read by the server at runtime; without it Studio shows its watermark.
+## Built with
 
-## The arena API
+- PayPal, the sandbox, through the server SDK [`@paypal/paypal-server-sdk`](https://www.npmjs.com/package/@paypal/paypal-server-sdk) 2.5.0 (`packages/payments/src/sandbox.ts`):
+  - Orders: create an order with the `AUTHORIZE` intent, authorize it, read it back.
+  - Payments: read, capture, void and reauthorize an authorization, and read a capture. Refunding a capture is in the adapter and its contract tests, but the app doesn't use it yet.
+  - Vault: setup tokens and payment tokens, to save the buyer's PayPal wallet once so later orders authorize with no approval step.
+  - Payouts: `POST /v1/payments/payouts` and `GET /v1/payments/payouts/{id}`, to pay each seller after capture. The SDK has no Payouts controller, so these go through the SDK client's own request builder, with its OAuth token.
+- Claude Haiku 5.5: the AI checks (Gates 1, 2 and 3), the rules writer, one of the two shopping agents, and the AG Studio assistant on the dashboard.
+- OpenAI GPT-6 Luna: the second shopping agent in the benchmark.
+- AG Grid Enterprise and AG Studio: the Runs history and the benchmark dashboard. See below.
+- APIMatic Context Plugin for the PayPal server SDK, in Claude Code, to write the PayPal integration. See below.
+- Channel3: the real-market price reference in the cart review.
+- Postman: a collection of the public API.
+- The stack: TypeScript throughout, in a pnpm workspace. Hono on Node 22 for the server, React and Vite for the web app, SQLite through Drizzle for the event log, the Vercel AI SDK for the shopping agent, the Anthropic SDK for the checks, Vitest and Biome. Docker and Caddy on a VPS for the hosted demo.
 
-The server runs the marketplace a shopping agent is tested in. A run is one agent visiting one scenario with one seed; the same scenario and seed always give the same arena.
+## How the PayPal integration was built
 
-| Call | What it does |
-|---|---|
-| `GET /arena/scenarios` | The scenarios and what the person asks for in each |
-| `POST /arena/runs` `{"scenarioId","seed"}` | Starts a run |
-| `GET /arena/runs/:runId/search?q=&category=&maxPriceCents=` | Searches listings |
-| `GET /arena/runs/:runId/listings/:listingId` | A listing, with its catalog data and its page content apart |
-| `GET /arena/runs/:runId/listings/:listingId/reviews` | A listing's reviews |
-| `GET`, `POST /arena/runs/:runId/cart` `{"listingId","quantity"}`, `DELETE /arena/runs/:runId/cart/:listingId` | The cart |
-| `POST /arena/runs/:runId/coupons` `{"code"}` | Applies a coupon |
-| `POST /arena/runs/:runId/checkout` | Turns the cart into an order draft, with each line's payee taken from the catalog |
-| `GET /events/runs`, `GET /events/runs/:runId` | The run list (each run with its `verdict`, `decidedBy` and `reviewFailed`, read from its review and a person's decision), and one run's events in replay order |
-| `GET /events/runs/:runId/payees` | The run's sellers by payee key, with each one's role (honest or attacker), rebuilt from its scenario and seed: the run view uses it to say who was paid and whether that was an attacker. An operator's view, not part of what an agent shops with |
-| `POST /events/runs/:runId/decision` | A person's decision on an escalated run, `{ "decision": "approve" \| "reject", "note"?: string }`, carried out by the same code as `decide-run` (so a repeat changes nothing). carried out on the server's own payment adapter (the sandbox's when its variables are set, otherwise one in-memory fake, so a practice run can be decided too). 409 when the run isn't waiting for a person, was decided the other way, or is on a different kind of adapter, 502 when the platform refuses |
-| `GET /live/status` | Whether a live run can start now (`available`, and `reason` in a sentence when not), which payment adapter holds the money (`fake` or `sandbox`), whether one is in progress (`busy`), and today's budget: the cap, what was spent, what is left and when it starts again (midnight UTC) |
-| `POST /live/runs` `{"scenarioId","seed"?}` | A live run from the web app: starts the arena run (marked `origin: "web"`, with its payment adapter) and drafts a mandate from the scenario's request. Answers the mandate: the request, each term in words, which can be edited, and whether it can be locked. 503 when live runs are off, 429 at the daily cap, 502 when the builder fails |
-| `GET`, `POST /live/runs/:runId/mandate` | The mandate's state; and `{"action":"edit","field","input"}` (the command line's own edit text), `{"action":"confirm"}` (locks it) or `{"action":"reject","reason"?}`. 422 with the reason when an edit can't be read, doesn't fit the catalog, or a draft can't be locked; 409 once it is locked or rejected |
-| `POST /live/runs/:runId/start` `{"firewall":"off"\|"gate0"\|"full"}` | Runs the agent in the background, through the SDK, with the locked mandate; answers 202 and the run is followed at `/runs/:runId`. 409 if the mandate isn't locked, the run has started, or another live run is in progress; 429 at the daily cap; 410 if the server restarted since the draft |
-| `GET /eval/results`, `GET /eval/results/:name` | The eval's results files in `RESULTS_DIR`, read-only: the list (adapter, model column, gate model, seeds, date, newest first; `available` is false when there is no folder) and one file, validated and cut down to what the dashboard draws. A name that isn't a plain file name in the folder is a 404 |
+The PayPal adapter (`packages/payments/src/sandbox.ts`) was written in Claude Code with APIMatic's Context Plugin for the PayPal server SDK (TypeScript). The plugin is installed in the project's cloud environment, and the project's rules make it the source for integration code (the "Plugins" decision in [docs/PLAN.md](docs/PLAN.md), and [CLAUDE.md](CLAUDE.md)). PayPal's own plugin was kept for looking at the sandbox and reading errors.
 
-A Postman collection of these calls, in the order a developer would use them (`docs/postman/chaperone.postman_collection.json`), and an environment for a local server (`docs/postman/local.postman_environment.json`) are in the repo. In Postman, choose Import and pick both files, then select the "Chaperone, local server" environment to use `http://localhost:3000`; the collection's own `baseUrl` is the hosted demo. `apps/server/src/postman.test.ts` fails if a route is renamed or an example body stops passing its schema. The same steps are in the docs page, `/docs#postman`.
+The adapter was built on Oct 22, in one Claude Code session that called the plugin 17 times. What it asked and what that shaped:
 
-Every arena call is written to the event log. Send `X-Parent-Event-Id` with the ID of the event that made the call, and the arena's event links to it.
+| Plugin call | What it settled | Where it is |
+|---|---|---|
+| `ask`: set up the SDK client for the sandbox with client-credentials OAuth | The `Client` with `Environment.Sandbox`, `clientCredentialsAuthCredentials` and a timeout | `createSandboxPaymentAdapter` in `sandbox.ts` |
+| `endpoint_search` `createOrder`; `model_search` `PurchaseUnitRequest`, `Item` | One order with one purchase unit for the whole cart, each line item carrying its seller in its SKU | `createOrder` and `fromSku` in `sandbox.ts` |
+| `endpoint_search` `voidPayment` | Voiding the hold when a cart is blocked | `voidAuthorization` in `sandbox.ts` |
+| `endpoint_search` `createSetupToken`; `ask`: save a wallet without a purchase, then authorize later orders against it | Setup token, buyer approval, payment token, then orders authorized against the vault ID | `startWalletSetup`, `finishWalletSetup` in `sandbox.ts`, and `pnpm --filter @firewall/payments save-wallet` |
+| `ask`: does the SDK have Payouts, and how does its OAuth work | It has no Payouts controller, so payouts are a direct REST call through the SDK client's own request builder and token | The payouts part of `sandbox.ts` |
+| `endpoint_search` `reauthorizePayment`; `ask`: what happens to the original authorization | The SDK's docs disagree on how often a hold can be reauthorized, so the fake follows the stricter reading | `reauthorize` in `sandbox.ts`, [docs/sandbox-checks.md](docs/sandbox-checks.md) |
+| `model_search` `PaymentAuthorization`, `CapturedPayment` | How authorizations and captures are read back | `toAuthorization` and the capture mapping in `sandbox.ts` |
 
-Some scenarios are benign and some carry an attack, and the scenario list doesn't say which. An attack scenario layers its attacker's stores, listings, reviews and Q&A onto the base catalog when the arena is built (`packages/arena/src/scenarios/attacks.ts`), so the base catalog and the benign scenarios never contain attack content. Whether a checkout fell for the attack is decided from its order draft by `attackSucceeded` (`packages/arena/src/outcome.ts`), which only the eval reads.
+The other five calls were the plugin's `update_activity` milestones (SDK set up, auth configured, first call made, an error met and resolved). The same adapter passes the shared contract suite (`packages/payments/src/contract.ts`) against the real sandbox with `pnpm --filter @firewall/payments test:sandbox`. The session's transcript isn't in the repo; the calls above are copied from it. The PayPal server SDK is itself built on APIMatic's runtime, so its `@apimatic/*` packages are in the lockfile.
 
-## The shopping agent
+## AG Grid and AG Studio
 
-`packages/agent` is the shopper the attacks are measured against: an ordinary agent on the Vercel AI SDK with no defences of its own. Given a scenario's request, it shops the arena through tools (search, a listing's page, reviews, the cart, coupons, checkout) that call the arena in-process, and its checkout holds the whole cart as one payment authorization against the buyer's saved wallet. It never captures: that's the review's decision. Each run writes the agent's trajectory to the event log on the `agent` lane (every model turn with what it said, its thinking summary, its tool calls, tokens and cost), linked to the arena and payment events each step caused.
+- The Runs history (`/runs`) is an AG Grid Enterprise grid, with row grouping by task, a status bar that totals the money held, moved, paid to attackers and voided over the runs shown, and Excel export of the evidence.
+- The benchmark dashboard (`/dashboard`) opens on AG Studio 3.0. It holds every sandbox results file, one row per run and setting, laid out so Studio's own sums and averages give the benchmark's rates. It opens on a report of attack success with Chaperone off and on, the held-out set, false escalations and cost. "Build your own" lets anyone rearrange it.
+- Theming: the grids and Studio wear the app's design tokens through AG's theming APIs, so light, dark and the theme switch work with one theme (`apps/web/src/grid/theme.ts`, `apps/web/src/dashboard/studio/theme.ts`).
+- The assistant: Studio's AI assistant runs on Claude Haiku 5.5 through our own model adapter (`apps/web/src/dashboard/studio/adapter.ts`), which sends each turn to our server (`POST /studio/ai`). The browser holds no key, and the server caps what the assistant may spend in a day (`FIREWALL_STUDIO_DAILY_USD`, $0.10 by default).
+- "One result, run by run", the dashboard's other view, is an AG Grid Enterprise table with master/detail (a run opens under each setting), grouping by attack and integrated charts.
 
-To run it on one scenario, with a real model (the whole run, through the firewall, is below):
+AG Grid Enterprise is used without a licence key, under the allowance the AG Grid team gave entrants on the hackathon Discord on Nov 2, so its watermark and console notice show. AG Studio runs on the hackathon trial key, which the server reads from `AG_STUDIO_LICENSE_KEY` and is never in the repo. The Enterprise features sit behind one flag (`apps/web/src/grid/flag.ts`). With it off, the build leaves the Enterprise packages out.
 
-```sh
-pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --firewall off                    # fake payments
-pnpm --filter @firewall/agent run-scenario sc_b01 --seed 1 --adapter sandbox --firewall off  # the sandbox
-```
+## Try it
 
-It needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`), prints a short transcript, and what the run cost. A run stops before a model call that could take it past `--max-usd` (default $0.05), and after 25 model calls. Each eval column is one model with no fallback; `run-scenario` runs the Claude Haiku 5.5 column (the eval's OpenAI column is below). The tests drive the loop with scripted model turns and never call a model.
-
-## Building a mandate
-
-A mandate is what the person confirmed they want bought, in the catalog's own terms: the category, the required attributes, the brands, the most to pay per item, the quantity, the extras allowed, and the tolerances. Every firewall check compares the cart against the locked mandate, never against the agent's memory of the request.
-
-```sh
-pnpm --filter @firewall/mandate build-mandate "Buy me a mechanical keyboard with tactile switches, under \$120"
-```
-
-One Claude Haiku 5.5 call drafts it (about $0.0005), which needs `FIREWALL_ANTHROPIC_API_KEY` (see `.env.example`). The draft is shown field by field, with anything the request said that the catalog can't express listed as not covered. Type `a` to accept, `e` to edit a field (requirements, brands, price and so on), or `r` to reject. Accepting locks the mandate with a sha256 hash over its contents, so any later change shows. The request, the draft, each edit, the confirmation and the locked mandate are all written to the event log, under a new run or the one `--run <runId>` names.
-
-The eval confirms mandates without a person: `buildMandate` with the `acceptsDraftAsIs` person accepts each draft exactly as the builder wrote it.
-
-The tests replay recorded model answers for the benign scenarios and never call a model. When the builder's prompt or schema changes, a test says so; re-record with `pnpm --filter @firewall/mandate record-fixtures` (about a fifth of a cent) and commit the new fixtures.
-
-## Gate 0, deterministic policy
-
-Gate 0 is plain rules over trusted data: the locked mandate (its hash checked) and the catalog the run's arena was built from, rebuilt from the run's scenario and seed. It never reads seller-written text (the catalog's pages are dropped before any rule runs, and the checkout is read only for its catalog fields) and never calls a model, so it costs nothing. Per order line and for the order it checks that:
-
-- the order matches the catalog: the listing, its SKU, seller, payee and price, any discount from the listing's own coupon, and totals that add up;
-- the seller is on the verified-seller list;
-- each line pays at most the mandate's ceiling per unit, and the mandate's category comes to at most the ceiling times the quantity;
-- the quantity of the item asked for is the mandate's;
-- a line outside the mandate's category is one of its allowed extras;
-- the catalog's specs for the product meet every required attribute;
-- the brand fits the policy (any reputable, listed only, or any) and isn't blocked;
-- the same SKU wasn't checked out more than twice in ten minutes in the run.
-
-A hard mandate violation blocks: a missing or altered mandate, an order that doesn't match the catalog, an unverified payee, a price over the ceiling or the budget, a missed attribute, a disallowed or blocked brand. An item the person didn't ask for, a different quantity within the budget, or repeated checkouts escalate, since the cart may still be what they wanted. Otherwise it approves, always with confidence 1. Each reason names the rule, the line and the values compared, and the verdict goes to the `gate0` lane under the checkout. A block ends the review.
-
-```ts
-const gate = runGate0(runId, { log });
-```
-
-## Gate 1, the quarantined extractor
-
-The review tree's rule is that the gates judging a purchase never read what sellers wrote. Gate 1 is the one part that does. It reads exactly the page content the arena served the agent, for the listings in the checkout and the ones it opened on the way, and turns each page into typed facts with one Claude Haiku 5.5 call per listing: the category, brand, seller and attributes the page claims, its prices, required add-ons, urgency and discount codes, and flags for text that speaks to an AI, pushes another product, claims an extra item is required, gives checkout instructions or poses as system text. Every fact names the event that served it; a quote is kept only if it really is the page's own words, then cleaned and capped. A few code tripwires catch the plainest injections even if the model is talked round.
-
-Code then compares each fact with the catalog's record of the listing (a page saying "tactile" on a linear keyboard, two left when twelve are in stock, a code the catalog doesn't have) and decides the verdict by rule: a flag or a disagreement on a listing in the cart, a steering flag on a page the agent opened, or a page it couldn't read escalates; otherwise it approves. Gate 1 never blocks. Everything goes to the `gate1` lane of the event log, with each call's tokens, cost (about $0.0007 a page) and latency. Later gates get `factsForReviewers`, which keeps no seller text.
-
-```ts
-const gate = await runGate1(runId, arena.catalog, { log, extractor: createExtractor({ client, vocabulary: extractionVocabulary(arena.catalog) }) });
-```
-
-The tests replay recorded extractions of scripted runs (an honest purchase, a poisoned review, a required add-on, urgency, a page the catalog contradicts, and text aimed at the extractor itself) and never call a model. Re-record with `pnpm --filter @firewall/firewall record-fixtures` (under a cent) when the prompt, the schema or a case changes.
-
-## Gate 2, the intent auditor
-
-Gate 2 decides whether the cart is what the person meant. It reads the locked mandate (verified by its hash: a missing or altered one blocks), the checkout's numbers with each listing's facts taken from the catalog rather than the checkout's seller-written line titles, Gate 1's `factsForReviewers`, and comparable offers. Code works out, for each line, how it sits against the mandate, the like-for-like offers in the marketplace (the same specification, from verified sellers, of brands the mandate allows), the best one and how far above it the line's price is against the mandate's tolerance. It also asks Channel3's product search what that kind of product sells for, by category and attributes only, and notes the low, median and high on the verdict for the person to read; that reference decides nothing and the auditor isn't shown it, since a category's median isn't a like-for-like price. One Claude Haiku 5.5 call then judges the cart into a schema of fixed reason codes (`matches_mandate`, `wrong_product`, `attribute_mismatch`, `brand_concern`, `unrequested_item`, `overpriced_vs_comparables`, `steered_by_seller_content`), each with its line and evidence refs, plus a short explanation. It sees catalog records, numbers and Gate 1's typed facts, never page text.
-
-Code decides the verdict. It blocks only when the auditor and the catalog agree a line is the wrong product or lacks a requirement. A price beyond tolerance above the best like-for-like offer escalates whatever the auditor said, and never blocks on its own; so does a line whose page Gate 1 flagged as steering, a concern only the auditor raised, an auditor that contradicts the catalog, an unsure approval, or no judgement at all. Everything goes to the `gate2` lane: what it read and computed, the market lookups, the judgement with its tokens, cost (about $0.0005 a review) and latency, and the verdict.
-
-```ts
-const gate2 = await runGate2(runId, arena.catalog, {
-  log,
-  auditor: createIntentAuditor({ client }),
-  market: createChannel3Market(channel3ConfigFromEnv()),
-  gate1, // runGate1's result: its reviewer view and verdict event
-});
-```
-
-Channel3 needs `FIREWALL_CHANNEL3_API_KEY` (see `.env.example`) and its host allowed; until then every review records the market reference as unavailable and checks prices within the marketplace only. The tests replay recordings of both gates on scripted runs (an honest purchase, an overpriced twin listing, a steered page, an unrequested extra and a linear keyboard for a tactile mandate), made with the market reference unavailable, and never call a model or Channel3. Re-record with `pnpm --filter @firewall/firewall record-gate2-fixtures` (about a cent) when a prompt, a schema or a case changes; with a Channel3 key set, the same command records its answers alongside.
-
-## Gate 3, the trace auditor
-
-Gate 3 asks how the agent chose its cart: whether the mandate drove the choice or a page the agent read steered it. It reads the arena's record of the agent's calls (`trace.ts`): which tools it called, which listings it opened, in what order, and what it added, each listing as the catalog records it (the product's catalog name, category, brand, seller), with Gate 1's `factsForReviewers` flags on the pages it read. It never reads page text, search words, coupon codes, error messages or anything the agent said (its turns can repeat what a seller wrote), and no durations (they would make the same case a different request every run; they are in the log). Code works out, for each cart line, the step that added it, whether it was opened or found in a search, how many other listings were opened first, and its exposures: pages Gate 1 flagged as steering that were read before it was added, with whether that page was the line's own listing, another listing of the same product, and whether the line was the next listing the agent opened. One Claude Haiku 5.5 call (about $0.0005) then judges each line into a schema of fixed codes (`driven_by_mandate`, `followed_steering`, `unrequested_addition`, `unexplained_choice`) with evidence refs; it can only recommend approve or escalate.
-
-Code decides the verdict, and Gate 3 never blocks: a trace shows how a choice was made, not that the cart is wrong, which Gates 0 and 2 can block by the catalog. A line the auditor judged steered escalates (with the exposure behind it, at higher confidence); so does a line with an exposure the auditor didn't clear (it clears one by judging the line driven by the mandate with confidence of at least 0.6, and no judgement leaves it standing), an item the catalog says the mandate neither asks for nor allows, a line the trace can't account for, and an auditor that gave no finding, no judgement or an unsure approval. It runs after Gate 2 in the tree, so a Gate 2 block ends the review before its call is made. Everything goes to the `gate3` lane: what it read and computed, the judgement (or why there was none) with its tokens, cost and latency, and the verdict. The tests replay recordings of the scripted runs (Gate 2's five cases, Gate 1's attack on its own extractor, a choice steered by a review, and A1's verified-attacker variant) and never call a model. Re-record with `pnpm --filter @firewall/firewall record-gate3-fixtures` (about a cent) when a prompt, a schema or a case changes.
-
-## The review tree and enforcement
-
-`runReview` (`packages/firewall/src/review.ts`) reviews a run whose agent has checked out. Gate 0 runs first, and a block there ends the review before any model is called. Otherwise Gate 1 reads the pages, Gate 2 audits the cart with its facts, and Gate 3 audits how the agent chose it. The tree's verdict is the most severe of the gates' (any block blocks, any escalation escalates), and any block ends the review where it stands. A firewall configuration says how much of the tree runs, so the eval can ablate it on the same checkout: `off` (no review), `gate0` (the policy rules only) or `full` (every gate). The review writes `review_started` and `review_finished` to the `review` lane: the verdict, each gate's verdict and event, the gates skipped and why, and the total cost.
-
-`enforceReview` (`enforce.ts`) then acts on the held payment through the payment adapter, every call recorded on the payments lane and pointing at the review's verdict:
-
-| Verdict | What happens to the money |
-|---|---|
-| approve | The hold is captured, then each seller is paid its share of what the platform received after its fee (`splitPayouts`) |
-| block | The hold is voided: nothing is captured and nobody is paid |
-| escalate | The hold stays; `escalated` records that a person must decide |
-| none (`off`) | Captured and paid out as it stands: that's what no firewall means |
-
-A person decides an escalated run with `decide-run <runId> approve|reject` (approve captures and pays out, reject voids), which writes their decision to the `human` lane with provenance `user` and then runs the same enforcement. A hold is honoured for three days; a person who takes longer than that has it reauthorized before it is captured, and one past its expiry can't be captured at all. Enforcement works from the event log, so running it twice never captures or pays twice, and running it after a failure halfway does only what is left.
-
-One command runs a whole scenario: it drafts the mandate from the scenario's request and confirms it as the builder wrote it, runs the agent, runs the review, enforces and prints what was bought, each gate's verdict, the final verdict, where the money went, the cost and, for an attack scenario, whether the agent was fooled and whether the attack succeeded (it needs the money to have been captured: a voided or held order paid nobody).
-
-```sh
-pnpm --filter @firewall/agent run-scenario sc_a01 --seed 1 --adapter sandbox --firewall off   # the heist
-pnpm --filter @firewall/agent run-scenario sc_a01 --seed 1 --adapter sandbox --firewall full  # the same run, reviewed
-pnpm --filter @firewall/agent decide-run <runId> approve                                      # an escalated run (sandbox)
-```
-
-It needs `FIREWALL_ANTHROPIC_API_KEY` for the agent, the mandate draft and the gates (about half a cent to a cent for a run), and for `--adapter sandbox` the sandbox variables and the buyer's saved wallet in `SANDBOX_BUYER_VAULT_ID` (`pnpm --filter @firewall/payments save-wallet` prints one). `--decide approve|reject` decides an escalation at once, which is the only way to decide a `--adapter fake` run, since the fake's state lives in that process. The tests use the fake adapter, a real event log, scripted agent turns and the gates' recordings, and never call a model.
+- The site: https://chaperone.omarg.dev. Open a recorded run under "Runs" and replay it step by step, see the benchmark on the dashboard, or start a live run on "Start a run". Live runs spend from a small daily budget, so once a day's budget is spent they are refused until midnight UTC. Replays and the dashboard are always there.
+- Postman: import [docs/postman/chaperone.postman_collection.json](docs/postman/chaperone.postman_collection.json). Its `baseUrl` is the hosted demo, and it walks the whole flow: start a live run, confirm the rules, let the agent shop, read the events, decide a held cart, read the results. The steps are in the docs, under [Try the API in Postman](https://chaperone.omarg.dev/docs#postman).
+- The SDK: put Chaperone in front of your own agent. The quick start is below, and the guide is [docs/sdk.md](docs/sdk.md).
 
 ## Protect your agent
 
-`@firewall/sdk` (`packages/sdk`) puts the firewall in front of your own shopping agent: you give it your agent's tools, and the payment tool holds the cart instead of paying for it. It is a workspace package for now, not published. In this repo, with Node 22 and `pnpm install` done, this runs in about a minute (offline, with the in-memory payment fake and a scripted model standing in for yours) and is the same file as `packages/sdk/examples/protect-your-agent.ts`, which a test runs:
+`@firewall/sdk` (`packages/sdk`) puts Chaperone in front of your own shopping agent. You give it your agent's tools, and the payment tool holds the cart instead of paying for it. It is a workspace package, not published to npm. With Node 22 and `pnpm install` done in a clone of this repo, this runs offline in about a minute, with an in-memory fake standing in for PayPal and a scripted model standing in for yours. It is the same file as `packages/sdk/examples/protect-your-agent.ts`, which a test runs:
 
 ```ts
 import { createArenaService } from "@firewall/arena";
@@ -246,150 +167,47 @@ log.close();
 pnpm --filter @firewall/sdk example   # verdict: block, money: voided
 ```
 
-The same material, as a page, is [docs/sdk.md](docs/sdk.md), which the app shows at `/docs`.
+v1 protects agents shopping in the arena: the checks need the merchant's catalog and the pages the agent was shown, and the arena supplies both. A real store would supply them through the `CatalogSource` interface, which is future work. [docs/sdk.md](docs/sdk.md) has every option, the three settings and which tools count as payment tools.
 
-What it does:
+## Running it locally
 
-- `createFirewall(options)` takes the event log, the catalog source (below), the payment adapter and the buyer's wallet, the mandate the person confirmed (or `{ builder, person }` to build it in the run), and `config`: `off`, `gate0` or `full` (`full` also needs `gates`, the model gates built from your own settings; the SDK never creates a model client from the environment).
-- `firewall.wrap(tools)` returns the same tools with each payment tool replaced by a guarded one. The guarded tool never captures and never calls the original `execute`: it creates the order and authorizes it against the wallet, and tells the agent the order is placed and pending review. The order held is the cart the catalog source reports, not the amounts in the agent's arguments, which are recorded with the call. Every other tool is passed through as it was.
-- `firewall.settle()` reviews the held cart and acts on the verdict: approve captures and pays each seller, block voids, escalate leaves the hold for a person (`firewall.decide("approve" | "reject")`). It returns `null` when nothing was held, and it reviews once however many times it is asked. `review()` and `enforce()` are its two halves.
-
-**When the review runs.** After the agent has finished, never inside the tool call. Gate 3 audits the agent's whole trajectory, which isn't there to read until the agent stops; the tool answers the same whatever the cart is, so an agent steered by an attacker learns nothing about the gates by probing the checkout; and the model gates take seconds. The hold lasts days, so nothing is lost by waiting. Stop your agent loop at the checkout, as the example does, or let it run on: the review reads the event log either way.
-
-**Which tools are payment tools.** By default `checkout` (ours) and `create_order` and `pay_order` (the payment platform's agent toolkit, whose order tools capture at once and can't hold money). Name your own with `paymentTools: ["buy_now"]`; an explicit list replaces the defaults. **A payment tool that isn't in the list is not guarded, and it pays at once.** Check the names before you rely on it. The toolkit is not installed in this repo (it is heavy and built for AI SDK 4), so its tools are tested here with stand-in tools of the same names and input shapes, not with the real package.
-
-**Scope of v1.** The gates need two things the agent can't be trusted to report: the merchant's catalog (what each listing really is, costs and is sold by) and the page content the agent was shown. The arena provides both, and writes them to the event log as it serves them. So v1 protects agents shopping in the arena (`arenaSource`). Protecting an agent in a real marketplace needs the same two things from that merchant, behind the `CatalogSource` interface (`packages/sdk/src/source.ts`): that is future work, and the SDK doesn't pretend otherwise. The SDK also doesn't write the agent's own model turns and tool calls for the tools it passes through; `runAgent` in `packages/agent` does. Gate 3 doesn't need them: it reads the arena's record of the agent's calls, which the catalog source writes for any agent, and not what the agent said.
-
-Our own shopping agent goes through the same two calls: `runAgent` wraps its tools with `firewall.wrap`, and the pipeline settles with `firewall.settle()`, so the SDK is not a second code path.
-
-## The eval
-
-`@firewall/eval` (`packages/eval`) measures the firewall: attack success rate, false block rate, false escalation rate, cost and latency, with the firewall off, with Gate 0 only and with the full tree. The agent runs once for each scenario, seed and model column (a cell), and the three configurations all review that same recorded checkout, so a run costs the agent once.
+Needs Node 22 and pnpm (`corepack enable` installs the version the repo pins).
 
 ```sh
-pnpm --filter @firewall/eval run-matrix --scenarios all --seeds 1,2 --column openai --dry-run  # cells and expected cost, spends nothing
-pnpm --filter @firewall/eval run-matrix --scenarios sc_b01,sc_a02 --seeds 1 --column haiku     # the real thing
+pnpm install
+cp .env.example .env
+pnpm dev                                 # the server, at http://localhost:3000
+pnpm --filter @firewall/web dev          # the web app, at http://localhost:5173
 ```
 
-`--column` picks the shopping agent's model, each one model with no fallback: `haiku` (Claude Haiku 5.5, needs `FIREWALL_ANTHROPIC_API_KEY`) or `openai` (OpenAI GPT-6 Luna, needs `FIREWALL_OPENAI_API_KEY`). A `gemini` column (Gemini 3.5 Flash-Lite, through Google's OpenAI-compatible endpoint) is in the code, but its benchmark was cut on Nov 9: two models make the point, and the results above have no Gemini numbers. The gates run on Claude Haiku 5.5 in every column, so every column also needs the Anthropic key, and a column without its own key refuses to run and names the variable. `--scenarios` takes IDs, `all`, `attacks`, `benign` or `held-out`; `--adapter fake|sandbox` picks the payment adapter (default `fake`); `--max-usd` (default 0.50) stops the matrix starting new cells once it is spent, on top of the agent's own per-run cap (`--agent-max-usd`); `--concurrency` (default 3) is how many cells run at once. It calls models: a cell is about half a cent to a cent (the dry run prices the column you picked). The tests call none.
+`curl localhost:3000/health` answers with `"status":"ok"` and the version in the root `package.json`. Vite proxies the API to the server, so the app calls it as it does in production. `pnpm build` builds both, and then the server serves the web app at `/` on port 3000.
 
-`all` and `attacks` are our own scenarios. `held-out` is the held-out set: 17 attacks ported, with attribution, from published benchmarks (StakeBench, Magentic Marketplace, AgentDojo and InjecAgent), written without reading the gates and never used to tune them, so the numbers show the firewall wasn't fitted to our own attacks. It runs on its own, never mixed with ours, and its files say so and end their names in `-held-out`. [docs/held-out.md](docs/held-out.md) lists the sources, licences, what was ported and what was left out.
+With nothing more in `.env`, the dashboard (it reads the committed results), the marketplace API and the rest of the app work, and live runs are off. `.env.example` says what each variable turns on: `FIREWALL_ANTHROPIC_API_KEY` for live runs and the AI checks, the `SANDBOX_*` variables for PayPal sandbox money, `FIREWALL_CHANNEL3_API_KEY` for the market price, and `AG_STUDIO_LICENSE_KEY` for Studio. Without the sandbox variables, money is an in-memory fake, labelled "Practice money".
 
-Each run writes `<date>-<adapter>-<column>.json` (every cell and configuration), a `.md` summary and the `.events.db` event log holding every run, under `results/`, which git ignores. **Every file says which payment adapter produced it.** Numbers from the `fake` adapter are for development; only a run against the sandbox may be shown in the video or the write-up. [results/README.md](results/README.md) explains the file and how each rate is counted. The cell functions (`runCell`, `evaluateCell`) are plain async functions over serialisable records.
+Before pushing, run what CI runs:
 
-## Layout
+```sh
+pnpm lint && pnpm check && pnpm test && pnpm build
+```
 
-| Folder | What's in it |
-|---|---|
-| `apps/server` | The HTTP server (Hono): the API, and later the websocket and the built web app |
-| `packages/events` | The append-only event log every run writes to (SQLite through Drizzle) |
-| `packages/arena` | The simulated marketplace: a fictional catalog, seeded benign and attack scenarios, what each request means, and whether a checkout fell for an attack |
-| `packages/payments` | The payment adapter interface, its in-memory fake and the contract tests both adapters pass |
-| `packages/agent` | The shopping agent: its loop, its tools, its checkout, and the commands that run a scenario through the firewall and decide an escalation |
-| `packages/mandate` | The mandate: its schema, the builder (one model call), confirmation on the command line, the lock and its hash |
-| `packages/firewall` | The review tree: Gate 0, deterministic policy, Gate 1, the quarantined extractor, Gate 2, the intent auditor, their shared result type, and enforcement of the verdict |
-| `packages/sdk` | The SDK: `createFirewall` and `firewall.wrap` put the firewall in front of an agent's payment tools, with the arena as its catalog source |
-| `packages/eval` | The eval harness: the matrix runner, the metrics and the results file |
-| `apps/web` | The web app: the landing page, the Runs history, the run view, the escalation inbox, the dashboard and `/docs`, in React and Vite |
-| `deploy` | What runs on the server: the compose file, the env example, the backup script and the Caddy site block |
-| `packages/` | Other libraries the apps share, added as each step needs them |
-| `docs/` | The plan, the SDK guide (`sdk.md`), the held-out sources and the design notes |
+The tests never call a model or PayPal: they replay recorded answers and use the fake. The PayPal contract suite runs against the real sandbox with `pnpm --filter @firewall/payments test:sandbox`. The commands that run a scenario, build rules on the command line and run the benchmark are in [docs/architecture.md](docs/architecture.md).
 
 ## Deploying (one-time setup)
 
-Chaperone runs on the VPS at `https://chaperone.omarg.dev`, deployed the rulebook's way. Releasing and deploying are the rulebook's shared workflows: a merged PR that adds a new version to the top of `CHANGELOG.md` is a release, and `.github/workflows/release.yml` builds the arm64 image, pushes it to `ghcr.io/omarg-dev/chaperone` as `:<version>` and `:prod`, tags the commit `v<version>`, publishes a GitHub Release, writes `compose.yml` into `~/stacks/chaperone/` over SSH, runs `docker compose pull && up -d` there, and waits for `/health`. The server never has a checkout of this repo. Staging is off.
-
-### 1. "setup"
-
-The rulebook's "Set up a repo" workflow (run with `repo: chaperone`) gives `main` its ruleset, copies the deploy secrets kept in the rulebook, sets `DEPLOY_ENABLED`, and adds the site block from [deploy/Caddyfile.example](deploy/Caddyfile.example) to the gateway (skipping it when the site is already there). Nothing is set by hand in this repo's settings. DNS needs nothing: the `*.omarg.dev` wildcard covers `chaperone.omarg.dev`.
-
-The site block proxies to the container `chaperone` on port 3000, and rate limits live runs (12 a minute per address), decisions (10) and other writes more tightly than reads.
-
-### 2. The server's `.env`
-
-The first release creates `~/stacks/chaperone/` with `data/` and a `.env` copied from [deploy/.env.example](deploy/.env.example). It runs as it is: replays, the dashboard and the arena work, and live runs are off. Fill in the real values once (the table at the end of this section says which turn what on), then apply them:
-
-```sh
-nano ~/stacks/chaperone/.env
-cd ~/stacks/chaperone && docker compose up -d
-```
-
-The container runs as uid 1000. If the deploy user isn't uid 1000, the deploy log says so; then `sudo chown -R 1000:1000 ~/stacks/chaperone/data`.
-
-### 3. Releases and going back
-
-Ask for a release ("release"): the release PR bumps the version in `package.json` and adds its entry to `CHANGELOG.md`, and merging it deploys. To put an earlier release back ("rollback"), run the Release workflow by hand with that version: it points `:prod` at that version's image and deploys it with that release's `compose.yml`.
-
-### 4. The nightly backup
-
-The app's `backup` command takes SQLite's online backup of the event log into `data/backups/events-<UTC time>.db`, checks it, and keeps the newest 14. After the first release:
-
-```sh
-crontab -e
-# add:
-17 3 * * * cd ~/stacks/chaperone && docker compose exec -T app node dist/cli.js backup --keep 14 >> ~/stacks/chaperone/backup.log 2>&1
-```
-
-Run the command once by hand to see it work. To restore a backup:
-
-```sh
-cd ~/stacks/chaperone
-docker compose stop app
-sudo cp data/events.db data/events.db.before-restore     # optional: keep what is there
-sudo cp data/backups/events-<time>.db data/events.db
-sudo rm -f data/events.db-wal data/events.db-shm
-sudo chown 1000:1000 data/events.db
-docker compose up -d
-```
-
-### 5. The demo runs
-
-The hosted app should open on real recorded runs, so import them once. The event log is append-only, and import only adds: events keep their IDs, times and parents, an event already there is skipped, and importing the same file twice does nothing.
-
-On a machine that has the real runs (this repo, with its `.env`), export the ones that held their money on the sandbox. From the server's own log (runs started on the web app, `apps/server/data/events.db`):
-
-```sh
-pnpm --filter @firewall/server export-runs --sandbox --out "$PWD/demo-runs.json"
-```
-
-or from an eval matrix run, whose events are in their own file under `results/`:
-
-```sh
-pnpm --filter @firewall/server export-runs --sandbox --db "$PWD/results/<date>-sandbox-<column>.events.db" --out "$PWD/demo-runs.json"
-```
-
-`--run <runId>` (repeatable) picks single runs instead. Look at what is in the file before sending it: the runs and the seller text in them become public. Then import on the server:
-
-```sh
-scp demo-runs.json <user>@<server>:/tmp/
-ssh <user>@<server> 'cd ~/stacks/chaperone && docker compose exec -T app node dist/cli.js import-runs - < /tmp/demo-runs.json && rm /tmp/demo-runs.json'
-```
-
-Runs imported with a time from today count toward that UTC day's live-run spend, so import runs the app made on the web earlier than today, or accept the small overlap. To show an eval's results on the dashboard, copy its `.json` file into `~/stacks/chaperone/data/results/`; no restart is needed.
-
-### What turns live runs and sandbox money on
-
-| In the server's `.env` | Effect |
-|---|---|
-| nothing | replays, the dashboard, the escalation inbox and the arena work; the Start a run page says live runs are off |
-| `FIREWALL_ANTHROPIC_API_KEY` | live runs on, with one fake payment adapter ("Practice money", not a sandbox result) |
-| `FIREWALL_LIVE_DAILY_USD` | the most live runs may spend in a UTC day (default `0.25`; `0` turns live runs off). Counted from the event log, so a restart can't reset it |
-| `FIREWALL_STUDIO_DAILY_USD` | the most the dashboard's AG Studio assistant may spend in a UTC day (default `0.10`; `0` turns it off). It needs `FIREWALL_ANTHROPIC_API_KEY`, and is counted in the event log's database |
-| `AG_STUDIO_LICENSE_KEY` | AG Studio's licence key, served to the dashboard at runtime. Unset, Studio shows its watermark |
-| `SANDBOX_CLIENT_ID`, `SANDBOX_CLIENT_SECRET` and the six `SANDBOX_MERCHANT_*` | decisions on held purchases use the real sandbox |
-| the above and `SANDBOX_BUYER_VAULT_ID` | live runs use the real sandbox as well. Without the vault ID they are off and the page says what is missing |
-| `FIREWALL_CHANNEL3_API_KEY` | Gate 2 checks prices against the real market |
-
-Sandbox credentials only, never live ones. After editing `.env`, run `docker compose up -d` in `~/stacks/chaperone` to apply it.
-
-## Branches
+The demo runs on a VPS with Docker Compose behind Caddy. A merged PR that adds a new version to the top of `CHANGELOG.md` is a release: CI builds the image, pushes it to `ghcr.io/omarg-dev/chaperone`, and deploys it. The one-time steps, the server's `.env`, backups and importing demo runs are in [docs/deploying.md](docs/deploying.md).
 
 ```
 feat/<thing> ──PR──▶ main ──release──▶ production
 ```
 
-`main` is the only long-lived branch: every change is a PR into it. A release is a merged PR that adds a new version to the top of `CHANGELOG.md`; the Release workflow (`.github/workflows/release.yml`, which calls the rulebook's shared one) tags it, publishes it and deploys it. Merging anything else deploys nothing. There's no staging.
+`main` is the only long-lived branch, and there's no staging.
 
-## License
+## Built with AI coding tools
 
-[MIT](LICENSE). The held-out attacks adapt text from MIT-licensed benchmarks, whose notices are in [packages/arena/THIRD_PARTY_NOTICES.md](packages/arena/THIRD_PARTY_NOTICES.md).
+Omar Ghazal built Chaperone solo, with Claude Code. Claude wrote much of the code under his direction and review, and most commits in the history are authored by Claude.
+
+## Licence and contact
+
+[MIT](LICENSE), © 2026 Omar Ghazal. The held-out attacks adapt text from MIT-licensed benchmarks, whose notices are in [packages/arena/THIRD_PARTY_NOTICES.md](packages/arena/THIRD_PARTY_NOTICES.md).
+
+Omar Ghazal, contact@omarg.dev

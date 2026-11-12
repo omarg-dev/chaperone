@@ -79,7 +79,7 @@ export function ReplayBar({ events, replay }: { events: readonly RunEvent[]; rep
           className="icon-button replay-step"
           onClick={() => replay.step(-1)}
           disabled={position <= 1}
-          aria-label="Previous event"
+          aria-label="Previous step"
           aria-keyshortcuts="ArrowLeft"
         >
           <Icon d={BACK} />
@@ -89,7 +89,7 @@ export function ReplayBar({ events, replay }: { events: readonly RunEvent[]; rep
           className="icon-button replay-step"
           onClick={() => replay.step(1)}
           disabled={position >= total}
-          aria-label="Next event"
+          aria-label="Next step"
           aria-keyshortcuts="ArrowRight"
         >
           <Icon d={FORWARD} />
@@ -102,7 +102,7 @@ export function ReplayBar({ events, replay }: { events: readonly RunEvent[]; rep
           step={1}
           value={position}
           aria-label="Position in the run"
-          aria-valuetext={`Event ${position} of ${total}, ${time} in: ${what}`}
+          aria-valuetext={`Step ${position} of ${total}, ${time} in: ${what}`}
           onChange={(e) => replay.seek(Number(e.target.value))}
         />
         <span className="replay-readout t-data">

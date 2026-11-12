@@ -29,7 +29,7 @@ describe("where a run's money is", () => {
   it("holds the money of a run whose review broke", () => {
     expect(placeOf(made({ reviewFailed: true, holdOpen: true }))).toMatchObject({
       place: "held",
-      note: "review failed",
+      note: "check failed",
     });
   });
 
@@ -65,12 +65,12 @@ describe("where a run's money is", () => {
       place: "voided",
       cents: 10999,
       tone: "voided",
-      note: "voided",
+      note: "hold cancelled",
       noteTone: "plain",
     });
     expect(placeOf(made({ ...escalated.released }))).toMatchObject({
       place: "voided",
-      note: "released",
+      note: "hold cancelled",
     });
     expect(placeOf(made({ ...escalated.decided("block") }))).toMatchObject({ place: "voided" });
   });
@@ -81,7 +81,7 @@ describe("where a run's money is", () => {
     ).toMatchObject({ place: "held", note: "not settled yet" });
     expect(placeOf(made({ holdOpen: true }))).toMatchObject({
       place: "held",
-      note: "not reviewed yet",
+      note: "not checked yet",
     });
   });
 

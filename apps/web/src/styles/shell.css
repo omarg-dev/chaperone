@@ -1,8 +1,16 @@
 .shell {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
 }
 
-/* The top bar: the wordmark, where you can go, and the one filled button. */
+/* The page takes what the bar and the footer leave, so the footer sits at the foot of a short page. */
+.shell > main {
+  flex: 1 0 auto;
+  min-width: 0;
+}
+
+/* The top bar: the wordmark, where you can go, the theme, and the one filled button. */
 .topbar {
   position: sticky;
   top: 0;
@@ -22,6 +30,15 @@
   border-radius: var(--radius);
 }
 
+/* The links and the theme: a row in the bar on a wide screen, the Menu button's panel on a phone. */
+.topbar-menu {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 1;
+  min-width: 0;
+}
+
 .topbar-nav {
   display: flex;
   align-items: center;
@@ -30,10 +47,8 @@
   min-width: 0;
 }
 
-.topbar-end {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
+.topbar-menu-button {
+  display: none;
 }
 
 .nav-link {
@@ -69,58 +84,229 @@
   min-height: 44px;
 }
 
-.theme-switch {
-  display: inline-flex;
-  margin: 0;
-  border: 0;
-  padding: 2px;
-  border-radius: var(--radius);
-  background: var(--sunk);
-  box-shadow: inset 0 0 0 1px var(--line);
-}
-
-.theme-option {
+/* One button between light and dark. In the bar it is its icon; its words are for the phone menu
+   and for a screen reader. */
+.theme-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 30px;
+  gap: var(--space-3);
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
   border-radius: var(--radius);
   background: transparent;
-  color: var(--muted);
+  color: var(--ink-2);
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
 }
 
-.theme-option:has(:focus-visible) {
-  outline: 2px solid var(--focus);
-  outline-offset: 1px;
-}
-
-.theme-option:hover {
+.theme-toggle:hover {
+  background: var(--sunk);
   color: var(--ink);
 }
 
-.theme-option:has(:checked) {
-  background: var(--surface);
+.theme-toggle-text {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The foot of every page. */
+.site-foot {
+  margin-top: var(--space-8);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-meta);
+}
+
+.site-foot-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: var(--space-4) 48px;
+}
+
+.site-foot p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-4);
+}
+
+.site-foot-made {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+
+.site-foot-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--space-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.site-foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--ink-2);
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+.site-foot a:hover {
   color: var(--ink);
-  box-shadow: 0 0 0 1px var(--line-strong);
 }
 
 @media (max-width: 760px) {
+  /* One short row: the wordmark, Start a run, and the Menu button that opens the rest. */
   .topbar {
-    flex-wrap: wrap;
-    gap: var(--space-2) var(--space-4);
-    height: auto;
-    padding: var(--space-3) var(--space-4);
+    gap: var(--space-2);
+    height: 56px;
+    padding: 0 var(--space-4);
+  }
+
+  .topbar-home {
+    align-items: center;
+    min-height: 44px;
+    margin-inline-end: auto;
+  }
+
+  .topbar-home .wordmark {
+    gap: var(--space-2);
+  }
+
+  .topbar-home .wordmark-name {
+    font-size: 20px;
+  }
+
+  .topbar-home .wordmark svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .topbar-start.btn,
+  .topbar-start-here {
+    flex: none;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  .topbar-start-here {
+    gap: 6px;
+    padding: 0 var(--space-1);
+    font-size: 14px;
+  }
+
+  .topbar-menu-button {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: 6px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 10px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+
+  /* The panel under the bar. Closed, it isn't drawn, so it isn't read or tabbed to either. */
+  .topbar-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    max-height: calc(100vh - 56px);
+    overflow-y: auto;
+    padding: var(--space-2) var(--space-4) var(--space-4);
+    background: var(--bg);
+    border-bottom: 2px solid var(--ink);
+  }
+
+  .topbar[data-menu="open"] .topbar-menu {
+    display: flex;
   }
 
   .topbar-nav {
-    order: 3;
-    flex-basis: 100%;
-    overflow-x: auto;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
   }
 
-  .topbar-end {
+  .topbar-menu .nav-link {
+    min-height: 52px;
+    border-bottom: 1px solid var(--line);
+    font-size: 17px;
+  }
+
+  .topbar-menu .count {
     margin-inline-start: auto;
+    font-size: 15px;
+  }
+
+  .theme-toggle {
+    justify-content: flex-start;
+    min-height: 52px;
+    font-size: 17px;
+  }
+
+  .theme-toggle:hover {
+    background: transparent;
+  }
+
+  .theme-toggle-text {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .site-foot-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: var(--space-3) var(--space-4) var(--space-5);
+  }
+}
+
+/* A narrow phone has no room for the word beside the icon, and the narrowest none for the name
+   beside the mark. Both keep their accessible names. */
+@media (max-width: 380px) {
+  .topbar-menu-word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+@media (max-width: 340px) {
+  .topbar-home .wordmark-name {
+    display: none;
   }
 }

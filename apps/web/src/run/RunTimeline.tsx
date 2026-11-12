@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import { Disclosure, formatMoney, type GateState, MoneyGlyph, Pill, ReadChip } from "../design";
 import { formatCost } from "../format";
+import { firewallLabel, isFirewallSetting } from "../start/copy";
 import { Timeline, type TimelineFooter, type TimelineItem } from "../timeline/Timeline";
 import type { NodeTone } from "../timeline/types";
+import { GATE_WORDS, plainWords, ruleWords, VERDICT_WORDS } from "../words/plain";
 import type { FactRow, RunItem, RunModel, Segment, ServedPage, Verdict } from "./timeline";
 
 // Draws a RunModel with the timeline component. Nothing here decides anything: the model says what
@@ -10,10 +12,8 @@ import type { FactRow, RunItem, RunModel, Segment, ServedPage, Verdict } from ".
 
 const tone = (verdict: Verdict | null): NodeTone => verdict ?? "none";
 
-const humanise = (rule: string) => {
-  const text = rule.replace(/_/g, " ");
-  return text.charAt(0).toUpperCase() + text.slice(1);
-};
+// "Gate 1" beside a check's plain name, for someone who has read the docs or the dashboard.
+const gateTag = (gate: string) => gate.replace(/^gate/, "Gate ");
 
 function Facts({ rows }: { rows: FactRow[] }) {
   if (rows.length === 0) return null;
@@ -21,18 +21,20 @@ function Facts({ rows }: { rows: FactRow[] }) {
     <dl className="tl-facts">
       {rows.map((row) => (
         <div key={`${row.label}|${row.value}`}>
-          <dt>{row.label}</dt>
-          <dd>{row.value}</dd>
+          <dt>{plainWords(row.label)}</dt>
+          <dd>{plainWords(row.value)}</dd>
         </div>
       ))}
     </dl>
   );
 }
 
+// What a check cost in AI calls and how long it took. A check with no AI in it costs nothing.
 function Spend({ costUsd, latencyMs }: { costUsd: number; latencyMs: number }) {
+  const took = latencyMs >= 1000 ? `${(latencyMs / 1000).toFixed(1)} s` : `${latencyMs} ms`;
   return (
     <p className="tl-spend t-data">
-      {formatCost(costUsd)} · {latencyMs} ms
+      {costUsd > 0 ? `AI cost ${formatCost(costUsd)}` : "No AI cost"} · took {took}
     </p>
   );
 }
@@ -90,8 +92,9 @@ function readsOf(item: Extract<RunItem, { kind: "gate" }>): ReactNode {
   const { reads } = item;
   return (
     <span className="tl-reads">
+      <span className="tl-reads-label">Reads</span>
       {reads.catalog && <ReadChip kind="catalog">Catalog</ReadChip>}
-      <ReadChip kind={reads.seller === "quarantine" ? "seller" : "never"}>Seller</ReadChip>
+      <ReadChip kind={reads.seller === "quarantine" ? "seller" : "never"}>Seller text</ReadChip>
       <ReadChip
         kind={reads.facts === "writes" ? "facts" : reads.facts === "reads" ? "facts-in" : "never"}
       >
@@ -111,7 +114,7 @@ function toTimelineItem(item: RunItem): TimelineItem {
         kind: "event",
         tag: item.tag,
         title: item.title,
-        tone: item.tag === "Person" ? "hold" : "none",
+        tone: item.tag === "You" ? "hold" : "none",
         body:
           item.lines.length > 0 || item.quote ? (
             <>
@@ -131,22 +134,24 @@ function toTimelineItem(item: RunItem): TimelineItem {
         kind: "station",
         title: "",
         tone: "hold",
-        aside: <Pill state="held" label="Held at checkout" />,
+        aside: <Pill state="held" label="Payment put on hold" />,
       };
     case "gate": {
       const state: GateState = item.verdict;
       return {
         ...base,
         kind: "station",
-        title: item.label,
+        tag: gateTag(item.gate),
+        title: GATE_WORDS[item.gate].name,
         tone: tone(item.verdict),
-        aside: <Pill state={state} />,
+        aside: <Pill state={state} label={VERDICT_WORDS[item.verdict]} />,
         body: (
           <>
+            <span className="tl-does">{GATE_WORDS[item.gate].does}</span>
             {readsOf(item)}
             {item.gate === "gate1" && item.facts.length > 0 && (
               <Disclosure
-                title="Typed facts it passed on"
+                title="The facts it passed on"
                 summary={`${item.facts.length} ${item.facts.length === 1 ? "line" : "lines"}`}
               >
                 <Facts rows={item.facts} />
@@ -161,15 +166,20 @@ function toTimelineItem(item: RunItem): TimelineItem {
       return {
         ...base,
         kind: "station",
-        title: "Review",
+        title: "Overall result",
         tone: tone(item.verdict),
         aside: item.verdict ? (
-          <Pill state={item.verdict} />
+          <Pill state={item.verdict} label={VERDICT_WORDS[item.verdict]} />
         ) : (
-          <span className="badge">Nobody reviewed the cart</span>
+          <span className="badge">Nothing checked the cart</span>
         ),
         body:
-          item.config !== "full" ? <span className="tl-skip">Firewall: {item.config}</span> : null,
+          item.config !== "full" ? (
+            <span className="tl-skip">
+              Chaperone's setting:{" "}
+              {isFirewallSetting(item.config) ? firewallLabel(item.config) : item.config}
+            </span>
+          ) : null,
       };
     case "skipped":
       return {
@@ -184,16 +194,16 @@ function toTimelineItem(item: RunItem): TimelineItem {
       return {
         ...base,
         kind: "event",
-        tag: "Read from the catalog",
+        tag: "Fixed rules · read the catalog only",
         title: item.title,
         tone: tone(item.verdict),
         body: (
-          <Disclosure title="Rule results" summary={`${passed} of ${item.checks.length} passed`}>
+          <Disclosure title="Each rule" summary={`${passed} of ${item.checks.length} passed`}>
             <ul className="tl-checks">
               {item.checks.map((check, index) => (
                 // biome-ignore lint/suspicious/noArrayIndexKey: checks are positional and never reorder.
                 <li key={index} className={check.passed ? "tl-check-pass" : "tl-check-fail"}>
-                  <strong>{humanise(check.rule)}</strong>
+                  <strong>{ruleWords(check.rule)}</strong>
                   <span className="visually-hidden">{check.passed ? " passed" : " failed"}</span>
                   {check.reason}
                 </li>
@@ -208,12 +218,12 @@ function toTimelineItem(item: RunItem): TimelineItem {
       return {
         ...base,
         kind: "event",
-        tag: "Read the catalog and Gate 1's facts",
+        tag: "Cart review · read the catalog and the facts",
         title: item.title,
         tone: tone(item.verdict),
         body: (
           <Disclosure title="How it judged">
-            {item.explanation && <p className="tl-explanation">{item.explanation}</p>}
+            {item.explanation && <p className="tl-explanation">{plainWords(item.explanation)}</p>}
             {item.lines.map((line) => (
               <div key={line.productName} className="tl-line-facts">
                 <span className="tl-line-name">{line.productName}</span>
@@ -223,7 +233,7 @@ function toTimelineItem(item: RunItem): TimelineItem {
             {item.notes.length > 0 && (
               <ul className="tl-notes">
                 {item.notes.map((note) => (
-                  <li key={note}>{note}</li>
+                  <li key={note}>{plainWords(note)}</li>
                 ))}
               </ul>
             )}
@@ -235,17 +245,17 @@ function toTimelineItem(item: RunItem): TimelineItem {
       return {
         ...base,
         kind: "event",
-        tag: "Read the agent's trace and Gate 1's facts",
+        tag: "Agent's path · read the agent's steps and the facts",
         title: item.title,
         tone: tone(item.verdict),
         body: (
           <Disclosure title="How the agent chose">
-            {item.explanation && <p className="tl-explanation">{item.explanation}</p>}
+            {item.explanation && <p className="tl-explanation">{plainWords(item.explanation)}</p>}
             <Facts rows={item.rows} />
             {item.notes.length > 0 && (
               <ul className="tl-notes">
                 {item.notes.map((note) => (
-                  <li key={note}>{note}</li>
+                  <li key={note}>{plainWords(note)}</li>
                 ))}
               </ul>
             )}
@@ -257,7 +267,7 @@ function toTimelineItem(item: RunItem): TimelineItem {
       return {
         ...base,
         kind: "event",
-        tag: "Read again, in quarantine",
+        tag: "Seller pages · read again, in isolation",
         title: item.title,
         // Red, as an outline, when Gate 1 flagged the page: where the attacker's money would have come from.
         tone: item.flagged ? "attacker" : tone(item.verdict),
@@ -297,7 +307,7 @@ function toTimelineItem(item: RunItem): TimelineItem {
       return {
         ...base,
         kind: "event",
-        tag: "Arena · served to the agent",
+        tag: "What the agent was shown",
         title: item.title,
         body: item.pages.length > 0 ? <ServedPages pages={item.pages} /> : undefined,
       };
@@ -320,7 +330,7 @@ export function exitsOf(model: RunModel): TimelineFooter {
       <>
         <span className="tl-exit-title">
           <MoneyGlyph state={attacker && exit === "capture" ? "attacker" : "captured"} size={24} />
-          Capture and pay the seller
+          Pay the seller
         </span>
         {exit === "capture" &&
           money.payouts.map((payout) => (
@@ -337,7 +347,7 @@ export function exitsOf(model: RunModel): TimelineFooter {
         )}
         <span className="tl-exit-title">
           <MoneyGlyph state="person" size={24} />
-          To the person
+          Ask you to decide
         </span>
         {exit === "person" && (
           <span className="tl-exit-line">
@@ -345,7 +355,7 @@ export function exitsOf(model: RunModel): TimelineFooter {
               ? "Your decision isn't finished"
               : model.awaitingPerson
                 ? "Waiting on you"
-                : "Stays held, nobody is deciding"}
+                : "The hold was released, nobody decided"}
           </span>
         )}
       </>
@@ -354,9 +364,9 @@ export function exitsOf(model: RunModel): TimelineFooter {
       <>
         <span className="tl-exit-title">
           <MoneyGlyph state="voided" size={24} />
-          Void the hold
+          Release the hold
         </span>
-        {exit === "void" && <span className="tl-exit-line">Nobody is paid</span>}
+        {exit === "void" && <span className="tl-exit-line">Nobody was paid</span>}
       </>
     ),
   };

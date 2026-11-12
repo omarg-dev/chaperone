@@ -22,6 +22,8 @@
 
 import { type Escalation, holdStateOf, needsPerson, outcomeOf } from "@firewall/events/outcome";
 import type { GateState, ZoneKind } from "../design";
+import { GATE_IN_A_SENTENCE, gateWords, plainWords } from "../words/plain";
+import { requirementOf } from "../words/requirements";
 import { list, num, type Obj, obj, type Payee, type RunEvent, str } from "./events";
 
 export type Verdict = "approve" | "escalate" | "block";
@@ -315,12 +317,12 @@ const FLAG_LABELS: Record<string, string> = {
 };
 
 const FINDING_LABELS: Record<string, string> = {
-  matches_mandate: "Matches the mandate",
+  matches_mandate: "Matches your rules",
   wrong_product: "Wrong product",
   unrequested_item: "Not asked for",
   overpriced: "Priced above its like-for-like offers",
   steered_by_seller_content: "Steered by what the page said",
-  auditor_unsure: "The auditor was unsure",
+  auditor_unsure: "The AI reviewer wasn't sure",
 };
 
 export const flagLabel = (kind: string): string =>
@@ -332,10 +334,47 @@ function capitalise(text: string): string {
 
 const gateName = (gate: string) => gate.replace(/^gate/, "Gate ");
 
+// Why a check didn't run, in a line: a block ends the review, so the checks after it never start.
+function skippedText(gate: string, reason: string): string {
+  const stoppedBy = /^gate(\d) blocked/.exec(reason)?.[1];
+  const why = stoppedBy
+    ? `${GATE_IN_A_SENTENCE[Number(stoppedBy)]} had already stopped the purchase`
+    : plainWords(reason.replace(/gate(\d)/g, "Gate $1")) || "the review ended";
+  return `${gateWords(gate)} (${gateName(gate)}) didn't run: ${why}`;
+}
+
 const words = (id: string) => id.replace(/^brand_/, "").replace(/_/g, " ");
 
 const dollars = (cents: number) =>
   `$${(cents / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+// Why Gate 2's real-market reference had no range, in plain words.
+const MARKET_UNAVAILABLE_WORDS: Record<string, string> = {
+  not_configured: "this server has no Channel3 key",
+  unreachable: "Channel3 couldn't be reached",
+  http_error: "Channel3 answered with an error",
+  invalid_response: "Channel3's answer couldn't be read",
+  too_few_prices: "Channel3 found too few prices to give a range",
+};
+
+// Gate 2's real-market reference for one cart line (a gate2_market quote), as the run page says
+// it: the low, median and high prices Channel3 found for that kind of product, or why there were
+// none. It is a note for the person and decides nothing, which the words say. Null when the line
+// has no quote.
+export function marketWords(quote: Obj): string | null {
+  if (quote.status === "available") {
+    const low = num(quote.lowCents);
+    const median = num(quote.medianCents);
+    const high = num(quote.highCents);
+    if (low === null || median === null || high === null) return null;
+    return `${dollars(low)} to ${dollars(high)}, median ${dollars(median)}, via Channel3. A note for you: it decides nothing`;
+  }
+  if (quote.status === "unavailable") {
+    const why = MARKET_UNAVAILABLE_WORDS[str(quote.reason) ?? ""] ?? "Channel3 gave no range";
+    return `Not available: ${why}. It's only a note, so the review is the same without it`;
+  }
+  return null;
+}
 
 // A gate's reason as a sentence for the screen: the listing's id becomes its product's name and
 // the trailing [code] a gate adds for its own bookkeeping goes.
@@ -348,7 +387,7 @@ export function tidyReason(reason: string, names: ReadonlyMap<string, string>): 
     .replace(/\b[a-z]+(?:_[a-z]+)+\b/g, (code) =>
       code in FLAG_LABELS || code in FINDING_LABELS ? code.replace(/_/g, " ") : code,
     );
-  const text = named.trim();
+  const text = plainWords(named.trim());
   // A sentence that opens with an id (brand_x, seller_y) is left as the id is written.
   return /^\S*_/.test(text) ? text : capitalise(text);
 }
@@ -393,11 +432,9 @@ export function mandateTerms(mandate: Obj): MandateTerm[] {
 
   const must = list(mandate.constraints).map((raw) => {
     const c = obj(raw);
-    const name = String(c.attribute ?? "").replace(/_/g, " ");
-    const value = String(c.value ?? "");
-    if (c.op === "lte") return `${name} at most ${value}`;
-    if (c.op === "gte") return `${name} at least ${value}`;
-    return `${name}: ${value}`;
+    // The same words the Start page showed these rules in, before they were locked.
+    const op = c.op === "lte" ? "<=" : c.op === "gte" ? ">=" : "=";
+    return requirementOf(String(c.attribute ?? ""), op, String(c.value ?? ""));
   });
   if (must.length > 0) terms.push({ label: "Must have", value: must.join(", ") });
 
@@ -424,14 +461,14 @@ export function mandateTerms(mandate: Obj): MandateTerm[] {
   });
 
   if (mandate.payeePolicy === "verified_sellers_only") {
-    terms.push({ label: "Paying", value: "Verified sellers only" });
+    terms.push({ label: "Sellers", value: "Verified sellers only" });
   }
   const extras = list(mandate.allowedExtras).map(String);
   if (extras.length > 0) terms.push({ label: "Extras allowed", value: extras.join(", ") });
   const unmapped = list(mandate.unmapped).map(String);
   if (unmapped.length > 0) {
     terms.push({
-      label: "Not enforced",
+      label: "Not covered",
       value: unmapped.join(", "),
       hint: "In your request, but not made a rule",
     });
@@ -574,7 +611,7 @@ export function buildRun(
       zone: "catalog",
       group: "request",
       kind: "step",
-      tag: "Person",
+      tag: "You",
       title: "Made the request",
       lines: [],
     });
@@ -587,8 +624,8 @@ export function buildRun(
       zone: "catalog",
       group: "mandate",
       kind: "step",
-      tag: "Mandate",
-      title: "Confirmed and locked",
+      tag: "You",
+      title: "Locked the rules",
       lines: edits > 0 ? [`Edited ${edits === 1 ? "once" : `${edits} times`} first`] : [],
     });
   }
@@ -616,8 +653,8 @@ export function buildRun(
       zone: "catalog",
       group: "mandate",
       kind: "step",
-      tag: "Mandate",
-      title: "Rejected",
+      tag: "You",
+      title: "Rejected the rules",
       lines: [],
       ...(reason && { quote: reason }),
     });
@@ -628,8 +665,8 @@ export function buildRun(
       zone: "catalog",
       group: "mandate",
       kind: "step",
-      tag: "Mandate",
-      title: "Couldn't be drafted",
+      tag: "Chaperone",
+      title: "Couldn't write the rules",
       lines: [],
     });
   }
@@ -645,7 +682,7 @@ export function buildRun(
       kind: "step",
       tag: "Agent",
       title: "Started shopping",
-      lines: agentModel ? [agentModel] : [],
+      lines: agentModel ? [`AI model: ${agentModel}`] : [],
     });
   }
 
@@ -958,9 +995,10 @@ export function buildRun(
       for (const raw of list(facts.attributes)) {
         const attribute = obj(raw);
         if (attribute.value !== "not_stated" && attribute.value !== null) {
-          summary.push(
-            `${String(attribute.attribute).replace(/_/g, " ")} ${String(attribute.value)}`,
-          );
+          // "wireless: no", not "wireless false": a yes-or-no fact in words.
+          const value =
+            attribute.value === true ? "yes" : attribute.value === false ? "no" : attribute.value;
+          summary.push(`${String(attribute.attribute).replace(/_/g, " ")}: ${String(value)}`);
         }
       }
       factRows.push({
@@ -1040,8 +1078,8 @@ export function buildRun(
       flagged: flagKinds.length > 0 || quotes.length > 0,
       crosses:
         flagKinds.length > 0
-          ? `Fact crosses: ${flagLabel(flagKinds[0] ?? "").toLowerCase()}`
-          : "Fact crosses: nothing flagged",
+          ? `Passed on as a fact: ${flagLabel(flagKinds[0] ?? "").toLowerCase()}`
+          : "Passed on as a fact: nothing flagged",
       quotes,
       discountCodes: codes,
     });
@@ -1071,20 +1109,19 @@ export function buildRun(
           value:
             pct === null || pct === 0
               ? `${dollars(best)}, which is this one`
-              : `${dollars(best)}, so this is ${pct}% above it (the mandate allows ${String(comparables.tolerancePct)}%)`,
+              : `${dollars(best)}, so this is ${pct}% above it (your rules allow ${String(comparables.tolerancePct)}%)`,
         });
       }
       const meeting = obj(comparables.meetingMandate);
       const offers = num(meeting.offers);
       if (offers !== null && offers > 0) {
         rows.push({
-          label: "Offers meeting the mandate",
+          label: "Offers that meet your rules",
           value: `${offers}, from ${dollars(num(meeting.lowestCents) ?? 0)} to a median of ${dollars(num(meeting.medianCents) ?? 0)}`,
         });
       }
       const fit = obj(line.fit);
-      if (fit.role === "unrequested")
-        rows.push({ label: "In the mandate", value: "Not asked for" });
+      if (fit.role === "unrequested") rows.push({ label: "In your rules", value: "Not asked for" });
       const failedConstraints = list(fit.failedConstraints);
       if (failedConstraints.length > 0)
         rows.push({
@@ -1093,15 +1130,8 @@ export function buildRun(
             .map((c) => String(typeof c === "string" ? c : (obj(c).attribute ?? "")))
             .join(", "),
         });
-      const quote = obj(marketLines.find((m) => m.listingId === listingId)?.quote);
-      if (quote.status === "available") {
-        rows.push({ label: "Real-market price", value: "Checked" });
-      } else if (quote.status === "unavailable") {
-        rows.push({
-          label: "Real-market price",
-          value: "Not checked, so only the marketplace's offers were compared",
-        });
-      }
+      const market = marketWords(obj(marketLines.find((m) => m.listingId === listingId)?.quote));
+      if (market) rows.push({ label: "Real-market price", value: market });
       if (list(line.steering).length > 0)
         rows.push({ label: "Steering", value: "Gate 1 flagged its page" });
       return { productName: productName(listingId), rows };
@@ -1135,12 +1165,12 @@ export function buildRun(
       notes: [
         ...reasons.slice(1),
         ...(failedJudgement
-          ? ["The auditor couldn't judge the cart, so only the checks in code ran"]
+          ? ["The AI reviewer couldn't judge the cart, so only the checks in code ran"]
           : []),
         ...list(judged.findings)
           .map(obj)
           .map((f) => FINDING_LABELS[String(f.code)] ?? "")
-          .filter((label) => label && label !== "Matches the mandate")
+          .filter((label) => label && label !== "Matches your rules")
           .map((label) => `Auditor: ${label.toLowerCase()}`),
       ],
       costUsd: spend("gate2"),
@@ -1196,7 +1226,7 @@ export function buildRun(
       notes: [
         ...reasons.slice(1),
         ...(failedJudgement
-          ? ["The auditor couldn't judge the trace, so only the checks in code ran"]
+          ? ["The AI reviewer couldn't judge the agent's steps, so only the checks in code ran"]
           : []),
       ],
       costUsd: spend("gate3"),
@@ -1215,7 +1245,7 @@ export function buildRun(
         zone: "route",
         group: "skipped",
         kind: "skipped",
-        text: `${gateName(String(skip.gate))} skipped: ${String(skip.reason ?? "the review ended").replace(/gate(\d)/g, "Gate $1")}`,
+        text: skippedText(String(skip.gate), String(skip.reason ?? "")),
       });
     }
     items.push({
@@ -1241,7 +1271,7 @@ export function buildRun(
       zone: "catalog",
       group: "decision",
       kind: "step",
-      tag: "Person",
+      tag: "You",
       title: decision === "approve" ? "Approved the purchase" : "Rejected the purchase",
       lines: [],
       ...(decisionNote && { quote: decisionNote }),
@@ -1380,7 +1410,7 @@ export function buildRun(
     }
     if (item.verdict !== "escalate") continue;
     const gate: GateName = item.kind.slice(0, 5) as GateName;
-    heldReasons.push({ gate, label: gateName(gate), reason: item.title });
+    heldReasons.push({ gate, label: gateWords(gate), reason: item.title });
   }
 
   return {
@@ -1452,7 +1482,7 @@ export function headlineFor(s: Standing): Headline {
   if (s.mandate === "rejected") {
     return plain(
       "no_agent",
-      "You rejected the mandate, so no agent ran.",
+      "You rejected the rules, so no agent ran.",
       "Nothing was bought and no money moved.",
       "No run",
     );
@@ -1460,7 +1490,7 @@ export function headlineFor(s: Standing): Headline {
   if (s.mandate === "failed") {
     return plain(
       "no_agent",
-      "The mandate couldn't be drafted, so no agent ran.",
+      "The rules couldn't be written, so no agent ran.",
       "Nothing was bought and no money moved.",
       "No run",
     );
@@ -1468,9 +1498,9 @@ export function headlineFor(s: Standing): Headline {
   if (s.mandate === "waiting") {
     return plain(
       "mandate_waiting",
-      "This mandate is waiting for you.",
-      "Confirm it on the Start a run page, and the agent can shop. Nothing runs until you do.",
-      "Not confirmed",
+      "These rules are waiting for you.",
+      "Lock them on the Start a run page, and the agent can shop. Nothing runs until you do.",
+      "Rules not locked",
     );
   }
   // Red is for one thing: money that reached an attacker, however the run got there.
@@ -1481,15 +1511,16 @@ export function headlineFor(s: Standing): Headline {
       "Paid attacker",
       s.reviewed && s.verdict !== null
         ? "The money reached an attacker's store."
-        : "The firewall was off, and the money reached an attacker's store.",
+        : "Chaperone was switched off, and the money reached an attacker's store.",
     );
   }
   if (s.failed) {
     return pilled(
       "review_failed",
       "held",
-      "Held, review failed",
-      "A gate broke, so nothing was enforced.",
+      "On hold, a check failed",
+      "A check couldn't finish, so the money is still on hold.",
+      "Nothing was charged and nobody was paid.",
     );
   }
   if (s.noCheckout) {
@@ -1525,23 +1556,23 @@ export function headlineFor(s: Standing): Headline {
       "escalate",
       "Waiting on you",
       "We've paused this purchase.",
-      "Approve it or reject it below.",
+      "Chaperone wasn't sure it is what you asked for. The money is on hold until you decide below.",
     );
   }
   if (s.released) {
     return plain(
       "released",
       "The hold was released without a decision.",
-      "Chaperone paused this purchase, and the hold was voided before a person decided it. Nobody was paid.",
+      "Chaperone paused this purchase for a person to decide. This was a benchmark run with nobody waiting, so the hold was released. Nobody was paid.",
       "Hold released",
     );
   }
   if (s.reviewed && s.verdict === null) {
     return plain(
       "firewall_off",
-      "The firewall was off, so the cart went straight to payment.",
-      null,
-      "Firewall off",
+      "Chaperone was switched off, so the cart went straight to payment.",
+      "Nothing checked this purchase. This is what happens without Chaperone.",
+      "Chaperone off",
     );
   }
   if (s.verdict === "block") {
@@ -1557,7 +1588,7 @@ export function headlineFor(s: Standing): Headline {
       : s.started
         ? "The agent is shopping."
         : "Waiting for the run to start.",
-    s.holding ? "The money is held, not charged." : null,
+    s.holding ? "The money is on hold, not charged." : null,
     "In progress",
   );
 }

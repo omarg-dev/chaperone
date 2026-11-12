@@ -59,7 +59,7 @@ describe("the way into a replay", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "The cart matches what you asked for.",
     );
-    expect(screen.getByText("Captured and paid out")).toBeInTheDocument();
+    expect(screen.getByText("Paid to Larkspur Goods")).toBeInTheDocument();
   });
 
   it("is offered on a run waiting for a person too, since nothing more will arrive", async () => {
@@ -91,8 +91,8 @@ describe("playing a run back", () => {
     readout(1, log.length);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("The agent is shopping.");
     expect(within(timeline()).queryByText("Gate 0")).toBeNull();
-    expect(screen.queryByText("Captured and paid out")).toBeNull();
-    expect(screen.getByText(/Replay, event 1 of/)).toBeInTheDocument();
+    expect(screen.queryByText("Paid to Northgate Supply")).toBeNull();
+    expect(screen.getByText(/Replay, step 1 of/)).toBeInTheDocument();
     expect(within(bar()).getByText("The run started")).toBeInTheDocument();
 
     // The recorded events are 380 ms apart: at 1x the playhead goes on by one each time.
@@ -110,8 +110,8 @@ describe("playing a run back", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "The cart matches what you asked for.",
     );
-    expect(within(timeline()).getByText("Review")).toBeInTheDocument();
-    expect(screen.queryByText(/Replay, event/)).toBeNull();
+    expect(within(timeline()).getByText("Overall result")).toBeInTheDocument();
+    expect(screen.queryByText(/Replay, step/)).toBeNull();
   });
 
   it("pauses, steps either way, and picks up where it stopped", async () => {
@@ -124,10 +124,10 @@ describe("playing a run back", () => {
     await wait(3000);
     readout(10, log.length);
 
-    await user.click(within(bar()).getByRole("button", { name: "Next event" }));
+    await user.click(within(bar()).getByRole("button", { name: "Next step" }));
     readout(11, log.length);
-    await user.click(within(bar()).getByRole("button", { name: "Previous event" }));
-    await user.click(within(bar()).getByRole("button", { name: "Previous event" }));
+    await user.click(within(bar()).getByRole("button", { name: "Previous step" }));
+    await user.click(within(bar()).getByRole("button", { name: "Previous step" }));
     readout(9, log.length);
 
     await user.click(within(bar()).getByRole("button", { name: "Play" }));
@@ -181,7 +181,7 @@ describe("playing a run back", () => {
     readout(20, log.length);
     expect(within(bar()).getByRole("slider")).toHaveAttribute(
       "aria-valuetext",
-      expect.stringMatching(/^Event 20 of 51, /),
+      expect.stringMatching(/^Step 20 of 51, /),
     );
   });
 
@@ -216,7 +216,7 @@ describe("the playhead's place in the address", () => {
   it("follows the playhead once it is still, without piling up history", async () => {
     const user = userEvent.setup({ delay: null });
     await open(log, "?at=12");
-    await user.click(within(bar()).getByRole("button", { name: "Next event" }));
+    await user.click(within(bar()).getByRole("button", { name: "Next step" }));
     await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("?at=13"), {
       timeout: URL_SETTLE_MS * 10,
     });
@@ -256,7 +256,7 @@ describe("what a replay shows", () => {
     await open(log);
     const snapshot = () => ({
       top: document.querySelector(".run-top")?.innerHTML,
-      brief: screen.getByLabelText("The locked mandate").innerHTML,
+      brief: screen.getByLabelText("The locked rules").innerHTML,
       timeline: timeline().innerHTML,
       decision: screen.queryByRole("region", { name: "Your decision" }) !== null,
     });
@@ -293,7 +293,7 @@ describe("what a replay shows", () => {
   it("follows the money in the header: nothing, then held, then captured and paid to an attacker", async () => {
     const log = fixtures.attackerPaid;
     await open(log, "?at=3");
-    expect(screen.queryByText("Held, not charged")).toBeNull();
+    expect(screen.queryByText("On hold, not charged")).toBeNull();
     expect(document.querySelector(".run-money")).toBeNull();
 
     const held = positionOf(log, "payments", "payment_call") + 4;
@@ -305,12 +305,12 @@ describe("what a replay shows", () => {
       ) + 1;
     expect(heldAt).toBeGreaterThan(0);
     fireEvent.change(within(bar()).getByRole("slider"), { target: { value: String(heldAt) } });
-    expect(screen.getByText("Held, not charged")).toBeInTheDocument();
+    expect(screen.getByText("On hold, not charged")).toBeInTheDocument();
     expect(document.querySelector(".run-money-attacker")).toBeNull();
     expect(held).toBeGreaterThan(0);
 
     fireEvent.change(within(bar()).getByRole("slider"), { target: { value: String(log.length) } });
-    expect(screen.getByText("Captured and paid out")).toBeInTheDocument();
+    expect(screen.getByText("Paid to an attacker's store")).toBeInTheDocument();
     expect(document.querySelector(".run-money-attacker")).not.toBeNull();
     expect(screen.getByRole("img", { name: "Verdict: Paid attacker" })).toBeInTheDocument();
   });
@@ -332,7 +332,11 @@ describe("what a replay shows", () => {
     await open(log, `?at=${flagged - 1}`);
     expect(document.querySelector(".tl-passage mark")).toBeNull();
     fireEvent.change(within(bar()).getByRole("slider"), { target: { value: String(flagged) } });
-    expect(within(bar()).getByText("Gate 1 flagged a passage as steering")).toBeInTheDocument();
+    expect(
+      within(bar()).getByText(
+        "Seller pages (Gate 1): flagged a passage that tries to steer the purchase",
+      ),
+    ).toBeInTheDocument();
     expect(document.querySelectorAll(".tl-passage mark").length).toBeGreaterThan(0);
     // Gate 1's own verdict, and its card, come a moment later.
     expect(within(timeline()).queryByText("Gate 1")).toBeNull();
@@ -423,7 +427,7 @@ describe("when the person asks for less motion", () => {
     await new Promise((resolve) => setTimeout(resolve, 600));
     readout(1, fixtures.approved.length);
 
-    await user.click(within(bar()).getByRole("button", { name: "Next event" }));
+    await user.click(within(bar()).getByRole("button", { name: "Next step" }));
     expect(scroll).toHaveBeenLastCalledWith({ block: "nearest", behavior: "auto" });
     delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
   });

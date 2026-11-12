@@ -325,7 +325,7 @@ export function createLiveService(options: LiveOptions): LiveService {
           throw new LiveError(
             502,
             "draft_failed",
-            "The mandate couldn't be drafted just now, so nothing was started. Try again in a moment.",
+            "The rules couldn't be written just now, so nothing was started. Try again in a moment.",
             { runId: run.runId },
           );
         }
@@ -344,10 +344,10 @@ export function createLiveService(options: LiveOptions): LiveService {
           409,
           "mandate_closed",
           progress.status === "locked"
-            ? "This mandate is already locked. The terms can't change now."
+            ? "These rules are already locked, so they can't change now."
             : progress.status === "rejected"
-              ? "This mandate was rejected, so there is nothing to change."
-              : "There is no mandate on this run to decide.",
+              ? "These rules were thrown away, so there is nothing to change."
+              : "This run has no rules yet.",
         );
       }
       const scenarioId = events[0]?.scenarioId ?? null;
@@ -399,8 +399,8 @@ export function createLiveService(options: LiveOptions): LiveService {
           409,
           "mandate_not_locked",
           progress.status === "rejected"
-            ? "This mandate was rejected, so the agent can't start. Choose a task again."
-            : "Confirm the mandate first: the agent only shops against terms you locked.",
+            ? "These rules were thrown away, so the agent can't start. Pick a task again."
+            : "Lock the rules first. The agent only shops against rules you've locked.",
         );
       }
       requireAvailable();
@@ -420,7 +420,7 @@ export function createLiveService(options: LiveOptions): LiveService {
           throw new LiveError(
             410,
             "run_lost",
-            "This run was lost when the server restarted. Choose a task again.",
+            "This run was lost when the server restarted. Pick a task again.",
           );
         }
         throw error;

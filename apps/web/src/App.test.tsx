@@ -12,7 +12,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const headings = {
   "/runs": "Runs",
-  "/escalations": "Escalations",
+  "/escalations": "Waiting on you",
   "/dashboard": "How it's doing",
 };
 
@@ -20,7 +20,7 @@ describe("navigation", () => {
   it("shows the mark and name, and every destination in the top bar", async () => {
     renderApp();
     const nav = screen.getByRole("navigation", { name: "Main" });
-    for (const name of ["Runs", "Escalations", "Dashboard", "Docs"]) {
+    for (const name of ["Runs", "Waiting on you", "Dashboard", "Docs"]) {
       expect(within(nav).getByRole("link", { name: new RegExp(name) })).toBeInTheDocument();
     }
     expect(screen.getByRole("link", { name: "Chaperone, home" })).toHaveTextContent("Chaperone");
@@ -61,7 +61,7 @@ describe("navigation", () => {
 
   it("has a page for a run, and one for an address that isn't a page", async () => {
     renderApp("/runs/run_abc");
-    expect(await screen.findByText("There's no run with this ID.")).toBeInTheDocument();
+    expect(await screen.findByText("We can't find this run.")).toBeInTheDocument();
     renderApp("/nowhere");
     expect(await screen.findByText("There's nothing at this address.")).toBeInTheDocument();
   });

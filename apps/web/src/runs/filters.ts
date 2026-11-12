@@ -1,4 +1,5 @@
 import type { RunSummary } from "../api";
+import { taskWords } from "../words/plain";
 import { DEFAULT_SORT, parseSort, type Sort, sortToParam } from "./sort";
 import { CONFIGS, configOf, OUTCOMES, outcomeOf, type RunOutcome } from "./state";
 
@@ -87,7 +88,7 @@ export function applyFilters(
 }
 
 const searchable = (run: RunSummary, titles: Record<string, string>) =>
-  [run.runId, run.scenarioId, run.scenarioId ? titles[run.scenarioId] : null]
+  [run.runId, run.scenarioId, run.scenarioId ? taskWords(run.scenarioId, titles) : null]
     .filter(Boolean)
     .join("\n")
     .toLowerCase();

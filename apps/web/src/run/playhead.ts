@@ -6,6 +6,7 @@
 // A position is how many events are shown, from 1 (just the first) to the number of events in the
 // run. It is what the address carries as `?at=`: a shared link opens at that moment.
 
+import { RESULT_WORDS, VERDICT_WORDS } from "../words/plain";
 import type { RunEvent } from "./events";
 import { list, obj, str } from "./events";
 
@@ -120,19 +121,28 @@ const TOOL_WORDS: Record<string, string> = {
 
 const PAYMENT_WORDS: Record<string, string> = {
   create_order: "An order was created",
-  authorize_order: "The platform held the money",
+  authorize_order: "The payment platform put the money on hold",
   reauthorize: "The hold was renewed",
   get_authorization: "The hold was checked",
-  capture: "The hold was captured",
+  capture: "The held money was charged",
   payout: "A seller was paid",
-  void: "The hold was voided",
+  void: "The hold was released",
 };
 
 const GATE_NAMES: Record<string, string> = {
-  gate0: "Gate 0",
-  gate1: "Gate 1",
-  gate2: "Gate 2",
-  gate3: "Gate 3",
+  gate0: "Fixed rules (Gate 0)",
+  gate1: "Seller pages (Gate 1)",
+  gate2: "Cart review (Gate 2)",
+  gate3: "Agent's path (Gate 3)",
+};
+
+type Ruling = keyof typeof VERDICT_WORDS;
+
+// Chaperone's settings, as the Start page names them.
+const SETTING_WORDS: Record<string, string> = {
+  full: "full check",
+  gate0: "rules only",
+  off: "switched off",
 };
 
 const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
@@ -154,15 +164,15 @@ export function describeEvent(event: RunEvent): string {
     case "arena/run_started":
       return "The run started";
     case "human/mandate_requested":
-      return "The person made the request";
+      return "You made the request";
     case "mandate/mandate_drafted":
-      return "A mandate was drafted";
+      return "Chaperone wrote the rules from your request";
     case "human/mandate_edited":
-      return "The person edited the mandate";
+      return "You edited the rules";
     case "human/mandate_confirmed":
-      return "The person confirmed the mandate";
+      return "You confirmed the rules";
     case "mandate/mandate_locked":
-      return "The mandate was locked";
+      return "The rules were locked";
     case "agent/agent_started":
       return "The agent started shopping";
     case "agent/model_turn":
@@ -172,11 +182,11 @@ export function describeEvent(event: RunEvent): string {
       return `The agent ${TOOL_WORDS[tool] ?? `used ${tool.replace(/_/g, " ") || "a tool"}`}`;
     }
     case "agent/tool_result":
-      return "The agent got an answer";
+      return "The marketplace answered the agent";
     case "arena/listing_viewed":
-      return "A listing page was served";
+      return "The agent was shown a listing page";
     case "arena/reviews_viewed":
-      return "The reviews were served";
+      return "The agent was shown the reviews";
     case "arena/cart_updated":
       return "The cart changed";
     case "arena/checkout":
@@ -184,54 +194,60 @@ export function describeEvent(event: RunEvent): string {
     case "agent/run_finished":
       return "The agent finished";
     case "payments/payment_call": {
-      if ("error" in body) return "A payment call failed";
-      return PAYMENT_WORDS[String(body.operation)] ?? "A payment call was made";
+      if ("error" in body) return "The payment platform refused a request";
+      return PAYMENT_WORDS[String(body.operation)] ?? "The payment platform was asked something";
     }
     case "review/review_started": {
       const config = str(body.config);
-      return config ? `The review started (firewall ${config})` : "The review started";
+      return config
+        ? `Chaperone started checking (${SETTING_WORDS[config] ?? config})`
+        : "Chaperone started checking";
     }
     case "review/review_finished": {
       const verdict = str(body.verdict);
-      return verdict ? `The review ruled: ${verdict}` : "The review ended with nobody reviewing";
+      return verdict
+        ? `Overall result: ${RESULT_WORDS[verdict as Ruling] ?? verdict}`
+        : "Nothing checked the cart";
     }
     case "review/review_failed":
-      return "A gate broke, so nothing was enforced";
+      return "A check couldn't finish, so the money stayed on hold";
     case "review/escalated":
-      return "The purchase was held for a person";
+      return "The purchase was put on hold for you to decide";
     case "human/human_decision":
       return str(body.decision) === "approve"
-        ? "The person approved the purchase"
-        : "The person rejected the purchase";
+        ? "You approved the purchase"
+        : "You rejected the purchase";
     case "review/enforced":
       return body.money === "voided"
-        ? "The hold was voided"
-        : "The money was captured and paid out";
+        ? "The hold was released, nobody was paid"
+        : "The money was charged and paid to the seller";
     case "gate1/gate1_started":
-      return "Gate 1 started reading the pages";
+      return "Seller pages (Gate 1): started reading what sellers wrote";
     case "gate1/gate1_facts":
       return flaggedSteering(event)
-        ? "Gate 1 flagged a passage as steering"
-        : "Gate 1 read a page and found nothing steering";
+        ? "Seller pages (Gate 1): flagged a passage that tries to steer the purchase"
+        : "Seller pages (Gate 1): read a page and found nothing wrong";
     case "gate2/gate2_started":
-      return "Gate 2 gathered what it reads";
+      return "Cart review (Gate 2): gathered the facts";
     case "gate2/gate2_market":
-      return "Gate 2 looked at the market price";
+      return "Cart review (Gate 2): looked up the market price";
     case "gate2/gate2_judgement":
-      return "Gate 2 judged the cart";
+      return "Cart review (Gate 2): judged the cart";
     case "gate2/gate2_judgement_failed":
-      return "Gate 2's auditor couldn't judge the cart";
+      return "Cart review (Gate 2): the AI reviewer couldn't judge the cart";
     case "gate3/gate3_started":
-      return "Gate 3 gathered the agent's trace";
+      return "Agent's path (Gate 3): gathered the agent's steps";
     case "gate3/gate3_judgement":
-      return "Gate 3 judged how the agent chose";
+      return "Agent's path (Gate 3): judged how the agent chose";
     case "gate3/gate3_judgement_failed":
-      return "Gate 3's auditor couldn't judge the trace";
+      return "Agent's path (Gate 3): the AI reviewer couldn't judge the steps";
   }
   const gate = GATE_NAMES[event.lane];
   if (gate && event.type === "verdict") {
     const verdict = str(obj(body.result).verdict);
-    return verdict ? `${gate} ruled: ${verdict}` : `${gate} ruled`;
+    return verdict
+      ? `${gate}: ${VERDICT_WORDS[verdict as Ruling]?.toLowerCase() ?? verdict}`
+      : `${gate}: finished`;
   }
   return sentence(`${event.lane} ${event.type.replace(/_/g, " ")}`);
 }
