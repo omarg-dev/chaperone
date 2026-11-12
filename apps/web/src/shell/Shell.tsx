@@ -4,6 +4,7 @@ import { buttonClass, Wordmark } from "../design";
 import { useRuns } from "../runs/RunsProvider";
 import { ThemeSwitch } from "../theme/ThemeSwitch";
 import { Footer } from "./Footer";
+import { useScrollOnNavigate } from "./useScrollOnNavigate";
 
 // The top bar, the page and the footer. On a wide screen the bar is one row: the wordmark, where
 // you can go, the theme and the one filled button. On a phone the links and the theme fold behind a
@@ -14,6 +15,7 @@ export function Shell() {
   const header = useRef<HTMLElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
+  useScrollOnNavigate();
 
   // While the menu is open: its first link takes the focus (the menu sits before its button in the
   // page, so a keyboard or a screen reader would otherwise have to go backwards to find it), Escape

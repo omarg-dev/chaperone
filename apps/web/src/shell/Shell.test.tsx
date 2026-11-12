@@ -119,3 +119,25 @@ describe("the footer", () => {
     expect(screen.getByRole("contentinfo").querySelector("img, svg, picture")).toBeNull();
   });
 });
+
+describe("following a link", () => {
+  it("opens the next page at its top, and an address naming a part at that part", async () => {
+    const user = userEvent.setup();
+    const scrollTo = vi.spyOn(window, "scrollTo");
+    const scrolled: string[] = [];
+    // jsdom has no scrollIntoView, so the test gives it one for as long as it runs.
+    Element.prototype.scrollIntoView = function (this: Element) {
+      scrolled.push(this.id);
+    };
+    renderApp("/runs");
+    // The first page opens where the browser puts it.
+    expect(scrollTo).not.toHaveBeenCalled();
+    await user.click(within(screen.getByRole("contentinfo")).getByRole("link", { name: "Docs" }));
+    expect(scrollTo).toHaveBeenCalledWith(0, 0);
+
+    renderApp("/docs#postman");
+    expect(scrolled).toContain("postman");
+    scrollTo.mockRestore();
+    delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+  });
+});
