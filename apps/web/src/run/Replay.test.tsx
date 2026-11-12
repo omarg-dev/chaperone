@@ -428,7 +428,7 @@ describe("when the person asks for less motion", () => {
     readout(1, fixtures.approved.length);
 
     await user.click(within(bar()).getByRole("button", { name: "Next step" }));
-    expect(scroll).toHaveBeenLastCalledWith({ block: "nearest", behavior: "auto" });
+    expect(scroll).toHaveBeenLastCalledWith({ block: "end", behavior: "auto" });
     delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
   });
 });

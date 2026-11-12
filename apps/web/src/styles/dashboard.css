@@ -689,13 +689,29 @@
 
 /* The assistant, said where Studio's tabs are: what it is for, a few questions, and the way in. */
 .benchmark-assistant {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  max-width: 72ch;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-4);
+  align-items: center;
   padding: var(--space-3) var(--space-4);
   border-left: 3px solid var(--hold);
   background: var(--hold-tint);
+}
+
+/* The intro and the examples take the full width; the cost line and the way in share the last row. */
+.benchmark-assistant > p:first-child,
+.benchmark-assistant > .benchmark-examples {
+  grid-column: 1 / -1;
+}
+
+.benchmark-assistant > div {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.benchmark-assistant > .t-meta {
+  grid-column: 1;
+  grid-row: 3;
 }
 
 .benchmark-assistant p {
@@ -703,8 +719,23 @@
 }
 
 .benchmark-examples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: var(--space-1) var(--space-5);
   margin: 0;
   padding-left: var(--space-4);
   font-family: var(--font-voice);
   font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .benchmark-assistant {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .benchmark-assistant > div,
+  .benchmark-assistant > .t-meta {
+    grid-column: 1;
+    grid-row: auto;
+  }
 }
